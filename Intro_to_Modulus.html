@@ -1,912 +1,1136 @@
-
-
 <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<html lang="en" >
+<title>2&nbsp; Intro to Modulus – The Modulus Book</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Intro to Modulus &#8212; The Modulus Book</title>
-  
-  
-  
-  <script data-cfasync="false">
-    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
-    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
-  </script>
-  
-  <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./The_Basic_Algorithm.html" rel="next">
+<link href="./index.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-3f70bac5631458d474a321d4182f9338.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
 
-  
-  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css" />
-    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
-    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css" />
-    <link rel="stylesheet" type="text/css" href="_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
-  
-  <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
-
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/clipboard.min.js"></script>
-    <script src="_static/copybutton.js"></script>
-    <script src="_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
-    <script>let toggleHintShow = 'Click to show';</script>
-    <script>let toggleHintHide = 'Click to hide';</script>
-    <script>let toggleOpenOnPrint = 'true';</script>
-    <script src="_static/togglebutton.js"></script>
-    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script src="_static/design-tabs.js"></script>
-    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
-const thebe_selector = ".thebe,.cell"
-const thebe_selector_input = "pre"
-const thebe_selector_output = ".output, .cell_output"
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
 </script>
-    <script async="async" src="_static/sphinx-thebe.js"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'Intro_to_Modulus';</script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="The Basic Algorithm" href="The_Basic_Algorithm.html" />
-    <link rel="prev" title="Introduction" href="Introduction.html" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="en"/>
-  </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
-  
-  
-  <a class="skip-link" href="#main-content">Skip to main content</a>
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          name="__primary"
-          id="__primary"/>
-  <label class="overlay overlay-primary" for="__primary"></label>
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          name="__secondary"
-          id="__secondary"/>
-  <label class="overlay overlay-secondary" for="__secondary"></label>
-  
-  <div class="search-button__wrapper">
-    <div class="search-button__overlay"></div>
-    <div class="search-button__search-container">
-<form class="bd-search d-flex align-items-center"
-      action="search.html"
-      method="get">
-  <i class="fa-solid fa-magnifying-glass"></i>
-  <input type="search"
-         class="form-control"
-         name="q"
-         id="search-input"
-         placeholder="Search this book..."
-         aria-label="Search this book..."
-         autocomplete="off"
-         autocorrect="off"
-         autocapitalize="off"
-         spellcheck="false"/>
-  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-  </div>
-  
-    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
-    </nav>
-  
-  <div class="bd-container">
-    <div class="bd-container__inner bd-page-width">
-      
-      <div class="bd-sidebar-primary bd-sidebar">
-        
+<link rel="stylesheet" href="custom.css">
+</head>
 
-  
-  <div class="sidebar-header-items sidebar-primary__section">
-    
-    
-    
-    
-  </div>
-  
-    <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item">
-  
+<body class="nav-sidebar floating quarto-light">
 
-<a class="navbar-brand logo" href="Introduction.html">
-  
-  
-  
-  
-  
-    <p class="title logo__title">The Modulus Book</p>
-  
-</a></div>
-        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
-    <div class="bd-toc-item navbar-nav active">
-        
-        <ul class="nav bd-sidenav bd-sidenav__home-link">
-            <li class="toctree-l1">
-                <a class="reference internal" href="Introduction.html">
-                    Introduction
-                </a>
-            </li>
-        </ul>
-        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Modulus Basics</span></p>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Intro to Modulus</a></li>
-<li class="toctree-l1"><a class="reference internal" href="The_Basic_Algorithm.html">The Basic Algorithm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Dual_Families.html">Dual Families</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="References.html">References</a></li>
-</ul>
-
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Intro_to_Modulus.html">Modulus Basics</a></li><li class="breadcrumb-item"><a href="./Intro_to_Modulus.html"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Intro to Modulus</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
     </div>
-</nav></div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">The Modulus Book</a> 
+        <div class="sidebar-tools-main">
+    <a href="https://github.com/nathan-albin/discrete-modulus/tree/main/book/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
     </div>
-  
-  
-  <div class="sidebar-primary-items__end sidebar-primary__section">
-  </div>
-  
-  <div id="rtd-footer-container"></div>
-
-
       </div>
-      
-      <main id="main-content" class="bd-main">
-        
-        
-
-<div class="sbt-scroll-pixel-helper"></div>
-
-          <div class="bd-content">
-            <div class="bd-article-container">
-              
-              <div class="bd-header-article">
-<div class="header-article-items header-article__inner">
-  
-    <div class="header-article-items__start">
-      
-        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <span class="fa-solid fa-bars"></span>
-</label></div>
-      
-    </div>
-  
-  
-    <div class="header-article-items__end">
-      
-        <div class="header-article-item">
-
-<div class="article-header-buttons">
-
-
-
-
-
-<div class="dropdown dropdown-source-buttons">
-  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
-    <i class="fab fa-github"></i>
-  </button>
-  <ul class="dropdown-menu">
-      
-      
-      
-      <li><a href="https://github.com/nathan-albin/modulus_book" target="_blank"
-   class="btn btn-sm btn-source-repository-button dropdown-item"
-   title="Source repository"
-   data-bs-placement="left" data-bs-toggle="tooltip"
->
-  
-
-<span class="btn__icon-container">
-  <i class="fab fa-github"></i>
-  </span>
-<span class="btn__text-container">Repository</span>
-</a>
-</li>
-      
-      
-      
-      
-      <li><a href="https://github.com/nathan-albin/modulus_book/edit/main/Intro_to_Modulus.ipynb" target="_blank"
-   class="btn btn-sm btn-source-edit-button dropdown-item"
-   title="Suggest edit"
-   data-bs-placement="left" data-bs-toggle="tooltip"
->
-  
-
-<span class="btn__icon-container">
-  <i class="fas fa-pencil-alt"></i>
-  </span>
-<span class="btn__text-container">Suggest edit</span>
-</a>
-</li>
-      
-      
-      
-      
-      <li><a href="https://github.com/nathan-albin/modulus_book/issues/new?title=Issue%20on%20page%20%2FIntro_to_Modulus.html&body=Your%20issue%20content%20here." target="_blank"
-   class="btn btn-sm btn-source-issues-button dropdown-item"
-   title="Open an issue"
-   data-bs-placement="left" data-bs-toggle="tooltip"
->
-  
-
-<span class="btn__icon-container">
-  <i class="fas fa-lightbulb"></i>
-  </span>
-<span class="btn__text-container">Open issue</span>
-</a>
-</li>
-      
-  </ul>
-</div>
-
-
-
-
-
-
-<div class="dropdown dropdown-download-buttons">
-  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
-    <i class="fas fa-download"></i>
-  </button>
-  <ul class="dropdown-menu">
-      
-      
-      
-      <li><a href="_sources/Intro_to_Modulus.ipynb" target="_blank"
-   class="btn btn-sm btn-download-source-button dropdown-item"
-   title="Download source file"
-   data-bs-placement="left" data-bs-toggle="tooltip"
->
-  
-
-<span class="btn__icon-container">
-  <i class="fas fa-file"></i>
-  </span>
-<span class="btn__text-container">.ipynb</span>
-</a>
-</li>
-      
-      
-      
-      
-      <li>
-<button onclick="window.print()"
-  class="btn btn-sm btn-download-pdf-button dropdown-item"
-  title="Print to PDF"
-  data-bs-placement="left" data-bs-toggle="tooltip"
->
-  
-
-<span class="btn__icon-container">
-  <i class="fas fa-file-pdf"></i>
-  </span>
-<span class="btn__text-container">.pdf</span>
-</button>
-</li>
-      
-  </ul>
-</div>
-
-
-
-
-<button onclick="toggleFullScreen()"
-  class="btn btn-sm btn-fullscreen-button"
-  title="Fullscreen mode"
-  data-bs-placement="bottom" data-bs-toggle="tooltip"
->
-  
-
-<span class="btn__icon-container">
-  <i class="fas fa-expand"></i>
-  </span>
-
-</button>
-
-
-<script>
-document.write(`
-  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
-    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
-    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
-  </button>
-`);
-</script>
-
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-  </button>
-`);
-</script>
-<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="fa-solid fa-list"></span>
-</label>
-</div></div>
-      
-    </div>
-  
-</div>
-</div>
-              
-              
-
-<div id="jb-print-docs-body" class="onlyprint">
-    <h1>Intro to Modulus</h1>
-    <!-- Table of contents -->
-    <div id="print-main-content">
-        <div id="jb-print-toc">
-            
-            <div>
-                <h2> Contents </h2>
-            </div>
-            <nav aria-label="Page">
-                <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#families-of-objects">Families of objects</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-the-family-of-triangles">Example: the family of triangles</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-a-family-of-simple-paths">Example: a family of simple paths</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#admissible-densities-everybody-pays-a-dollar">Admissible densities: “Everybody pays a dollar”</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-densities-and-triangles">Example: densities and triangles</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-densities-and-paths">Example: densities and paths</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#modulus-of-a-family">Modulus of a family</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-triangle-modulus">Example: triangle modulus</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-path-modulus">Example: path modulus</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-to-from-here">Where to from here?</a></li>
-</ul>
-            </nav>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
         </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Modulus Basics</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Intro_to_Modulus.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Intro to Modulus</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./The_Basic_Algorithm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">The Basic Algorithm</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Dual_Families.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Dual Families</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./References.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">References</span></span></a>
+  </div>
+</li>
+    </ul>
     </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#families-of-objects" id="toc-families-of-objects" class="nav-link active" data-scroll-target="#families-of-objects"><span class="header-section-number">2.1</span> Families of objects</a>
+  <ul class="collapse">
+  <li><a href="#example-the-family-of-triangles" id="toc-example-the-family-of-triangles" class="nav-link" data-scroll-target="#example-the-family-of-triangles"><span class="header-section-number">2.1.1</span> Example: the family of triangles</a></li>
+  <li><a href="#example-a-family-of-simple-paths" id="toc-example-a-family-of-simple-paths" class="nav-link" data-scroll-target="#example-a-family-of-simple-paths"><span class="header-section-number">2.1.2</span> Example: a family of simple paths</a></li>
+  </ul></li>
+  <li><a href="#admissible-densities-everybody-pays-a-dollar" id="toc-admissible-densities-everybody-pays-a-dollar" class="nav-link" data-scroll-target="#admissible-densities-everybody-pays-a-dollar"><span class="header-section-number">2.2</span> Admissible densities: “Everybody pays a dollar”</a>
+  <ul class="collapse">
+  <li><a href="#example-densities-and-triangles" id="toc-example-densities-and-triangles" class="nav-link" data-scroll-target="#example-densities-and-triangles"><span class="header-section-number">2.2.1</span> Example: densities and triangles</a></li>
+  <li><a href="#example-densities-and-paths" id="toc-example-densities-and-paths" class="nav-link" data-scroll-target="#example-densities-and-paths"><span class="header-section-number">2.2.2</span> Example: densities and paths</a></li>
+  </ul></li>
+  <li><a href="#modulus-of-a-family" id="toc-modulus-of-a-family" class="nav-link" data-scroll-target="#modulus-of-a-family"><span class="header-section-number">2.3</span> Modulus of a family</a>
+  <ul class="collapse">
+  <li><a href="#example-triangle-modulus" id="toc-example-triangle-modulus" class="nav-link" data-scroll-target="#example-triangle-modulus"><span class="header-section-number">2.3.1</span> Example: triangle modulus</a></li>
+  <li><a href="#example-path-modulus" id="toc-example-path-modulus" class="nav-link" data-scroll-target="#example-path-modulus"><span class="header-section-number">2.3.2</span> Example: path modulus</a></li>
+  </ul></li>
+  <li><a href="#where-to-from-here" id="toc-where-to-from-here" class="nav-link" data-scroll-target="#where-to-from-here"><span class="header-section-number">2.4</span> Where to from here?</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/nathan-albin/discrete-modulus/edit/main/book/Intro_to_Modulus.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/nathan-albin/discrete-modulus/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Intro_to_Modulus.html">Modulus Basics</a></li><li class="breadcrumb-item"><a href="./Intro_to_Modulus.html"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Intro to Modulus</span></a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Intro to Modulus</span></h1>
 </div>
 
-              
-                
-<div id="searchbox"></div>
-                <article class="bd-article" role="main">
-                  
-  <section class="tex2jax_ignore mathjax_ignore" id="intro-to-modulus">
-<h1>Intro to Modulus<a class="headerlink" href="#intro-to-modulus" title="Permalink to this heading">#</a></h1>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">modulus_tools</span> <span class="kn">import</span> <span class="n">demo_graphs</span>
-</pre></div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div id="4d3f63a8" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus <span class="im">import</span> demo</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-</div>
-</div>
-<section id="families-of-objects">
-<h2>Families of objects<a class="headerlink" href="#families-of-objects" title="Permalink to this heading">#</a></h2>
-<p>The goal of this book is to introduce a collection of Python routines to explore the concept of the modulus of a family of objects <span class="math notranslate nohighlight">\(\Gamma\)</span> on a discrete graph <span class="math notranslate nohighlight">\(G=(V,E)\)</span>.  Roughly speaking, modulus is a framework for quantifying the “richness” of the family <span class="math notranslate nohighlight">\(\Gamma\)</span>.  Before we define modulus, therefore, it make sense to consider what is meant by a family of objects.  As will become apparent in later chapters, there aren’t many obvious constraints on the type of graph considered.  For example, the graph may be finite or infinite, it may be directed or undirected, it may even contain parallel edges or self loops.  Modulus is a flexible framework that can be adapted to many settings.  However, for developing an intuition about modulus, it helps to consider something concrete; for now, consider a finite, simple, undirected graph <span class="math notranslate nohighlight">\(G\)</span>.</p>
-<p>Similarly, there is a great deal of flexibility in what is considered to be an “objects”.  A good starting point is to consider <span class="math notranslate nohighlight">\(\Gamma\)</span> to be some collection of subsets of edges. That is, <span class="math notranslate nohighlight">\(\Gamma\subseteq 2^E\)</span>.  While it is certainly possible to define more complicated notions of “object,” families of edge subsets are already sufficiently rich to demonstrate the modulus framework.  For now, then, we shall think of <span class="math notranslate nohighlight">\(\Gamma\)</span> as a collection of subsets of edges.  Some possible choices to keep in mind are:</p>
-<ul class="simple">
-<li><p>the family of all paths connecting two specified distinct nodes</p></li>
-<li><p>the family of all cuts separating two specified distinct nodes</p></li>
-<li><p>the family of all spanning trees of <span class="math notranslate nohighlight">\(G\)</span></p></li>
-<li><p>the family of all cycles in <span class="math notranslate nohighlight">\(G\)</span></p></li>
-<li><p>the family of all triangles in <span class="math notranslate nohighlight">\(G\)</span></p></li>
-<li><p>the family of all stars in <span class="math notranslate nohighlight">\(G\)</span></p></li>
+<section id="families-of-objects" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="families-of-objects"><span class="header-section-number">2.1</span> Families of objects</h2>
+<p>The goal of this book is to introduce a collection of Python routines to explore the concept of the modulus of a family of objects <span class="math inline">\(\Gamma\)</span> on a discrete graph <span class="math inline">\(G=(V,E)\)</span>. Roughly speaking, modulus is a framework for quantifying the “richness” of the family <span class="math inline">\(\Gamma\)</span>. Before we define modulus, therefore, it make sense to consider what is meant by a family of objects. As will become apparent in later chapters, there aren’t many obvious constraints on the type of graph considered. For example, the graph may be finite or infinite, it may be directed or undirected, it may even contain parallel edges or self loops. Modulus is a flexible framework that can be adapted to many settings. However, for developing an intuition about modulus, it helps to consider something concrete; for now, consider a finite, simple, undirected graph <span class="math inline">\(G\)</span>.</p>
+<p>Similarly, there is a great deal of flexibility in what is considered to be an “objects”. A good starting point is to consider <span class="math inline">\(\Gamma\)</span> to be some collection of subsets of edges. That is, <span class="math inline">\(\Gamma\subseteq 2^E\)</span>. While it is certainly possible to define more complicated notions of “object,” families of edge subsets are already sufficiently rich to demonstrate the modulus framework. For now, then, we shall think of <span class="math inline">\(\Gamma\)</span> as a collection of subsets of edges. Some possible choices to keep in mind are:</p>
+<ul>
+<li>the family of all paths connecting two specified distinct nodes</li>
+<li>the family of all cuts separating two specified distinct nodes</li>
+<li>the family of all spanning trees of <span class="math inline">\(G\)</span></li>
+<li>the family of all cycles in <span class="math inline">\(G\)</span></li>
+<li>the family of all triangles in <span class="math inline">\(G\)</span></li>
+<li>the family of all stars in <span class="math inline">\(G\)</span></li>
 </ul>
-<p>In each of these cases, we may identify each object <span class="math notranslate nohighlight">\(\gamma\)</span> in the family <span class="math notranslate nohighlight">\(\Gamma\)</span> with the set of edges used by the object.  For example, a path can be identified with the collection of edges it crosses.  A convenient way to keep track of this information is via the <span class="math notranslate nohighlight">\(\Gamma\times E\)</span> <em>usage matrix</em> <span class="math notranslate nohighlight">\(\mathcal{N}\)</span>, whose entries are defined as</p>
-<div class="math notranslate nohighlight">
-\[\begin{split}
+<p>In each of these cases, we may identify each object <span class="math inline">\(\gamma\)</span> in the family <span class="math inline">\(\Gamma\)</span> with the set of edges used by the object. For example, a path can be identified with the collection of edges it crosses. A convenient way to keep track of this information is via the <span class="math inline">\(\Gamma\times E\)</span> <em>usage matrix</em> <span class="math inline">\(\mathcal{N}\)</span>, whose entries are defined as</p>
+<p><span class="math display">\[
 \mathcal{N}(\gamma,e) :=
 \begin{cases}
 1 &amp; \text{if }e\in\gamma,\\
 0 &amp; \text{otherwise}.
 \end{cases}
-\end{split}\]</div>
-<section id="example-the-family-of-triangles">
-<h3>Example: the family of triangles<a class="headerlink" href="#example-the-family-of-triangles" title="Permalink to this heading">#</a></h3>
-<p>The following code cell produces the <span class="math notranslate nohighlight">\(\mathcal{N}\)</span> matrix for the family of triangles on a particular graph.  Notice that, in order to write <span class="math notranslate nohighlight">\(\mathcal{N}\)</span> as a two-dimensional array of numbers, we need to choose some ordering for the edges and objects.  These orderings can be chosen arbitrarily, as long as they are used consistently.</p>
-<p>The code also draws the three triangles of the graph.  The labels on the edges show the edge enumeration.  The figure on the left corresponds to the first row of <span class="math notranslate nohighlight">\(\mathcal{N}\)</span>, the middle figure to the second row, and the right figure to the third row.</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># the demo graph</span>
-<span class="n">G</span><span class="p">,</span> <span class="n">pos</span> <span class="o">=</span> <span class="n">demo_graphs</span><span class="o">.</span><span class="n">slashed_house_graph</span><span class="p">()</span>
-
-<span class="c1"># enumerate the edges</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">()):</span>
-    <span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="s1">&#39;enum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
-    
-<span class="c1"># find all triangles</span>
-<span class="c1"># NOTE: this would be a silly thing to do on a big graph</span>
-<span class="n">triangles</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">n</span> <span class="o">=</span> <span class="mi">5</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">G</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">G</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">and</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">G</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
-                <span class="n">triangles</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">),</span> <span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">i</span><span class="p">)))</span>
-
-                
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
-
-<span class="c1"># draw the triangles</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">triangles</span><span class="p">):</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">labels</span> <span class="o">=</span> <span class="p">{(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;enum&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
-    <span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">node_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edges</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">edgelist</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edge_labels</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">edge_labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-    
-<span class="c1"># build the N matrix</span>
-<span class="n">n_edges</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
-<span class="n">n_triangles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triangles</span><span class="p">)</span>
-<span class="n">N_tri</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_triangles</span><span class="p">,</span> <span class="n">n_edges</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">triangles</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">u</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">T</span><span class="p">:</span>
-        <span class="n">j</span> <span class="o">=</span> <span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="s1">&#39;enum&#39;</span><span class="p">]</span>
-        <span class="n">N_tri</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;N_tri = &#39;</span><span class="p">)</span>        
-<span class="nb">print</span><span class="p">(</span><span class="n">N_tri</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>N_tri = 
+\]</span></p>
+<section id="example-the-family-of-triangles" class="level3" data-number="2.1.1">
+<h3 data-number="2.1.1" class="anchored" data-anchor-id="example-the-family-of-triangles"><span class="header-section-number">2.1.1</span> Example: the family of triangles</h3>
+<p>The following code cell produces the <span class="math inline">\(\mathcal{N}\)</span> matrix for the family of triangles on a particular graph. Notice that, in order to write <span class="math inline">\(\mathcal{N}\)</span> as a two-dimensional array of numbers, we need to choose some ordering for the edges and objects. These orderings can be chosen arbitrarily, as long as they are used consistently.</p>
+<p>The code also draws the three triangles of the graph. The labels on the edges show the edge enumeration. The figure on the left corresponds to the first row of <span class="math inline">\(\mathcal{N}\)</span>, the middle figure to the second row, and the right figure to the third row.</p>
+<div id="64bac1cd" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the demo graph</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>G, pos <span class="op">=</span> demo.slashed_house_graph()</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># enumerate the edges</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (u,v) <span class="kw">in</span> <span class="bu">enumerate</span>(G.edges()):</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    G[u][v][<span class="st">'enum'</span>] <span class="op">=</span> i</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># find all triangles</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">NOTE</span><span class="co">: this would be a silly thing to do on a big graph</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>triangles <span class="op">=</span> []</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n<span class="op">-</span><span class="dv">2</span>):</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(i<span class="op">+</span><span class="dv">1</span>, n<span class="op">-</span><span class="dv">1</span>):</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(j<span class="op">+</span><span class="dv">1</span>, n):</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> j <span class="kw">in</span> G[i] <span class="kw">and</span> k <span class="kw">in</span> G[j] <span class="kw">and</span> i <span class="kw">in</span> G[k]:</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>                triangles.append(((i, j), (j, k), (k, i)))</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">4</span>))</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co"># draw the triangles</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, T <span class="kw">in</span> <span class="bu">enumerate</span>(triangles):</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    plt.subplot(<span class="dv">1</span>,<span class="dv">3</span>,i<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> {(u, v): d[<span class="st">'enum'</span>] <span class="cf">for</span> u, v, d <span class="kw">in</span> G.edges(data<span class="op">=</span><span class="va">True</span>)}</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    nx.draw(G, pos, node_size<span class="op">=</span><span class="dv">100</span>, node_color<span class="op">=</span><span class="st">'black'</span>, edge_color<span class="op">=</span><span class="st">'gray'</span>)</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    nx.draw_networkx_edges(G, pos, edgelist<span class="op">=</span>T, width<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    nx.draw_networkx_edge_labels(G, pos, edge_labels<span class="op">=</span>labels, font_size<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co"># build the N matrix</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>n_edges <span class="op">=</span> <span class="bu">len</span>(G.edges())</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>n_triangles <span class="op">=</span> <span class="bu">len</span>(triangles)</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>N_tri <span class="op">=</span> np.zeros((n_triangles, n_edges))</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, T <span class="kw">in</span> <span class="bu">enumerate</span>(triangles):</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> u,v <span class="kw">in</span> T:</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>        j <span class="op">=</span> G[u][v][<span class="st">'enum'</span>]</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>        N_tri[i, j] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'N_tri = '</span>)        </span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(N_tri)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>N_tri = 
 [[1. 0. 1. 0. 1. 0. 0.]
  [0. 0. 1. 1. 0. 1. 0.]
- [0. 1. 0. 1. 0. 0. 1.]]
-</pre></div>
+ [0. 1. 0. 1. 0. 0. 1.]]</code></pre>
 </div>
-<img alt="_images/f387e784f47479ce21a6060ba928095c1b7bfaf34ac5ca7a16b98f53a827b355.png" src="_images/f387e784f47479ce21a6060ba928095c1b7bfaf34ac5ca7a16b98f53a827b355.png" />
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Intro_to_Modulus_files/figure-html/cell-3-output-2.png" width="950" height="374" class="figure-img"></p>
+</figure>
+</div>
 </div>
 </div>
 </section>
-<section id="example-a-family-of-simple-paths">
-<h3>Example: a family of simple paths<a class="headerlink" href="#example-a-family-of-simple-paths" title="Permalink to this heading">#</a></h3>
-<p>Consider, instead, the family of simple paths that connect the top vertex of the previous graph to the bottom-right vertex.  The following code generates and prints the <span class="math notranslate nohighlight">\(\mathcal{N}\)</span> matrix for this family, along with a corresponding series of pictures.</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># find all simple paths</span>
-<span class="c1"># NOTE: again, not a good idea for large graphs</span>
-<span class="n">paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_simple_paths</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
-
-<span class="c1"># draw the paths</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">paths</span><span class="p">):</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">edges</span> <span class="o">=</span> <span class="p">[(</span><span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
-    <span class="n">labels</span> <span class="o">=</span> <span class="p">{(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;enum&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
-    <span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">node_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edges</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">edgelist</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edge_labels</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">edge_labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-    
-<span class="c1"># build the N matrix</span>
-<span class="n">n_edges</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
-<span class="n">n_paths</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
-<span class="n">N_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_paths</span><span class="p">,</span> <span class="n">n_edges</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">paths</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">u</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">path</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">path</span><span class="p">[</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)]:</span>
-        <span class="n">j</span> <span class="o">=</span> <span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="s1">&#39;enum&#39;</span><span class="p">]</span>
-        <span class="n">N_path</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;N_path = &#39;</span><span class="p">)</span>        
-<span class="nb">print</span><span class="p">(</span><span class="n">N_path</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>N_path = 
+<section id="example-a-family-of-simple-paths" class="level3" data-number="2.1.2">
+<h3 data-number="2.1.2" class="anchored" data-anchor-id="example-a-family-of-simple-paths"><span class="header-section-number">2.1.2</span> Example: a family of simple paths</h3>
+<p>Consider, instead, the family of simple paths that connect the top vertex of the previous graph to the bottom-right vertex. The following code generates and prints the <span class="math inline">\(\mathcal{N}\)</span> matrix for this family, along with a corresponding series of pictures.</p>
+<div id="f0d01d7a" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># find all simple paths</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">NOTE</span><span class="co">: again, not a good idea for large graphs</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>paths <span class="op">=</span> <span class="bu">list</span>(nx.all_simple_paths(G, <span class="dv">1</span>, <span class="dv">3</span>))</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>))</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># draw the paths</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, path <span class="kw">in</span> <span class="bu">enumerate</span>(paths):</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    plt.subplot(<span class="dv">2</span>,<span class="dv">3</span>,i<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    edges <span class="op">=</span> [(path[i], path[i<span class="op">+</span><span class="dv">1</span>]) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(path)<span class="op">-</span><span class="dv">1</span>)]</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> {(u, v): d[<span class="st">'enum'</span>] <span class="cf">for</span> u, v, d <span class="kw">in</span> G.edges(data<span class="op">=</span><span class="va">True</span>)}</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    nx.draw(G, pos, node_size<span class="op">=</span><span class="dv">100</span>, node_color<span class="op">=</span><span class="st">'black'</span>, edge_color<span class="op">=</span><span class="st">'gray'</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    nx.draw_networkx_edges(G, pos, edgelist<span class="op">=</span>edges, width<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    nx.draw_networkx_edge_labels(G, pos, edge_labels<span class="op">=</span>labels, font_size<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co"># build the N matrix</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>n_edges <span class="op">=</span> <span class="bu">len</span>(G.edges())</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>n_paths <span class="op">=</span> <span class="bu">len</span>(paths)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>N_path <span class="op">=</span> np.zeros((n_paths, n_edges))</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, path <span class="kw">in</span> <span class="bu">enumerate</span>(paths):</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> u,v <span class="kw">in</span> [(path[k], path[k<span class="op">+</span><span class="dv">1</span>]) <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(path)<span class="op">-</span><span class="dv">1</span>)]:</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        j <span class="op">=</span> G[u][v][<span class="st">'enum'</span>]</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>        N_path[i, j] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'N_path = '</span>)        </span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(N_path)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>N_path = 
 [[1. 1. 0. 0. 0. 0. 1.]
  [1. 0. 1. 0. 0. 1. 0.]
  [1. 0. 0. 1. 0. 0. 0.]
  [0. 0. 0. 0. 1. 1. 0.]
  [0. 1. 1. 0. 1. 0. 1.]
- [0. 0. 1. 1. 1. 0. 0.]]
-</pre></div>
+ [0. 0. 1. 1. 1. 0. 0.]]</code></pre>
 </div>
-<img alt="_images/ebbb0ccb3ed0562daedb017c95afe414265e23ce9eda4ff0bd2c09c8df556694.png" src="_images/ebbb0ccb3ed0562daedb017c95afe414265e23ce9eda4ff0bd2c09c8df556694.png" />
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Intro_to_Modulus_files/figure-html/cell-4-output-2.png" width="950" height="758" class="figure-img"></p>
+</figure>
+</div>
 </div>
 </div>
 </section>
 </section>
-<section id="admissible-densities-everybody-pays-a-dollar">
-<h2>Admissible densities: “Everybody pays a dollar”<a class="headerlink" href="#admissible-densities-everybody-pays-a-dollar" title="Permalink to this heading">#</a></h2>
-<p>The next step in the definition of modulus is to develop the concept of admissible density.  Suppose we are given a graph <span class="math notranslate nohighlight">\(G\)</span> and the usage matrix <span class="math notranslate nohighlight">\(\mathcal{N}\)</span> for a family of objects <span class="math notranslate nohighlight">\(\Gamma\)</span>.  In later chapters, we shall see more exotic families of objects whose usage matrices take values other than <span class="math notranslate nohighlight">\(0\)</span> and <span class="math notranslate nohighlight">\(1\)</span> so, in order to keep the discussion general, we assume that <span class="math notranslate nohighlight">\(\mathcal{N}\)</span> is a <span class="math notranslate nohighlight">\(\Gamma\times E\)</span> real matrix with non-negative entries.</p>
-<p>A <em>density</em> on <span class="math notranslate nohighlight">\(G\)</span> is a non-negative vector <span class="math notranslate nohighlight">\(\rho\in\mathbb{R}^E_{\ge 0}\)</span> that gives some non-negative value <span class="math notranslate nohighlight">\(\rho(e)\)</span> to every edge <span class="math notranslate nohighlight">\(e\in E\)</span>.  It can be helpful to think of <span class="math notranslate nohighlight">\(\rho(e)\)</span> as a cost per unit usage incurred by using edge <span class="math notranslate nohighlight">\(e\)</span>.  This induces on each <span class="math notranslate nohighlight">\(\gamma\in\Gamma\)</span> a <em>total usage cost</em>, often referred to as the <em><span class="math notranslate nohighlight">\(\rho\)</span>-length</em> of <span class="math notranslate nohighlight">\(\gamma\)</span> for historical reasons, defined as</p>
-<div class="math notranslate nohighlight">
-\[
+<section id="admissible-densities-everybody-pays-a-dollar" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="admissible-densities-everybody-pays-a-dollar"><span class="header-section-number">2.2</span> Admissible densities: “Everybody pays a dollar”</h2>
+<p>The next step in the definition of modulus is to develop the concept of admissible density. Suppose we are given a graph <span class="math inline">\(G\)</span> and the usage matrix <span class="math inline">\(\mathcal{N}\)</span> for a family of objects <span class="math inline">\(\Gamma\)</span>. In later chapters, we shall see more exotic families of objects whose usage matrices take values other than <span class="math inline">\(0\)</span> and <span class="math inline">\(1\)</span> so, in order to keep the discussion general, we assume that <span class="math inline">\(\mathcal{N}\)</span> is a <span class="math inline">\(\Gamma\times E\)</span> real matrix with non-negative entries.</p>
+<p>A <em>density</em> on <span class="math inline">\(G\)</span> is a non-negative vector <span class="math inline">\(\rho\in\mathbb{R}^E_{\ge 0}\)</span> that gives some non-negative value <span class="math inline">\(\rho(e)\)</span> to every edge <span class="math inline">\(e\in E\)</span>. It can be helpful to think of <span class="math inline">\(\rho(e)\)</span> as a cost per unit usage incurred by using edge <span class="math inline">\(e\)</span>. This induces on each <span class="math inline">\(\gamma\in\Gamma\)</span> a <em>total usage cost</em>, often referred to as the <em><span class="math inline">\(\rho\)</span>-length</em> of <span class="math inline">\(\gamma\)</span> for historical reasons, defined as</p>
+<p><span class="math display">\[
 \ell_\rho(\gamma) := \sum_{e\in E}\mathcal{N}(\gamma,e)\rho(e).
-\]</div>
-<p>In words, the <span class="math notranslate nohighlight">\(\rho\)</span>-length of <span class="math notranslate nohighlight">\(\gamma\)</span> is the sum over all edges of the extent to which <span class="math notranslate nohighlight">\(\gamma\)</span> uses <span class="math notranslate nohighlight">\(e\)</span> multiplied by the cost per unit usage assessed by <span class="math notranslate nohighlight">\(\rho\)</span>.  In the case that all entries of <span class="math notranslate nohighlight">\(\mathcal{N}\)</span> are either 0 or 1, the <span class="math notranslate nohighlight">\(\rho\)</span>-length can be rewritten as</p>
-<div class="math notranslate nohighlight">
-\[
+\]</span></p>
+<p>In words, the <span class="math inline">\(\rho\)</span>-length of <span class="math inline">\(\gamma\)</span> is the sum over all edges of the extent to which <span class="math inline">\(\gamma\)</span> uses <span class="math inline">\(e\)</span> multiplied by the cost per unit usage assessed by <span class="math inline">\(\rho\)</span>. In the case that all entries of <span class="math inline">\(\mathcal{N}\)</span> are either 0 or 1, the <span class="math inline">\(\rho\)</span>-length can be rewritten as</p>
+<p><span class="math display">\[
 \ell_\rho(\gamma) = \sum_{e\in\Gamma}\rho(e).
-\]</div>
-<p>Now we are ready to define admissibility.  A density <span class="math notranslate nohighlight">\(\rho\in\mathbb{R}^E_{\ge 0}\)</span> is said to be <em>admissible for <span class="math notranslate nohighlight">\(\Gamma\)</span></em> if <span class="math notranslate nohighlight">\(\ell_{\rho}(\gamma)\ge 1\)</span> for every <span class="math notranslate nohighlight">\(\gamma\in\Gamma\)</span>.  That is: everybody pays a dollar.</p>
-<p>Since <span class="math notranslate nohighlight">\(\mathcal{N}\)</span> is a <span class="math notranslate nohighlight">\(\Gamma\times E\)</span> matrix and <span class="math notranslate nohighlight">\(\rho\)</span> is an <span class="math notranslate nohighlight">\(E\)</span>-vector, the product <span class="math notranslate nohighlight">\(\mathcal{N}\rho\)</span> is a <span class="math notranslate nohighlight">\(\Gamma\)</span>-vector whose <span class="math notranslate nohighlight">\(\gamma\)</span> entry is <span class="math notranslate nohighlight">\(\ell_\rho(\gamma)\)</span>.  Thus, it is often convenient to use the shorthand notation <span class="math notranslate nohighlight">\(\mathcal{N}\rho\ge\mathbf{1}\)</span> to indicated that <span class="math notranslate nohighlight">\(\rho\)</span> is admissible.  In this context, the inequality is interpreted element-wise.</p>
-<section id="example-densities-and-triangles">
-<h3>Example: densities and triangles<a class="headerlink" href="#example-densities-and-triangles" title="Permalink to this heading">#</a></h3>
-<p>Returning to the example of the family of triangles, the following code generates a set of densities and checks for admissibility.  Each row in the figure produced represents a density.  In each row, the triangles are colored either green or red depending on whether or not the <span class="math notranslate nohighlight">\(\rho\)</span>-length of that triangle is at least 1.  A density is admissible for the triangles if all triangles in that row are colored green.</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># seed the random number generator</span>
-<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">88198283</span><span class="p">)</span>
-
-<span class="n">n_rho</span> <span class="o">=</span> <span class="mi">3</span>
-
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_rho</span><span class="p">):</span>
-    
-    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-    
-    <span class="c1"># generate a random density</span>
-    <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_edges</span><span class="p">)</span>
-    <span class="n">labels</span> <span class="o">=</span> <span class="p">{(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span> <span class="nb">round</span><span class="p">(</span><span class="n">rho</span><span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;enum&#39;</span><span class="p">]],</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
-    
-    <span class="c1"># compute the rho-lengths</span>
-    <span class="n">l</span> <span class="o">=</span> <span class="n">N_tri</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
-    
-    <span class="c1"># plot the results</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">triangles</span><span class="p">):</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span>
-        <span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">node_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-        <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edges</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">edgelist</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
-        <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edge_labels</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">edge_labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;rho-length = </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
-    <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Example </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">l</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="n">title</span> <span class="o">+=</span> <span class="s1">&#39; (admissible)&#39;</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">title</span> <span class="o">+=</span> <span class="s1">&#39; (not admissible)&#39;</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;x-large&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">top</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
-</pre></div>
+\]</span></p>
+<p>Now we are ready to define admissibility. A density <span class="math inline">\(\rho\in\mathbb{R}^E_{\ge 0}\)</span> is said to be <em>admissible for <span class="math inline">\(\Gamma\)</span></em> if <span class="math inline">\(\ell_{\rho}(\gamma)\ge 1\)</span> for every <span class="math inline">\(\gamma\in\Gamma\)</span>. That is: everybody pays a dollar.</p>
+<p>Since <span class="math inline">\(\mathcal{N}\)</span> is a <span class="math inline">\(\Gamma\times E\)</span> matrix and <span class="math inline">\(\rho\)</span> is an <span class="math inline">\(E\)</span>-vector, the product <span class="math inline">\(\mathcal{N}\rho\)</span> is a <span class="math inline">\(\Gamma\)</span>-vector whose <span class="math inline">\(\gamma\)</span> entry is <span class="math inline">\(\ell_\rho(\gamma)\)</span>. Thus, it is often convenient to use the shorthand notation <span class="math inline">\(\mathcal{N}\rho\ge\mathbf{1}\)</span> to indicated that <span class="math inline">\(\rho\)</span> is admissible. In this context, the inequality is interpreted element-wise.</p>
+<section id="example-densities-and-triangles" class="level3" data-number="2.2.1">
+<h3 data-number="2.2.1" class="anchored" data-anchor-id="example-densities-and-triangles"><span class="header-section-number">2.2.1</span> Example: densities and triangles</h3>
+<p>Returning to the example of the family of triangles, the following code generates a set of densities and checks for admissibility. Each row in the figure produced represents a density. In each row, the triangles are colored either green or red depending on whether or not the <span class="math inline">\(\rho\)</span>-length of that triangle is at least 1. A density is admissible for the triangles if all triangles in that row are colored green.</p>
+<div id="a7092378" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># seed the random number generator</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">88198283</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>n_rho <span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_rho):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># generate a random density</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    rho <span class="op">=</span> np.random.rand(n_edges)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> {</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        (u, v): <span class="bu">round</span>(rho[d[<span class="st">'enum'</span>]], <span class="dv">3</span>) <span class="cf">for</span> u, v, d <span class="kw">in</span> G.edges(data<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># compute the rho-lengths</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    l <span class="op">=</span> N_tri.dot(rho)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># plot the results</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j, T <span class="kw">in</span> <span class="bu">enumerate</span>(triangles):</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        plt.subplot(<span class="dv">1</span>,<span class="dv">3</span>,j<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> l[j] <span class="op">&gt;=</span> <span class="dv">1</span>:</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>            color <span class="op">=</span> <span class="st">'green'</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>            color <span class="op">=</span> <span class="st">'red'</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>        nx.draw(G, pos, node_size<span class="op">=</span><span class="dv">100</span>, node_color<span class="op">=</span><span class="st">'black'</span>, edge_color<span class="op">=</span><span class="st">'gray'</span>)</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        nx.draw_networkx_edges(G, pos, edgelist<span class="op">=</span>T, width<span class="op">=</span><span class="dv">3</span>, edge_color<span class="op">=</span>color)</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>        nx.draw_networkx_edge_labels(G, pos, edge_labels<span class="op">=</span>labels, font_size<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>        plt.title(<span class="st">'rho-length = </span><span class="sc">{:.3f}</span><span class="st">'</span>.<span class="bu">format</span>(l[j]))</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>    title <span class="op">=</span> <span class="st">'Example </span><span class="sc">{}</span><span class="st">'</span>.<span class="bu">format</span>(i<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> np.<span class="bu">all</span>(l<span class="op">&gt;=</span><span class="dv">1</span>):</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>        title <span class="op">+=</span> <span class="st">' (admissible)'</span></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>        title <span class="op">+=</span> <span class="st">' (not admissible)'</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>    plt.suptitle(title, fontsize<span class="op">=</span><span class="st">'x-large'</span>)</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>    plt.tight_layout()</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>    plt.subplots_adjust(top<span class="op">=</span><span class="fl">0.75</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Intro_to_Modulus_files/figure-html/cell-5-output-1.png" width="950" height="381" class="figure-img"></p>
+</figure>
 </div>
 </div>
-<div class="cell_output docutils container">
-<img alt="_images/311730c8f382a4c18549164eeffba0965bd6a2858cd4c4c579ef81ded98b1696.png" src="_images/311730c8f382a4c18549164eeffba0965bd6a2858cd4c4c579ef81ded98b1696.png" />
-<img alt="_images/7b6b9485ae1f9e6d89cc629dfafbb8969f8efe0c9f199d78561534b67d80c3b0.png" src="_images/7b6b9485ae1f9e6d89cc629dfafbb8969f8efe0c9f199d78561534b67d80c3b0.png" />
-<img alt="_images/5f8a1d81116be618aac2603e45784749f36ad44f4493611d9b7305921013bdcd.png" src="_images/5f8a1d81116be618aac2603e45784749f36ad44f4493611d9b7305921013bdcd.png" />
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Intro_to_Modulus_files/figure-html/cell-5-output-2.png" width="950" height="381" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Intro_to_Modulus_files/figure-html/cell-5-output-3.png" width="950" height="381" class="figure-img"></p>
+</figure>
+</div>
 </div>
 </div>
 </section>
-<section id="example-densities-and-paths">
-<h3>Example: densities and paths<a class="headerlink" href="#example-densities-and-paths" title="Permalink to this heading">#</a></h3>
+<section id="example-densities-and-paths" class="level3" data-number="2.2.2">
+<h3 data-number="2.2.2" class="anchored" data-anchor-id="example-densities-and-paths"><span class="header-section-number">2.2.2</span> Example: densities and paths</h3>
 <p>The code below does the same thing, but for the path family we considered earlier.</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># seed the random number generator</span>
-<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">88198283</span><span class="p">)</span>
-
-<span class="n">n_rho</span> <span class="o">=</span> <span class="mi">3</span>
-
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_rho</span><span class="p">):</span>
-    
-    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
-    
-    <span class="c1"># generate a random density</span>
-    <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_edges</span><span class="p">)</span>
-    <span class="n">labels</span> <span class="o">=</span> <span class="p">{(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span> <span class="nb">round</span><span class="p">(</span><span class="n">rho</span><span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;enum&#39;</span><span class="p">]],</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
-    
-    <span class="c1"># compute the rho-lengths</span>
-    <span class="n">l</span> <span class="o">=</span> <span class="n">N_path</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
-    
-    <span class="c1"># plot the results</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">paths</span><span class="p">):</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">edges</span> <span class="o">=</span> <span class="p">[(</span><span class="n">path</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">path</span><span class="p">[</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
-        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span>
-        <span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">node_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-        <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edges</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">edgelist</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
-        <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edge_labels</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">edge_labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;rho-length = </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
-
-    <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Example </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">l</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="n">title</span> <span class="o">+=</span> <span class="s1">&#39; (admissible)&#39;</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">title</span> <span class="o">+=</span> <span class="s1">&#39; (not admissible)&#39;</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;x-large&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">top</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
-</pre></div>
+<div id="36b0fdbc" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># seed the random number generator</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">88198283</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>n_rho <span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_rho):</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">8</span>))</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># generate a random density</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    rho <span class="op">=</span> np.random.rand(n_edges)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> {</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        (u, v): <span class="bu">round</span>(rho[d[<span class="st">'enum'</span>]], <span class="dv">3</span>) <span class="cf">for</span> u, v, d <span class="kw">in</span> G.edges(data<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># compute the rho-lengths</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    l <span class="op">=</span> N_path.dot(rho)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># plot the results</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j, path <span class="kw">in</span> <span class="bu">enumerate</span>(paths):</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        plt.subplot(<span class="dv">2</span>,<span class="dv">3</span>,j<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        edges <span class="op">=</span> [(path[k], path[k<span class="op">+</span><span class="dv">1</span>]) <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(path)<span class="op">-</span><span class="dv">1</span>)]</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> l[j] <span class="op">&gt;=</span> <span class="dv">1</span>:</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>            color <span class="op">=</span> <span class="st">'green'</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>            color <span class="op">=</span> <span class="st">'red'</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>        nx.draw(G, pos, node_size<span class="op">=</span><span class="dv">100</span>, node_color<span class="op">=</span><span class="st">'black'</span>, edge_color<span class="op">=</span><span class="st">'gray'</span>)</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>        nx.draw_networkx_edges(</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>            G, pos, edgelist<span class="op">=</span>edges, width<span class="op">=</span><span class="dv">3</span>, edge_color<span class="op">=</span>color</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>        nx.draw_networkx_edge_labels(G, pos, edge_labels<span class="op">=</span>labels, font_size<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>        plt.title(<span class="st">'rho-length = </span><span class="sc">{:.3f}</span><span class="st">'</span>.<span class="bu">format</span>(l[j]))</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>    title <span class="op">=</span> <span class="st">'Example </span><span class="sc">{}</span><span class="st">'</span>.<span class="bu">format</span>(i<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> np.<span class="bu">all</span>(l<span class="op">&gt;=</span><span class="dv">1</span>):</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>        title <span class="op">+=</span> <span class="st">' (admissible)'</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>        title <span class="op">+=</span> <span class="st">' (not admissible)'</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>    plt.suptitle(title, fontsize<span class="op">=</span><span class="st">'x-large'</span>)</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>    plt.tight_layout()</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>    plt.subplots_adjust(top<span class="op">=</span><span class="fl">0.9</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Intro_to_Modulus_files/figure-html/cell-6-output-1.png" width="950" height="757" class="figure-img"></p>
+</figure>
 </div>
 </div>
-<div class="cell_output docutils container">
-<img alt="_images/6d341e1e3edea32755f7a0b0c9dc67de7797d6f7e079b7051d407c9c6ca1b2cc.png" src="_images/6d341e1e3edea32755f7a0b0c9dc67de7797d6f7e079b7051d407c9c6ca1b2cc.png" />
-<img alt="_images/f610d26d3efc59bdc3443ec5c4718b493497a79319129fb0e029f49bc33fc84a.png" src="_images/f610d26d3efc59bdc3443ec5c4718b493497a79319129fb0e029f49bc33fc84a.png" />
-<img alt="_images/85dd141a94de72f6fb9c8043d7fd2a13090e85d4dd8c4b3ce532c900170507ff.png" src="_images/85dd141a94de72f6fb9c8043d7fd2a13090e85d4dd8c4b3ce532c900170507ff.png" />
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Intro_to_Modulus_files/figure-html/cell-6-output-2.png" width="950" height="757" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Intro_to_Modulus_files/figure-html/cell-6-output-3.png" width="950" height="757" class="figure-img"></p>
+</figure>
+</div>
 </div>
 </div>
 </section>
 </section>
-<section id="modulus-of-a-family">
-<h2>Modulus of a family<a class="headerlink" href="#modulus-of-a-family" title="Permalink to this heading">#</a></h2>
-<p>Once the graph <span class="math notranslate nohighlight">\(G\)</span>, the family of objects <span class="math notranslate nohighlight">\(\Gamma\)</span> and the usage matrix <span class="math notranslate nohighlight">\(\mathcal{N}\)</span> are defined, the definition of modulus is easy.  (Interpretations of modulus are more complex and are discussed in later chapters of this book.)  In optimization notation, the <em>modulus of <span class="math notranslate nohighlight">\(\Gamma\)</span></em> is defined to be the value of the problem</p>
-<div class="math notranslate nohighlight">
-\[\begin{split}
+<section id="modulus-of-a-family" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="modulus-of-a-family"><span class="header-section-number">2.3</span> Modulus of a family</h2>
+<p>Once the graph <span class="math inline">\(G\)</span>, the family of objects <span class="math inline">\(\Gamma\)</span> and the usage matrix <span class="math inline">\(\mathcal{N}\)</span> are defined, the definition of modulus is easy. (Interpretations of modulus are more complex and are discussed in later chapters of this book.) In optimization notation, the <em>modulus of <span class="math inline">\(\Gamma\)</span></em> is defined to be the value of the problem</p>
+<p><span class="math display">\[
 \begin{split}
 \text{minimize}\quad&amp;\mathcal{E}_p(\rho)\\
 \text{subject to}\quad&amp;\rho\in\mathbb{R}^E_{\ge 0}\\
 &amp;\mathcal{N}\rho\ge\mathbf{1}.
 \end{split}
-\end{split}\]</div>
-<p>The symbol <span class="math notranslate nohighlight">\(\mathcal{E}_p\)</span> is called the <em>energy functional</em> or simply the <em>energy</em> for modulus, and is parameterized by a number <span class="math notranslate nohighlight">\(p\in[1,\infty]\)</span>.  For this reason, modulus is often referred to as <em><span class="math notranslate nohighlight">\(p\)</span>-modulus</em> or, when a specific <span class="math notranslate nohighlight">\(p\)</span> has been chosen, as <span class="math notranslate nohighlight">\(1\)</span>-modulus, <span class="math notranslate nohighlight">\(2\)</span>-modulus, <span class="math notranslate nohighlight">\(\infty\)</span>-modulus, etc.  In the context of modulus, a non-negative vector <span class="math notranslate nohighlight">\(\rho\in\mathbb{R}^E_{\ge 0}\)</span> is called a <em>density</em> and the <em><span class="math notranslate nohighlight">\(p\)</span>-energy</em> of a density is defined to be</p>
-<div class="math notranslate nohighlight">
-\[\begin{split}
-\mathcal{E}_p(\rho) := 
+\]</span></p>
+<p>The symbol <span class="math inline">\(\mathcal{E}_p\)</span> is called the <em>energy functional</em> or simply the <em>energy</em> for modulus, and is parameterized by a number <span class="math inline">\(p\in[1,\infty]\)</span>. For this reason, modulus is often referred to as <em><span class="math inline">\(p\)</span>-modulus</em> or, when a specific <span class="math inline">\(p\)</span> has been chosen, as <span class="math inline">\(1\)</span>-modulus, <span class="math inline">\(2\)</span>-modulus, <span class="math inline">\(\infty\)</span>-modulus, etc. In the context of modulus, a non-negative vector <span class="math inline">\(\rho\in\mathbb{R}^E_{\ge 0}\)</span> is called a <em>density</em> and the <em><span class="math inline">\(p\)</span>-energy</em> of a density is defined to be</p>
+<p><span class="math display">\[
+\mathcal{E}_p(\rho) :=
 \begin{cases}
 \sum\limits_{e\in E}\rho(e)^p &amp;\text{ if }1\le p&lt;\infty,\\
 \max\limits_{e\in E}\rho(e) &amp;\text{ if }p=\infty.
 \end{cases}
-\end{split}\]</div>
-<p>That is, the <span class="math notranslate nohighlight">\(p\)</span>-energy of a density is just the sum of its <span class="math notranslate nohighlight">\(p\)</span>th powers on all edges of the graph if <span class="math notranslate nohighlight">\(p&lt;\infty\)</span> and is the maximum value of <span class="math notranslate nohighlight">\(\rho\)</span> over all edges if <span class="math notranslate nohighlight">\(p=\infty\)</span>.</p>
-<p>The value of the optimization problem above is referred to as the <em><span class="math notranslate nohighlight">\(p\)</span>-modulus of the family <span class="math notranslate nohighlight">\(\Gamma\)</span></em> and is denoted <span class="math notranslate nohighlight">\(\text{Mod}_p(\Gamma)\)</span>.  If <span class="math notranslate nohighlight">\(\rho=\rho^*\)</span> is a minimizer, then <span class="math notranslate nohighlight">\(\rho^*\)</span> is called an <em>optimal density</em> or <em>extremal density</em>.</p>
-<section id="example-triangle-modulus">
-<h3>Example: triangle modulus<a class="headerlink" href="#example-triangle-modulus" title="Permalink to this heading">#</a></h3>
-<p>Modulus, as defined above, is an example of a convex optimization problem.  Therefore, at least for small graphs, modulus can be computed using any software tool that can solve convex optimization problems.  An example of a function for computing modulus in this way is <code class="docutils literal notranslate"><span class="pre">matrix_modulus</span></code> found in <code class="docutils literal notranslate"><span class="pre">modulus_tools/basic_algorithm.py</span></code>.  Given the <span class="math notranslate nohighlight">\(\mathcal{N}\)</span> matrix along with the exponent <span class="math notranslate nohighlight">\(p\)</span>, this function finds a numerical approximation the modulus along with an optimal <span class="math notranslate nohighlight">\(\rho^*\)</span>.  The code below computes the modulus of triangles on our example graph for a few different values of <span class="math notranslate nohighlight">\(p\)</span>.  The value <span class="math notranslate nohighlight">\(\text{Mod}_p(\Gamma)\)</span> is printed above each plot, while the values of the optimal density <span class="math notranslate nohighlight">\(\rho^*\)</span> are shown on the edges.</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">modulus_tools.basic_algorithm</span> <span class="kn">import</span> <span class="n">matrix_modulus</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;font.size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">12</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
-
-<span class="c1"># loop over a few p values</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)):</span>
-
-    <span class="c1"># compute the modulus</span>
-    <span class="n">mod</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">matrix_modulus</span><span class="p">(</span><span class="n">N_tri</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
-
-    <span class="c1"># draw rho values on graph</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">labels</span> <span class="o">=</span> <span class="p">{(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span> <span class="nb">round</span><span class="p">(</span><span class="n">rho</span><span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;enum&#39;</span><span class="p">]],</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
-    <span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">node_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edge_labels</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">edge_labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;p = </span><span class="si">{}</span><span class="s1">, Mod = </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">mod</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-</pre></div>
+\]</span></p>
+<p>That is, the <span class="math inline">\(p\)</span>-energy of a density is just the sum of its <span class="math inline">\(p\)</span>th powers on all edges of the graph if <span class="math inline">\(p&lt;\infty\)</span> and is the maximum value of <span class="math inline">\(\rho\)</span> over all edges if <span class="math inline">\(p=\infty\)</span>.</p>
+<p>The value of the optimization problem above is referred to as the <em><span class="math inline">\(p\)</span>-modulus of the family <span class="math inline">\(\Gamma\)</span></em> and is denoted <span class="math inline">\(\text{Mod}_p(\Gamma)\)</span>. If <span class="math inline">\(\rho=\rho^*\)</span> is a minimizer, then <span class="math inline">\(\rho^*\)</span> is called an <em>optimal density</em> or <em>extremal density</em>.</p>
+<section id="example-triangle-modulus" class="level3" data-number="2.3.1">
+<h3 data-number="2.3.1" class="anchored" data-anchor-id="example-triangle-modulus"><span class="header-section-number">2.3.1</span> Example: triangle modulus</h3>
+<p>Modulus, as defined above, is an example of a convex optimization problem. Therefore, at least for small graphs, modulus can be computed using any software tool that can solve convex optimization problems. An example of a function for computing modulus in this way is <code>matrix_modulus</code> found in <code>discrete_modulus/algorithms.py</code>. Given the <span class="math inline">\(\mathcal{N}\)</span> matrix along with the exponent <span class="math inline">\(p\)</span>, this function finds a numerical approximation the modulus along with an optimal <span class="math inline">\(\rho^*\)</span>. The code below computes the modulus of triangles on our example graph for a few different values of <span class="math inline">\(p\)</span>. The value <span class="math inline">\(\text{Mod}_p(\Gamma)\)</span> is printed above each plot, while the values of the optimal density <span class="math inline">\(\rho^*\)</span> are shown on the edges.</p>
+<div id="8b0f3874" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus.algorithms <span class="im">import</span> matrix_modulus</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'font.size'</span>] <span class="op">=</span> <span class="dv">12</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>))</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># loop over a few p values</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, p <span class="kw">in</span> <span class="bu">enumerate</span>((<span class="dv">1</span>, <span class="fl">1.5</span>, <span class="dv">2</span>, <span class="fl">2.5</span>, <span class="dv">3</span>, np.inf)):</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># compute the modulus</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    mod, rho, _ <span class="op">=</span> matrix_modulus(N_tri, p)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># draw rho values on graph</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    plt.subplot(<span class="dv">2</span>,<span class="dv">3</span>,i<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> {</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        (u, v): <span class="bu">round</span>(rho[d[<span class="st">'enum'</span>]], <span class="dv">3</span>) <span class="cf">for</span> u, v, d <span class="kw">in</span> G.edges(data<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    nx.draw(G, pos, node_size<span class="op">=</span><span class="dv">100</span>, node_color<span class="op">=</span><span class="st">'black'</span>, edge_color<span class="op">=</span><span class="st">'gray'</span>)</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    nx.draw_networkx_edge_labels(G, pos, edge_labels<span class="op">=</span>labels, font_size<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    plt.title(<span class="st">'p = </span><span class="sc">{}</span><span class="st">, Mod = </span><span class="sc">{:.3f}</span><span class="st">'</span>.<span class="bu">format</span>(p, mod))</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Intro_to_Modulus_files/figure-html/cell-7-output-1.png" width="945" height="753" class="figure-img"></p>
+</figure>
 </div>
-</div>
-<div class="cell_output docutils container">
-<img alt="_images/9c9db63eea91fd2960099ef7feea87d426fe1ab493a69fcbee5e209d6c01a456.png" src="_images/9c9db63eea91fd2960099ef7feea87d426fe1ab493a69fcbee5e209d6c01a456.png" />
 </div>
 </div>
 </section>
-<section id="example-path-modulus">
-<h3>Example: path modulus<a class="headerlink" href="#example-path-modulus" title="Permalink to this heading">#</a></h3>
+<section id="example-path-modulus" class="level3" data-number="2.3.2">
+<h3 data-number="2.3.2" class="anchored" data-anchor-id="example-path-modulus"><span class="header-section-number">2.3.2</span> Example: path modulus</h3>
 <p>The code above requires only a small modification if we wish to compute the modulus of the family of paths from top to lower right.</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
-
-<span class="c1"># loop over a few p values</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)):</span>
-
-    <span class="c1"># compute the modulus</span>
-    <span class="n">mod</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">matrix_modulus</span><span class="p">(</span><span class="n">N_path</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
-
-    <span class="c1"># draw rho values on graph</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">labels</span> <span class="o">=</span> <span class="p">{(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span> <span class="nb">round</span><span class="p">(</span><span class="n">rho</span><span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;enum&#39;</span><span class="p">]],</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
-    <span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">node_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edge_labels</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">edge_labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;p = </span><span class="si">{}</span><span class="s1">, Mod = </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">mod</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-</pre></div>
+<div id="819dc347" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># loop over a few p values</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, p <span class="kw">in</span> <span class="bu">enumerate</span>((<span class="dv">1</span>, <span class="fl">1.5</span>, <span class="dv">2</span>, <span class="fl">2.5</span>, <span class="dv">3</span>, np.inf)):</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># compute the modulus</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    mod, rho, _ <span class="op">=</span> matrix_modulus(N_path, p)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># draw rho values on graph</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    plt.subplot(<span class="dv">2</span>,<span class="dv">3</span>,i<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> {</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        (u, v): <span class="bu">round</span>(rho[d[<span class="st">'enum'</span>]], <span class="dv">3</span>) <span class="cf">for</span> u, v, d <span class="kw">in</span> G.edges(data<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    nx.draw(G, pos, node_size<span class="op">=</span><span class="dv">100</span>, node_color<span class="op">=</span><span class="st">'black'</span>, edge_color<span class="op">=</span><span class="st">'gray'</span>)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    nx.draw_networkx_edge_labels(G, pos, edge_labels<span class="op">=</span>labels, font_size<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    plt.title(<span class="st">'p = </span><span class="sc">{}</span><span class="st">, Mod = </span><span class="sc">{:.3f}</span><span class="st">'</span>.<span class="bu">format</span>(p, mod))</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Intro_to_Modulus_files/figure-html/cell-8-output-1.png" width="945" height="753" class="figure-img"></p>
+</figure>
 </div>
-</div>
-<div class="cell_output docutils container">
-<img alt="_images/9b7433047a1840563ca25e51af38583b72e77320754c02d7bb8a36189be7f2ff.png" src="_images/9b7433047a1840563ca25e51af38583b72e77320754c02d7bb8a36189be7f2ff.png" />
 </div>
 </div>
 </section>
 </section>
-<section id="where-to-from-here">
-<h2>Where to from here?<a class="headerlink" href="#where-to-from-here" title="Permalink to this heading">#</a></h2>
-<p>Modulus is better thought of as a general framework for understanding families of objects than as a single rigid theory.  The ideas presented above can be generalized in many different and interesting ways, only some of which are covered in the chapters that follow.  Before moving on, however, we will introduce two useful generalizations.  First, if <span class="math notranslate nohighlight">\(G\)</span> is a weighted graph with nonnegative weights <span class="math notranslate nohighlight">\(\sigma\in\mathbb{R}^E_{&gt;0}\)</span>, it is common to define a <em>weighted <span class="math notranslate nohighlight">\(p\)</span>-modulus</em>, <span class="math notranslate nohighlight">\(\text{Mod}_{p,\sigma}(\Gamma)\)</span>, wherein the energy <span class="math notranslate nohighlight">\(\mathcal{E}_p\)</span> is replaced by</p>
-<div class="math notranslate nohighlight">
-\[\begin{split}
+<section id="where-to-from-here" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="where-to-from-here"><span class="header-section-number">2.4</span> Where to from here?</h2>
+<p>Modulus is better thought of as a general framework for understanding families of objects than as a single rigid theory. The ideas presented above can be generalized in many different and interesting ways, only some of which are covered in the chapters that follow. Before moving on, however, we will introduce two useful generalizations. First, if <span class="math inline">\(G\)</span> is a weighted graph with nonnegative weights <span class="math inline">\(\sigma\in\mathbb{R}^E_{&gt;0}\)</span>, it is common to define a <em>weighted <span class="math inline">\(p\)</span>-modulus</em>, <span class="math inline">\(\text{Mod}_{p,\sigma}(\Gamma)\)</span>, wherein the energy <span class="math inline">\(\mathcal{E}_p\)</span> is replaced by</p>
+<p><span class="math display">\[
 \mathcal{E}_{p,\sigma}(\rho) :=
 \begin{cases}
 \sum\limits_{e\in E}\sigma(e)\rho(e)^p &amp;\text{ if }1\le p&lt;\infty,\\
 \max\limits_{e\in E}\sigma(e)\rho(e) &amp;\text{ if }p=\infty.
 \end{cases}
-\end{split}\]</div>
-<p>Second, as described before, it is also useful to consider more general usage matrices <span class="math notranslate nohighlight">\(\mathcal{N}\)</span> that may take nonnegative values other than <span class="math notranslate nohighlight">\(0\)</span> and <span class="math notranslate nohighlight">\(1\)</span>.  This allows the consideration of objects that may have multiplicity on certain edges, or may spread fractional usage among several edges.  In any case, the modulus problem always looks the same:</p>
-<div class="math notranslate nohighlight">
-\[\begin{split}
+\]</span></p>
+<p>Second, as described before, it is also useful to consider more general usage matrices <span class="math inline">\(\mathcal{N}\)</span> that may take nonnegative values other than <span class="math inline">\(0\)</span> and <span class="math inline">\(1\)</span>. This allows the consideration of objects that may have multiplicity on certain edges, or may spread fractional usage among several edges. In any case, the modulus problem always looks the same:</p>
+<p><span class="math display">\[
 \begin{split}
 \text{minimize}\quad&amp;\mathcal{E}_{p,\sigma}(\rho)\\
 \text{subject to}\quad&amp;\rho\in\mathbb{R}^E_{\ge 0}\\
 &amp;\mathcal{N}\rho\ge\mathbf{1}.
 \end{split}
-\end{split}\]</div>
-<p>The energy is determined by the parameter <span class="math notranslate nohighlight">\(p\)</span> and weights <span class="math notranslate nohighlight">\(\sigma\)</span> while the constraints are determined by the usage matrix <span class="math notranslate nohighlight">\(\mathcal{N}\)</span>.  The <code class="docutils literal notranslate"><span class="pre">matrix_modulus</span></code> function can compute this more general concept of modulus.</p>
+\]</span></p>
+<p>The energy is determined by the parameter <span class="math inline">\(p\)</span> and weights <span class="math inline">\(\sigma\)</span> while the constraints are determined by the usage matrix <span class="math inline">\(\mathcal{N}\)</span>. The <code>matrix_modulus</code> function can compute this more general concept of modulus.</p>
 <p>The remainder of this book delves more deeply into modulus, its various interpretations, and algorithms for computing it.</p>
 <p>Other resources for understanding modulus and its applications can be found in the following papers.</p>
-<ul class="simple">
-<li><p><strong>General theory:</strong> <span id="id1">[<a class="reference internal" href="References.html#id2" title="Nathan Albin, Megan Brunner, Roberto Perez, Pietro Poggi-Corradini, and Natalie Wiens. Modulus on graphs as a generalization of standard graph theoretic quantities. Conformal Geometry and Dynamics, 19(13):298–317, 2015. URL: https://arxiv.org/abs/1504.02418, doi:10.1090/ecgd/287.">ABP+15</a>, <a class="reference internal" href="References.html#id4" title="Nathan Albin, Faryad Sahneh, Max Goering, and Pietro Poggi-Corradini. Modulus of families of walks on graphs. 2017. URL: https://arxiv.org/abs/1401.7640, doi:10.1090/conm/699/14080.">ASGPC17</a>]</span></p></li>
-<li><p><strong>Interpretations of modulus:</strong> <span id="id2">[<a class="reference internal" href="References.html#id7" title="Nathan Albin, Jason Clemens, Nethali Fernando, and Pietro Poggi-Corradini. Blocking duality for p-modulus on networks and applications. Annali di Matematica Pura ed Applicata, 198(3):973–999, nov 2019. URL: https://arxiv.org/abs/1612.00435, doi:10.1007/s10231-018-0806-0.">ACFPC19</a>, <a class="reference internal" href="References.html#id5" title="Nathan Albin, Jason Clemens, Derek Hoare, Pietro Poggi-Corradini, Brandon Sit, and Sarah Tymochko. Fairest edge usage and minimum expected overlap for random spanning trees. 2018. URL: https://arxiv.org/abs/1805.10112.">ACH+18</a>, <a class="reference internal" href="References.html#id3" title="Nathan Albin and Pietro Poggi-Corradini. Minimal subfamilies and the probabilistic interpretation for modulus on graphs. The Journal of Analysis, 24(2):183–208, 2016. URL: https://arxiv.org/abs/1605.08462, doi:10.1007/s41478-016-0002-9.">APC16</a>]</span></p></li>
-<li><p><strong>Applications of modulus:</strong> <span id="id3">[<a class="reference internal" href="References.html#id6" title="Nathan Albin, Nethali Fernando, and Pietro Poggi-Corradini. Modulus metrics on networks. Discrete &amp; Continuous Dynamical Systems - B, 2018. URL: http://aimsciences.org//article/id/e84e04ba-e6fc-493f-8b82-eb1a2f7dfa6b, doi:10.3934/dcdsb.2018161.">AFPC18</a>, <a class="reference internal" href="References.html#id11" title="Heman Shakeri, Behnaz Moradi-Jamei, Pietro Poggi-Corradini, Nathan Albin, and Caterina Scoglio. Generalization of effective conductance centrality for egonetworks. Physica A: Statistical Mechanics and its Applications, 511:127–138, 2018. doi:https://doi.org/10.1016/j.physa.2018.07.039.">SMJPC+18</a>, <a class="reference internal" href="References.html#id10" title="Heman Shakeri, Pietro Poggi-Corradini, Nathan Albin, and Caterina Scoglio. Network clustering and community detection using modulus of families of loops. Physical Review E, 95(1):012316, 2017. doi:10.1103/PhysRevE.95.012316.">SPCAS17</a>, <a class="reference internal" href="References.html#id9" title="Heman Shakeri, Pietro Poggi-Corradini, Caterina Scoglio, and Nathan Albin. Generalized network measures based on modulus of families of walks. Journal of Computational and Applied Mathematics, 307:307–318, 2016. doi:10.1016/j.cam.2016.01.027.">SPCSA16</a>]</span></p></li>
+<ul>
+<li><strong>General theory:</strong> <span class="citation" data-cites="albin2015modulusgraphsas albin2017modulusfamilieswalks">(<a href="References.html#ref-albin2015modulusgraphsas" role="doc-biblioref">Albin et al. 2015</a>, <a href="References.html#ref-albin2017modulusfamilieswalks" role="doc-biblioref">2017</a>)</span></li>
+<li><strong>Interpretations of modulus:</strong> <span class="citation" data-cites="albin2016minimalsubfamiliesprobabilistic albin2019blockingdualityp albin2018fairestedgeusage">(<a href="References.html#ref-albin2016minimalsubfamiliesprobabilistic" role="doc-biblioref">Albin and Poggi-Corradini 2016</a>; <a href="References.html#ref-albin2019blockingdualityp" role="doc-biblioref">Albin et al. 2019</a>; <a href="References.html#ref-albin2018fairestedgeusage" role="doc-biblioref">Albin, Clemens, et al. 2018</a>)</span></li>
+<li><strong>Applications of modulus:</strong> <span class="citation" data-cites="albin2018modulusmetricsnetworks shakeri2016generalizednetworkmeasures shakeri2017networkclusteringcommunity shakeri2018generalizationeffectiveconductance">(<a href="References.html#ref-albin2018modulusmetricsnetworks" role="doc-biblioref">Albin, Fernando, et al. 2018</a>; <a href="References.html#ref-shakeri2016generalizednetworkmeasures" role="doc-biblioref">Shakeri et al. 2016</a>, <a href="References.html#ref-shakeri2017networkclusteringcommunity" role="doc-biblioref">2017</a>, <a href="References.html#ref-shakeri2018generalizationeffectiveconductance" role="doc-biblioref">2018</a>)</span></li>
 </ul>
-</section>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" role="list" style="display: none">
+<div id="ref-albin2015modulusgraphsas" class="csl-entry" role="listitem">
+Albin, Nathan, Megan Brunner, Roberto Perez, Pietro Poggi-Corradini, and Natalie Wiens. 2015. <span>“Modulus on Graphs as a Generalization of Standard Graph Theoretic Quantities.”</span> <em>Conformal Geometry and Dynamics</em> 19 (13): 298–317. <a href="https://doi.org/10.1090/ecgd/287">https://doi.org/10.1090/ecgd/287</a>.
+</div>
+<div id="ref-albin2019blockingdualityp" class="csl-entry" role="listitem">
+Albin, Nathan, Jason Clemens, Nethali Fernando, and Pietro Poggi-Corradini. 2019. <span>“Blocking Duality for p-Modulus on Networks and Applications.”</span> <em>Annali Di Matematica Pura Ed Applicata</em> 198 (3): 973–99. <a href="https://doi.org/10.1007/s10231-018-0806-0">https://doi.org/10.1007/s10231-018-0806-0</a>.
+</div>
+<div id="ref-albin2018fairestedgeusage" class="csl-entry" role="listitem">
+Albin, Nathan, Jason Clemens, Derek Hoare, Pietro Poggi-Corradini, Brandon Sit, and Sarah Tymochko. 2018. <span>“Fairest Edge Usage and Minimum Expected Overlap for Random Spanning Trees.”</span> <a href="https://arxiv.org/abs/1805.10112">https://arxiv.org/abs/1805.10112</a>.
+</div>
+<div id="ref-albin2018modulusmetricsnetworks" class="csl-entry" role="listitem">
+Albin, Nathan, Nethali Fernando, and Pietro Poggi-Corradini. 2018. <span>“Modulus Metrics on Networks.”</span> <em>Discrete &amp; Continuous Dynamical Systems - B</em> 22. <a href="https://doi.org/10.3934/dcdsb.2018161">https://doi.org/10.3934/dcdsb.2018161</a>.
+</div>
+<div id="ref-albin2016minimalsubfamiliesprobabilistic" class="csl-entry" role="listitem">
+Albin, Nathan, and Pietro Poggi-Corradini. 2016. <span>“Minimal Subfamilies and the Probabilistic Interpretation for Modulus on Graphs.”</span> <em>The Journal of Analysis</em> 24 (2): 183–208. <a href="https://doi.org/10.1007/s41478-016-0002-9">https://doi.org/10.1007/s41478-016-0002-9</a>.
+</div>
+<div id="ref-albin2017modulusfamilieswalks" class="csl-entry" role="listitem">
+Albin, Nathan, Faryad Sahneh, Max Goering, and Pietro Poggi-Corradini. 2017. <em>Modulus of Families of Walks on Graphs</em>. American Mathematical Society. <a href="https://doi.org/10.1090/conm/699/14080">https://doi.org/10.1090/conm/699/14080</a>.
+</div>
+<div id="ref-shakeri2018generalizationeffectiveconductance" class="csl-entry" role="listitem">
+Shakeri, Heman, Behnaz Moradi-Jamei, Pietro Poggi-Corradini, Nathan Albin, and Caterina Scoglio. 2018. <span>“Generalization of Effective Conductance Centrality for Egonetworks.”</span> <em>Physica A: Statistical Mechanics and Its Applications</em> 511: 127–38. https://doi.org/<a href="https://doi.org/10.1016/j.physa.2018.07.039">https://doi.org/10.1016/j.physa.2018.07.039</a>.
+</div>
+<div id="ref-shakeri2017networkclusteringcommunity" class="csl-entry" role="listitem">
+Shakeri, Heman, Pietro Poggi-Corradini, Nathan Albin, and Caterina Scoglio. 2017. <span>“Network Clustering and Community Detection Using Modulus of Families of Loops.”</span> <em>Physical Review E</em> 95 (1): 012316. <a href="https://doi.org/10.1103/PhysRevE.95.012316">https://doi.org/10.1103/PhysRevE.95.012316</a>.
+</div>
+<div id="ref-shakeri2016generalizednetworkmeasures" class="csl-entry" role="listitem">
+Shakeri, Heman, Pietro Poggi-Corradini, Caterina Scoglio, and Nathan Albin. 2016. <span>“Generalized Network Measures Based on Modulus of Families of Walks.”</span> <em>Journal of Computational and Applied Mathematics</em> 307: 307–18. <a href="https://doi.org/10.1016/j.cam.2016.01.027">https://doi.org/10.1016/j.cam.2016.01.027</a>.
+</div>
+</div>
 </section>
 
-    <script type="text/x-thebe-config">
-    {
-        requestKernel: true,
-        binderOptions: {
-            repo: "binder-examples/jupyter-stacks-datascience",
-            ref: "master",
-        },
-        codeMirrorConfig: {
-            theme: "abcdef",
-            mode: "python"
-        },
-        kernelOptions: {
-            name: "python3",
-            path: "./."
-        },
-        predefinedOutput: true
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
     }
-    </script>
-    <script>kernelName = 'python3'</script>
-
-                </article>
-              
-
-              
-              
-                <footer class="bd-footer-article">
-                  
-<div class="footer-article-items footer-article__inner">
-  
-    <div class="footer-article-item"><!-- Previous / next buttons -->
-<div class="prev-next-area">
-    <a class="left-prev"
-       href="Introduction.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Introduction</p>
-      </div>
-    </a>
-    <a class="right-next"
-       href="The_Basic_Algorithm.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">The Basic Algorithm</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
-</div></div>
-  
-</div>
-
-                </footer>
-              
-            </div>
-            
-            
-              
-                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
-
-  <div class="sidebar-secondary-item">
-  <div class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> Contents
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./index.html" class="pagination-link" aria-label="Introduction">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span>
+      </a>          
   </div>
-  <nav class="bd-toc-nav page-toc">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#families-of-objects">Families of objects</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-the-family-of-triangles">Example: the family of triangles</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-a-family-of-simple-paths">Example: a family of simple paths</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#admissible-densities-everybody-pays-a-dollar">Admissible densities: “Everybody pays a dollar”</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-densities-and-triangles">Example: densities and triangles</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-densities-and-paths">Example: densities and paths</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#modulus-of-a-family">Modulus of a family</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-triangle-modulus">Example: triangle modulus</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-path-modulus">Example: path modulus</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-to-from-here">Where to from here?</a></li>
-</ul>
-  </nav></div>
-
-</div></div>
-              
-            
-          </div>
-          <footer class="bd-footer-content">
-            
-<div class="bd-footer-content__inner container">
-  
-  <div class="footer-item">
-    
-<p class="component-author">
-By Nathan Albin and Pietro Poggi-Corradini
-</p>
-
+  <div class="nav-page nav-page-next">
+      <a href="./The_Basic_Algorithm.html" class="pagination-link" aria-label="The Basic Algorithm">
+        <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">The Basic Algorithm</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
   </div>
-  
-  <div class="footer-item">
-    
-  <p class="copyright">
-    
-      © Copyright 2020.
-      <br/>
-    
-  </p>
+</nav>
+</div> <!-- /content -->
 
-  </div>
-  
-  <div class="footer-item">
-    
-  </div>
-  
-  <div class="footer-item">
-    
-  </div>
-  
-</div>
-          </footer>
-        
 
-      </main>
-    </div>
-  </div>
-  
-  <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
 
-  <footer class="bd-footer">
-  </footer>
-  </body>
-</html>
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/nathan-albin/discrete-modulus/edit/main/book/Intro_to_Modulus.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/nathan-albin/discrete-modulus/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
