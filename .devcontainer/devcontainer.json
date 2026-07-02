@@ -1,0 +1,21 @@
+{
+  "name": "discrete-modulus",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "postCreateCommand": "cd python && uv sync --all-groups",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-toolsai.jupyter",
+        "quarto.quarto"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/python/.venv/bin/python"
+      }
+    }
+  }
+}
