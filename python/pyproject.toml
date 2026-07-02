@@ -29,6 +29,8 @@ dev = [
     "ruff>=0.6",
     "types-networkx",
     "scipy-stubs",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
 ]
 book = [
     "jupyter-book>=0.15",
@@ -57,3 +59,9 @@ no_implicit_optional = true
 [[tool.mypy.overrides]]
 module = ["cvxpy.*"]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["discrete_modulus"]

@@ -89,9 +89,14 @@ def matrix_modulus(
     if prob.status != "optimal":
         warn(f"cvxpy solve returned status {prob.status}", stacklevel=2)
 
-    return SubproblemResult(
-        prob.value, np.array(rho.value).flatten(), np.array(cons[1].dual_value).flatten()
-    )
+    # rho and lam are constrained to be >= 0 by the LP itself; clip away
+    # any tiny negative solver noise so downstream consumers (e.g.
+    # Dijkstra-based shortest object finders) never see a spurious
+    # negative weight.
+    rho_opt = np.array(rho.value).flatten().clip(min=0)
+    lam_opt = np.array(cons[1].dual_value).flatten().clip(min=0)
+
+    return SubproblemResult(prob.value, rho_opt, lam_opt)
 
 
 def modulus(
@@ -197,7 +202,7 @@ def modulus(
     N = sp.csr_matrix((0, m))
     lam = np.array([])
     mod = 0.0
-    upper: float | FloatArray = np.inf
+    upper: float = np.inf
     cons: list[object] = []
 
     # default sigma
@@ -229,7 +234,7 @@ def modulus(
         # update the upper bound
         if length > 0:
             if p == np.inf:
-                upper = np.abs(sigma * rho / length)
+                upper = np.max(np.abs(sigma * rho / length))
             else:
                 upper = np.sum(sigma * (rho / length) ** p)
 
