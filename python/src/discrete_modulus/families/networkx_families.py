@@ -7,9 +7,8 @@ from collections.abc import Iterable
 
 import networkx as nx
 import numpy as np
-from numpy.typing import NDArray
 
-FloatArray = NDArray[np.float64]
+from ..protocols import FloatArray, ShortestResult
 
 
 class ShortestConnectingPath:
@@ -46,7 +45,7 @@ class ShortestConnectingPath:
         for v in T:
             self.H.add_edge(v, self.tgt, rho=0)
 
-    def __call__(self, rho: FloatArray, tol: float) -> tuple[list, FloatArray]:
+    def __call__(self, rho: FloatArray, tol: float) -> ShortestResult:
 
         # assign rho to the graph edges
         for i, (u, v) in enumerate(self.G.edges()):
@@ -63,7 +62,7 @@ class ShortestConnectingPath:
         for i in range(len(p) - 1):
             n[self.G[p[i]][p[i + 1]]["enum"]] = 1
 
-        return p, n
+        return ShortestResult(p, n)
 
 
 class MinimumSpanningTree:
@@ -81,7 +80,7 @@ class MinimumSpanningTree:
         for i, (u, v) in enumerate(G.edges()):
             G[u][v]["enum"] = i
 
-    def __call__(self, rho: FloatArray, tol: float) -> tuple[list, FloatArray]:
+    def __call__(self, rho: FloatArray, tol: float) -> ShortestResult:
 
         # assign rho to the graph edges
         for i, (u, v) in enumerate(self.G.edges()):
@@ -95,4 +94,4 @@ class MinimumSpanningTree:
         for u, v in T:
             n[self.G[u][v]["enum"]] = 1
 
-        return T, n
+        return ShortestResult(T, n)
