@@ -22,10 +22,10 @@ def house_graph() -> tuple[nx.Graph, PosDict]:
     Returns
     -------
     G : networkx graph
-      The house graph.
+        The house graph.
 
     pos : dict
-      Position dictionary for drawing the graph.
+        Position dictionary for drawing the graph.
     """
 
     G = nx.cycle_graph(5)
@@ -42,10 +42,10 @@ def slashed_house_graph() -> tuple[nx.Graph, PosDict]:
     Returns
     -------
     G : networkx graph
-      The house graph.
+        The house graph.
 
     pos : dict
-      Position dictionary for drawing the graph.
+        Position dictionary for drawing the graph.
     """
 
     G, pos = house_graph()

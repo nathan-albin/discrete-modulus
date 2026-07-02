@@ -37,6 +37,13 @@ book = [
     "matplotlib>=3.7",
     "pycddlib>=2.1",
 ]
+docs = [
+    "quartodoc>=0.7",
+    # quartodoc 0.11.1 uses griffe's now-removed `griffe.docstrings.*` import
+    # path and older parser-option names; griffe>=2 restructured internals
+    # and dropped them (griffe is unpinned upstream by quartodoc).
+    "griffe<2",
+]
 
 [tool.ruff]
 target-version = "py311"
