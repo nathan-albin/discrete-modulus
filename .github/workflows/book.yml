@@ -1,0 +1,99 @@
+name: Book
+
+# Each language's docs are built by an independent job that uploads a
+# self-contained artifact; `deploy` only knows how to stitch artifacts
+# together under reference/<lang>/ and publish the result. Adding Julia or
+# C++ docs later (Phase 10) means adding one more `build-*-docs` job plus one
+# more download/copy step in `deploy` -- the book and Python jobs don't
+# change.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "book/**"
+      - "python/docs/**"
+      - "python/src/**"
+      - "python/pyproject.toml"
+      - "python/uv.lock"
+      - ".github/workflows/book.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build-book:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install libcdd (pycddlib build dependency)
+        run: sudo apt-get update && sudo apt-get install -y libcdd-dev
+
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          working-directory: python
+
+      - run: uv sync --group book
+        working-directory: python
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: "1.9.38"
+
+      - run: quarto render .
+        working-directory: book
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: book-site
+          path: book/_book
+
+  build-python-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          working-directory: python
+
+      - run: uv sync --group docs
+        working-directory: python
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: "1.9.38"
+
+      - run: uv run python -m quartodoc build
+        working-directory: python/docs
+
+      - run: quarto render .
+        working-directory: python/docs
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-docs-site
+          path: python/docs/_site
+
+  deploy:
+    needs: [build-book, build-python-docs]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: book-site
+          path: _site
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: python-docs-site
+          path: _site/reference/python
+
+      - uses: peaceiris/actions-gh-pages@v4.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages

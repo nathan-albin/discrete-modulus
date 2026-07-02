@@ -1,0 +1,35 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "python/**"
+      - ".github/workflows/test.yml"
+  pull_request:
+    paths:
+      - "python/**"
+      - ".github/workflows/test.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+          working-directory: python
+
+      - run: uv sync --group dev --python ${{ matrix.python-version }}
+
+      - run: uv run pytest --cov=discrete_modulus --cov-report=term-missing
