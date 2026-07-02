@@ -33,11 +33,9 @@ dev = [
     "pytest-cov>=5.0",
 ]
 book = [
-    "jupyter-book>=0.15",
-    "jupyterlab>=4.0",
+    "jupyter>=1.0",
     "matplotlib>=3.7",
     "pycddlib>=2.1",
-    "ghp-import>=2.1",
 ]
 
 [tool.ruff]

@@ -1,0 +1,28 @@
+project:
+  type: book
+
+book:
+  title: "The Modulus Book"
+  author: "Nathan Albin and Pietro Poggi-Corradini"
+  date: last-modified
+  repo-url: https://github.com/nathan-albin/discrete-modulus
+  repo-subdir: book
+  repo-actions: [edit, issue]
+  chapters:
+    - index.qmd
+    - part: "Modulus Basics"
+      chapters:
+        - Intro_to_Modulus.qmd
+        - The_Basic_Algorithm.qmd
+        - Dual_Families.qmd
+    - References.qmd
+
+bibliography: References.bib
+
+execute:
+  freeze: auto
+
+format:
+  html:
+    theme: cosmo
+    css: custom.css

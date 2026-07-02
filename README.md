@@ -7,8 +7,8 @@ plan is to add reference implementations in other languages (Julia, C++)
 alongside it, since they aren't meant to interoperate — they're independent
 implementations of the same underlying theory.
 
-A companion book, built from the notebooks in this repository, introduces the
-theory and walks through the code. Read it here:
+A companion book, built with Quarto from the pages in [`book/`](book/),
+introduces the theory and walks through the code. Read it here:
 **https://nathan-albin.com/discrete-modulus/**
 
 > [!NOTE]
@@ -25,8 +25,8 @@ theory and walks through the code. Read it here:
   NetworkX-based families, demo graphs), managed with
   [`uv`](https://docs.astral.sh/uv/) (`python/pyproject.toml` +
   `python/uv.lock`). Requires Python >= 3.11.
-- [`book/`](book/) — the notebooks and pages that make up the companion book,
-  currently built with Jupyter Book.
+- [`book/`](book/) — the `.qmd` pages that make up the companion book, built
+  with [Quarto](https://quarto.org/).
 
 ## Running the code
 
@@ -39,8 +39,7 @@ uv sync
 
 This creates a `.venv` with the library and its runtime dependencies
 (numpy, scipy, cvxpy, networkx). To also get everything needed to run/build
-the book (Jupyter, Jupyter Book, matplotlib, pycddlib), add the `book`
-group:
+the book (Jupyter, matplotlib, pycddlib), add the `book` group:
 
 ```sh
 uv sync --group book
@@ -59,25 +58,41 @@ uv run mypy src/
 uv run pytest --cov --cov-report=term-missing
 ```
 
-Then start Jupyter from `book/` (e.g. `uv run --group book jupyter lab`) —
-the notebooks there import the library via `import discrete_modulus`.
+The `.qmd` pages in `book/` import the library the same way, via
+`import discrete_modulus`, in executable code cells.
 
 ## Building the book
 
-The book is currently built with [Jupyter Book](https://jupyterbook.org/).
-With the `book` dependency group installed, run from the `book/` directory:
+The book is built with [Quarto](https://quarto.org/) — install the Quarto
+CLI separately (it's not a Python package): see the
+[get-started guide](https://quarto.org/docs/get-started/).
+
+Quarto's Python code cells run via Jupyter, so point Quarto at the `uv`-managed
+environment (with the `book` group installed) before rendering:
 
 ```sh
-uv run --project ../python jupyter-book build .
+export QUARTO_PYTHON=/absolute/path/to/python/.venv/bin/python
 ```
 
-and publish the result to the `gh-pages` branch with:
+Then, from the `book/` directory:
 
 ```sh
-uv run --project ../python ghp-import -n _build/html
+quarto render
 ```
 
-(This will be replaced by a Quarto-based build in CI — see PR #28.)
+or, for live-reloading while editing:
+
+```sh
+quarto preview
+```
+
+Publish the result to the `gh-pages` branch with:
+
+```sh
+quarto publish gh-pages
+```
+
+(CI will handle this automatically once set up — see PR #28.)
 
 ## License
 

@@ -1,0 +1,17 @@
+/* The book layout has two sidebars (chapter nav + in-page TOC), leaving a
+   narrower content column than the previous Jupyter Book build had. Without
+   these rules, computational figures and code blocks render at their native
+   pixel width instead of shrinking to fit, causing horizontal scrollbars. */
+
+.quarto-figure img,
+.cell-output-display img,
+img.figure-img {
+  max-width: 100%;
+  height: auto;
+}
+
+div.sourceCode,
+pre.sourceCode {
+  max-width: 100%;
+  overflow-x: auto;
+}
