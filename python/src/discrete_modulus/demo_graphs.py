@@ -4,7 +4,10 @@ Small graphs for various demonstrations.
 
 import networkx as nx
 
-def house_graph():
+PosDict = dict[int, tuple[float, float]]
+
+
+def house_graph() -> tuple[nx.Graph, PosDict]:
     """
     Generates the house graph.
 
@@ -19,12 +22,12 @@ def house_graph():
 
     G = nx.cycle_graph(5)
     G.add_edge(0, 2)
-    pos = { 0: (0, 1), 1: (0.5, 1.87), 2: (1, 1), 3:(1, 0), 4:(0, 0) }
+    pos = {0: (0, 1), 1: (0.5, 1.87), 2: (1, 1), 3: (1, 0), 4: (0, 0)}
 
     return G, pos
 
 
-def slashed_house_graph():
+def slashed_house_graph() -> tuple[nx.Graph, PosDict]:
     """
     Generates a house graph with a diagonal slash through it.
 

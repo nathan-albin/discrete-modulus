@@ -22,3 +22,38 @@ dependencies = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/discrete_modulus"]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.10",
+    "ruff>=0.6",
+    "types-networkx",
+    "scipy-stubs",
+]
+book = [
+    "jupyter-book>=0.15",
+    "jupyterlab>=4.0",
+    "matplotlib>=3.7",
+    "pycddlib>=2.1",
+    "ghp-import>=2.1",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+# Checked against 3.12 (matching the numpy 2.5 stubs' syntax requirements)
+# even though the package supports Python >=3.11 at runtime.
+python_version = "3.12"
+packages = ["discrete_modulus"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["cvxpy.*"]
+ignore_missing_imports = true

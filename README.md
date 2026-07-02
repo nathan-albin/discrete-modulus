@@ -20,56 +20,60 @@ theory and walks through the code. Read it here:
 
 ## Repository layout
 
-- [`python/src/discrete_modulus/`](python/src/discrete_modulus/) — the Python
-  library implementing the modulus algorithms (basic algorithm, family
-  operators, NetworkX-based families, demo graphs), packaged as an
-  installable module (`python/pyproject.toml`).
+- [`python/`](python/) — the `discrete_modulus` Python package
+  (`python/src/discrete_modulus/`: basic algorithm, family operators,
+  NetworkX-based families, demo graphs), managed with
+  [`uv`](https://docs.astral.sh/uv/) (`python/pyproject.toml` +
+  `python/uv.lock`). Requires Python >= 3.11.
 - [`book/`](book/) — the notebooks and pages that make up the companion book,
   currently built with Jupyter Book.
-- [`requirements.txt`](requirements.txt) — pinned Python environment used to
-  run the code and build the book. (Still repo-root for now; this will move
-  into `python/pyproject.toml` in a later step — see PR #28.)
 
 ## Running the code
 
-You'll need a Python environment with the packages listed in
-[`requirements.txt`](requirements.txt), most notably:
-
-- networkx
-- numpy
-- matplotlib
-- cvxpy
-- pycddlib
-- jupyter
-
-Install them into a virtual environment with:
+The package is managed with [`uv`](https://docs.astral.sh/uv/). From the
+`python/` directory:
 
 ```sh
-pip install -r requirements.txt
+uv sync
 ```
 
-Then install the library itself in editable mode:
+This creates a `.venv` with the library and its runtime dependencies
+(numpy, scipy, cvxpy, networkx). To also get everything needed to run/build
+the book (Jupyter, Jupyter Book, matplotlib, pycddlib), add the `book`
+group:
 
 ```sh
-pip install -e python/
+uv sync --group book
 ```
 
-Then start Jupyter in `book/` — the notebooks there are the source for the
-book, and they import the library code via `import discrete_modulus`.
+`pycddlib` builds from source and needs the `cddlib` headers available on
+the system (Ubuntu/Debian: `apt install libcdd-dev`) — this will be baked
+into the devcontainer once that's set up (see PR #28).
+
+There's also a `dev` group (`ruff`, `mypy`) for linting/type-checking:
+
+```sh
+uv sync --group dev
+uv run ruff check src/
+uv run mypy src/
+```
+
+Then start Jupyter from `book/` (e.g. `uv run --group book jupyter lab`) —
+the notebooks there import the library via `import discrete_modulus`.
 
 ## Building the book
 
 The book is currently built with [Jupyter Book](https://jupyterbook.org/).
-With the Python environment above active, run from the `book/` directory:
+With the `book` dependency group installed, run from the `book/` directory:
 
 ```sh
-jupyter-book build .
+uv run --project ../python jupyter-book build .
 ```
 
 and publish the result to the `gh-pages` branch with:
 
 ```sh
-ghp-import -n _build/html
+uv run --project ../python ghp-import -n _build/html
 ```
 
 (This will be replaced by a Quarto-based build in CI — see PR #28.)
