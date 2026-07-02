@@ -55,7 +55,23 @@ class ShortestObjectFinder(Protocol):
     given family, given the current density `rho`.
     """
 
-    def __call__(self, rho: FloatArray, tol: float) -> ShortestResult: ...
+    def __call__(self, rho: FloatArray, tol: float) -> ShortestResult:
+        """
+        Parameters
+        ----------
+        rho : numpy array
+            The current density.
+
+        tol : float
+            The tolerance; may be ignored by implementations that don't
+            need it (see `ShortestResult`'s `n` field for the "already
+            admissible" case this exists to support).
+
+        Returns
+        -------
+        ShortestResult
+        """
+        ...
 
 
 class SubproblemResult(NamedTuple):
@@ -91,7 +107,24 @@ class SubproblemSolver(Protocol):
         N: FloatArray | sp.spmatrix,
         p: float,
         sigma: FloatArray | None = None,
-    ) -> SubproblemResult: ...
+    ) -> SubproblemResult:
+        """
+        Parameters
+        ----------
+        N : numpy array or scipy sparse matrix
+            The usage matrix for the (sub)family being solved.
+
+        p : float or np.inf
+            The modulus energy exponent.
+
+        sigma : numpy array, optional
+            The weights sigma. If None, all weights are treated as 1.
+
+        Returns
+        -------
+        SubproblemResult
+        """
+        ...
 
 
 class ModulusResult(NamedTuple):

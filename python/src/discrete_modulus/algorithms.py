@@ -1,3 +1,9 @@
+"""
+Core solvers for discrete modulus: a direct LP solver (`matrix_modulus`)
+and the incremental "basic algorithm" (`modulus`) that grows the
+constraint set one object at a time via a `ShortestObjectFinder`.
+"""
+
 from __future__ import annotations
 
 from time import perf_counter
@@ -49,6 +55,13 @@ def matrix_modulus(
 
         lam : numpy array
             An optimal dual lambda^* for modulus.
+
+    Warns
+    -----
+    UserWarning
+        If the underlying cvxpy solve does not report status "optimal"
+        (e.g. "optimal_inaccurate" or "infeasible"). `rho`/`lam` are
+        still returned in this case, but may not be reliable.
 
     Notes
     -----

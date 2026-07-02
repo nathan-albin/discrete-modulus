@@ -14,6 +14,9 @@ from ..protocols import FloatArray, ShortestResult
 class ShortestConnectingPath:
     """
     Functor class for finding the shortest rho-length path between two sets of nodes.
+
+    Implements `ShortestObjectFinder` for the family of paths connecting
+    any node in `S` to any node in `T`.
     """
 
     # the dummy source and target node names
@@ -21,6 +24,25 @@ class ShortestConnectingPath:
     tgt = "__target__"
 
     def __init__(self, G: nx.Graph, S: Iterable, T: Iterable) -> None:
+        """
+        Parameters
+        ----------
+        G : networkx graph
+            The graph the family of paths lives in.
+
+        S : iterable of nodes
+            The set of allowed path start nodes.
+
+        T : iterable of nodes
+            The set of allowed path end nodes.
+
+        Notes
+        -----
+        This mutates `G` by adding an `'enum'` edge attribute (an index
+        into `rho`/the usage matrix). A copy of `G`, with dummy source
+        and target nodes attached, is kept internally for the
+        shortest-path search; `G` itself is otherwise left untouched.
+        """
 
         # remember the graph, source and target sets
         self.G = G
@@ -46,6 +68,26 @@ class ShortestConnectingPath:
             self.H.add_edge(v, self.tgt, rho=0)
 
     def __call__(self, rho: FloatArray, tol: float) -> ShortestResult:
+        """
+        Finds the shortest rho-length path from `S` to `T`.
+
+        Parameters
+        ----------
+        rho : numpy array
+            The current density, one entry per edge of `G` (in the order
+            `G.edges()` iterates).
+
+        tol : float
+            Unused; accepted to satisfy the `ShortestObjectFinder`
+            interface.
+
+        Returns
+        -------
+        ShortestResult
+            `cons` is the path found, as a list of nodes from `S` to `T`
+            (the dummy source/target nodes are already trimmed off).
+            `n` is its usage vector.
+        """
 
         # assign rho to the graph edges
         for i, (u, v) in enumerate(self.G.edges()):
@@ -68,9 +110,24 @@ class ShortestConnectingPath:
 class MinimumSpanningTree:
     """
     Functor class for finding the minimum rho-length spanning tree.
+
+    Implements `ShortestObjectFinder` for the family of spanning trees
+    of `G`.
     """
 
     def __init__(self, G: nx.Graph) -> None:
+        """
+        Parameters
+        ----------
+        G : networkx graph
+            The graph whose spanning trees make up the family.
+
+        Notes
+        -----
+        This mutates `G` by adding an `'enum'` edge attribute (an index
+        into `rho`/the usage matrix), and, on each call, a `'rho'` edge
+        attribute holding the most recently assigned density.
+        """
 
         # remember the graph
         self.G = G
@@ -81,6 +138,25 @@ class MinimumSpanningTree:
             G[u][v]["enum"] = i
 
     def __call__(self, rho: FloatArray, tol: float) -> ShortestResult:
+        """
+        Finds a minimum rho-length spanning tree of `G`.
+
+        Parameters
+        ----------
+        rho : numpy array
+            The current density, one entry per edge of `G` (in the order
+            `G.edges()` iterates).
+
+        tol : float
+            Unused; accepted to satisfy the `ShortestObjectFinder`
+            interface.
+
+        Returns
+        -------
+        ShortestResult
+            `cons` is the list of edges in the minimum spanning tree.
+            `n` is its usage vector.
+        """
 
         # assign rho to the graph edges
         for i, (u, v) in enumerate(self.G.edges()):
