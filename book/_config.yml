@@ -28,6 +28,6 @@ launch_buttons:
 #######################################################################################
 # repository settings
 repository:
-  url                    : https://github.com/nathan-albin/modulus_book
-  path_to_book           : ""
+  url                    : https://github.com/nathan-albin/discrete-modulus
+  path_to_book           : "book"
   branch                 : main

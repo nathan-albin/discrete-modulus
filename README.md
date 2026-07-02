@@ -2,9 +2,9 @@
 
 Reference implementations of algorithms for **discrete modulus**, a
 combinatorial/optimization-based generalization of classical modulus of curve
-families. Currently this means a Python library (`modulus_tools`); the plan
-is to add reference implementations in other languages (Julia, C++) alongside
-it, since they aren't meant to interoperate — they're independent
+families. Currently this means a Python library (`discrete_modulus`); the
+plan is to add reference implementations in other languages (Julia, C++)
+alongside it, since they aren't meant to interoperate — they're independent
 implementations of the same underlying theory.
 
 A companion book, built from the notebooks in this repository, introduces the
@@ -20,14 +20,15 @@ theory and walks through the code. Read it here:
 
 ## Repository layout
 
-- [`modulus_tools/`](modulus_tools/) — the Python library implementing the
-  modulus algorithms (basic algorithm, family operators, NetworkX-based
-  families, demo graphs).
-- [`*.ipynb`](Intro_to_Modulus.ipynb), [`Introduction.md`](Introduction.md),
-  [`References.md`](References.md) — the notebooks and pages that make up the
-  book, currently built with Jupyter Book.
+- [`python/src/discrete_modulus/`](python/src/discrete_modulus/) — the Python
+  library implementing the modulus algorithms (basic algorithm, family
+  operators, NetworkX-based families, demo graphs), packaged as an
+  installable module (`python/pyproject.toml`).
+- [`book/`](book/) — the notebooks and pages that make up the companion book,
+  currently built with Jupyter Book.
 - [`requirements.txt`](requirements.txt) — pinned Python environment used to
-  run the code and build the book.
+  run the code and build the book. (Still repo-root for now; this will move
+  into `python/pyproject.toml` in a later step — see PR #28.)
 
 ## Running the code
 
@@ -47,14 +48,19 @@ Install them into a virtual environment with:
 pip install -r requirements.txt
 ```
 
-Then start Jupyter in the project root — the notebooks there are the source
-for the book, and they import the library code directly from
-`modulus_tools`.
+Then install the library itself in editable mode:
+
+```sh
+pip install -e python/
+```
+
+Then start Jupyter in `book/` — the notebooks there are the source for the
+book, and they import the library code via `import discrete_modulus`.
 
 ## Building the book
 
 The book is currently built with [Jupyter Book](https://jupyterbook.org/).
-With the Python environment above active, run from the project root:
+With the Python environment above active, run from the `book/` directory:
 
 ```sh
 jupyter-book build .
