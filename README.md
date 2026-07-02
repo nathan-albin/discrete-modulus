@@ -50,12 +50,13 @@ uv sync --group book
 the system (Ubuntu/Debian: `apt install libcdd-dev`) — this will be baked
 into the devcontainer once that's set up (see PR #28).
 
-There's also a `dev` group (`ruff`, `mypy`) for linting/type-checking:
+There's also a `dev` group (`ruff`, `mypy`, `pytest`) for linting, type-checking, and testing:
 
 ```sh
 uv sync --group dev
 uv run ruff check src/
 uv run mypy src/
+uv run pytest --cov --cov-report=term-missing
 ```
 
 Then start Jupyter from `book/` (e.g. `uv run --group book jupyter lab`) —
