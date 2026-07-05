@@ -2,11 +2,12 @@
 
 Reference implementations of algorithms for **discrete modulus**, a
 combinatorial/optimization-based generalization of classical modulus of curve
-families. Currently this means a Python library (`discrete_modulus`);
-[`julia/`](julia/) and [`cpp/`](cpp/) are placeholders for future Julia and
-C++ reference implementations. Those would be **independent**
-implementations of the same underlying theory, not bindings or wrappers
-around the Python code — the languages aren't meant to interoperate.
+families. Currently this means a Python library (`discrete_modulus`) and a
+narrower C++ library (`cpp/`, exact spanning tree modulus only);
+[`julia/`](julia/) is a placeholder for a future Julia reference
+implementation. Each is an **independent** implementation of the same
+underlying theory, not bindings or wrappers around the others — the
+languages aren't meant to interoperate.
 
 A companion book, built with Quarto from the pages in [`book/`](book/),
 introduces the theory and walks through the code, with the Python API
@@ -30,12 +31,19 @@ it here: **https://nathan-albin.com/discrete-modulus/**
     API reference from docstrings via `quartodoc`.
 - [`book/`](book/) — the `.qmd` pages that make up the companion book, built
   with [Quarto](https://quarto.org/).
-- [`julia/`](julia/), [`cpp/`](cpp/) — not implemented yet; see their
-  `README.md`s for intended scope.
-- [`.github/workflows/`](.github/workflows/) — CI: linting, tests, and the
-  book/docs build+deploy (see [CI](#ci) below).
-- [`.devcontainer/`](.devcontainer/) — a devcontainer with Python, `uv`, and
-  the Quarto CLI preinstalled (see [Development environment](#development-environment)
+- [`cpp/`](cpp/) — the `discrete_modulus` C++ library (header-only,
+  `cpp/include/discrete_modulus/`: exact spanning tree modulus via
+  Cunningham's algorithm), built with CMake and Boost.Graph. Narrower in
+  scope than `python/` so far — see [`cpp/README.md`](cpp/README.md).
+  - `cpp/test/` — the Catch2 test suite.
+  - `cpp/docs/` — Doxygen config for the API reference.
+- [`julia/`](julia/) — not implemented yet; see its `README.md` for
+  intended scope.
+- [`.github/workflows/`](.github/workflows/) — CI: linting, tests (Python
+  and C++), and the book/docs build+deploy (see [CI](#ci) below).
+- [`.devcontainer/`](.devcontainer/) — a devcontainer with Python, `uv`,
+  the Quarto CLI, and the C++ toolchain (CMake, Boost, Doxygen)
+  preinstalled (see [Development environment](#development-environment)
   below).
 
 ## Running the code
@@ -105,13 +113,33 @@ quarto render
 `python/docs/` is a Quarto *website* project (not a book), every generated
 page renders automatically — no manual chapter listing needed.
 
+## Building the C++ library
+
+The `cpp/` library is built with [CMake](https://cmake.org/) (>= 3.20) and
+requires [Boost](https://www.boost.org/) (>= 1.74, the `graph` component).
+On Ubuntu/Debian: `apt install cmake libboost-graph-dev` (already present
+in the devcontainer image).
+
+```sh
+cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release
+cmake --build cpp/build
+ctest --test-dir cpp/build --output-on-failure
+```
+
+(`-DCMAKE_BUILD_TYPE=Release` matters more than usual here — this is a
+CPU-bound algorithm, and an unoptimized build is dramatically slower.)
+
+See [`cpp/README.md`](cpp/README.md) for more, including running the
+`spt_mod` CLI and building its Doxygen API reference.
+
 ## Development environment
 
 The included devcontainer (`.devcontainer/`) has Python, `uv`, the Quarto
-CLI, and `libcdd-dev` preinstalled, and runs `uv sync --all-groups` on
-create — opening the repo in it (VS Code's Dev Containers extension, or a
-Codespace) is enough to lint, test, and build both the book and the API
-docs immediately.
+CLI, `libcdd-dev`, and the C++ toolchain (CMake, Boost, Doxygen, Graphviz)
+preinstalled, and runs `uv sync --all-groups` on create — opening the repo
+in it (VS Code's Dev Containers extension, or a Codespace) is enough to
+lint, test, and build the book, the Python API docs, and the C++ library
+immediately.
 
 ## CI
 
@@ -119,10 +147,13 @@ docs immediately.
   under `python/`.
 - `test.yml` — `pytest` across a Python version matrix, on changes under
   `python/`.
-- `book.yml` — builds the book and the Python API reference as independent
-  jobs, then assembles them into one site (book at the root, API reference
-  under `reference/python/`) and publishes it to the `gh-pages` branch, on
-  push to `main`. Structured so that adding Julia/C++ docs later only means
+- `cpp-test.yml` — configures, builds, and runs the Catch2 test suite for
+  `cpp/`, on changes under `cpp/`.
+- `book.yml` — builds the book, the Python API reference, and the C++ API
+  reference as independent jobs, then assembles them into one site (book
+  at the root, API references under `reference/python/` and
+  `reference/cpp/`) and publishes it to the `gh-pages` branch, on push to
+  `main`. Structured so that adding a Julia docs build later only means
   adding one more build job and one more assembly step.
 
 ## License

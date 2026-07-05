@@ -1,0 +1,32 @@
+# Minimal Doxygen configuration for the discrete_modulus C++ library.
+# Any option not set here uses Doxygen's built-in default.
+#
+# Usage (from cpp/docs/): doxygen Doxyfile
+# Output goes to cpp/docs/_site/html/, matching the layout the
+# `build-cpp-docs` CI job (.github/workflows/book.yml) expects to publish
+# under reference/cpp/.
+
+PROJECT_NAME           = "discrete-modulus (C++)"
+PROJECT_BRIEF          = "Reference implementations of discrete modulus algorithms (C++)"
+
+OUTPUT_DIRECTORY       = _site
+
+INPUT                  = ../include ../README.md
+FILE_PATTERNS          = *.hpp
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = ../README.md
+
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = NO
+
+QUIET                  = YES
+WARN_AS_ERROR          = NO

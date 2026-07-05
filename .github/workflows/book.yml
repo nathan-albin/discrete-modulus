@@ -2,9 +2,9 @@ name: Book
 
 # Each language's docs are built by an independent job that uploads a
 # self-contained artifact; `deploy` only knows how to stitch artifacts
-# together under reference/<lang>/ and publish the result. Adding Julia or
-# C++ docs later (Phase 10) means adding one more `build-*-docs` job plus one
-# more download/copy step in `deploy` -- the book and Python jobs don't
+# together under reference/<lang>/ and publish the result. Adding Julia
+# docs later means adding one more `build-*-docs` job plus one more
+# download/copy step in `deploy` -- the book, Python, and C++ jobs don't
 # change.
 
 on:
@@ -16,6 +16,9 @@ on:
       - "python/src/**"
       - "python/pyproject.toml"
       - "python/uv.lock"
+      - "cpp/include/**"
+      - "cpp/docs/**"
+      - "cpp/README.md"
       - ".github/workflows/book.yml"
   workflow_dispatch: {}
 
@@ -76,8 +79,24 @@ jobs:
           name: python-docs-site
           path: python/docs/_site
 
+  build-cpp-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Doxygen and Graphviz
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
+      - run: doxygen Doxyfile
+        working-directory: cpp/docs
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cpp-docs-site
+          path: cpp/docs/_site/html
+
   deploy:
-    needs: [build-book, build-python-docs]
+    needs: [build-book, build-python-docs, build-cpp-docs]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -91,6 +110,11 @@ jobs:
         with:
           name: python-docs-site
           path: _site/reference/python
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: cpp-docs-site
+          path: _site/reference/cpp
 
       - uses: peaceiris/actions-gh-pages@v4.0.0
         with:

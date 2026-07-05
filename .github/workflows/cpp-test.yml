@@ -1,0 +1,30 @@
+name: C++ Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cpp/**"
+      - ".github/workflows/cpp-test.yml"
+  pull_request:
+    paths:
+      - "cpp/**"
+      - ".github/workflows/cpp-test.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install CMake and Boost.Graph
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libboost-graph-dev
+
+      - name: Configure
+        run: cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build cpp/build -j
+
+      - name: Test
+        run: ctest --test-dir cpp/build --output-on-failure

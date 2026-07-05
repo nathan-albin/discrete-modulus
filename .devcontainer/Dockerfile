@@ -3,11 +3,17 @@ FROM mcr.microsoft.com/devcontainers/python:3.12-bookworm
 # libcdd-dev: pycddlib (python/ 'book' dependency group) builds a C
 # extension against cddlib's headers at install time.
 # build-essential: belt-and-suspenders in case the base image ever drops it.
+# cmake, libboost-graph-dev: cpp/'s CMake-built library (Boost.Graph).
+# doxygen, graphviz: cpp/docs/'s Doxygen-generated API reference.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libcdd-dev \
         build-essential \
         curl \
         ca-certificates \
+        cmake \
+        libboost-graph-dev \
+        doxygen \
+        graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # Quarto CLI, pinned to the same version book.yml uses in CI.
