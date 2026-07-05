@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>5&nbsp; Exact Spanning Tree Modulus – The Modulus Book</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./References.html" rel="next">
+<link href="./Dual_Families.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-3f70bac5631458d474a321d4182f9338.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="custom.css">
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Exact_Spanning_Tree_Modulus.html">Case Studies</a></li><li class="breadcrumb-item"><a href="./Exact_Spanning_Tree_Modulus.html"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Exact Spanning Tree Modulus</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">The Modulus Book</a> 
+        <div class="sidebar-tools-main">
+    <a href="https://github.com/nathan-albin/discrete-modulus/tree/main/book/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Modulus Basics</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Intro_to_Modulus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Intro to Modulus</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./The_Basic_Algorithm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">The Basic Algorithm</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Dual_Families.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Dual Families</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Case Studies</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Exact_Spanning_Tree_Modulus.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Exact Spanning Tree Modulus</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./References.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">References</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">5.1</span> Introduction</a></li>
+  <li><a href="#rank" id="toc-rank" class="nav-link" data-scroll-target="#rank"><span class="header-section-number">5.2</span> Rank</a></li>
+  <li><a href="#polymatroid" id="toc-polymatroid" class="nav-link" data-scroll-target="#polymatroid"><span class="header-section-number">5.3</span> Polymatroid</a></li>
+  <li><a href="#polymatroid-bases" id="toc-polymatroid-bases" class="nav-link" data-scroll-target="#polymatroid-bases"><span class="header-section-number">5.4</span> Polymatroid bases</a></li>
+  <li><a href="#cunninghams-algorithm" id="toc-cunninghams-algorithm" class="nav-link" data-scroll-target="#cunninghams-algorithm"><span class="header-section-number">5.5</span> Cunningham’s algorithm</a></li>
+  <li><a href="#the-max-flow-problem" id="toc-the-max-flow-problem" class="nav-link" data-scroll-target="#the-max-flow-problem"><span class="header-section-number">5.6</span> The max-flow problem</a></li>
+  <li><a href="#integer-arithmetic" id="toc-integer-arithmetic" class="nav-link" data-scroll-target="#integer-arithmetic"><span class="header-section-number">5.7</span> Integer arithmetic</a></li>
+  <li><a href="#graph-vulnerability" id="toc-graph-vulnerability" class="nav-link" data-scroll-target="#graph-vulnerability"><span class="header-section-number">5.8</span> Graph vulnerability</a>
+  <ul class="collapse">
+  <li><a href="#binary-search" id="toc-binary-search" class="nav-link" data-scroll-target="#binary-search"><span class="header-section-number">5.8.1</span> Binary search</a></li>
+  </ul></li>
+  <li><a href="#computing-modulus" id="toc-computing-modulus" class="nav-link" data-scroll-target="#computing-modulus"><span class="header-section-number">5.9</span> Computing modulus</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/nathan-albin/discrete-modulus/edit/main/book/Exact_Spanning_Tree_Modulus.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/nathan-albin/discrete-modulus/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Exact_Spanning_Tree_Modulus.html">Case Studies</a></li><li class="breadcrumb-item"><a href="./Exact_Spanning_Tree_Modulus.html"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Exact Spanning Tree Modulus</span></a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Exact Spanning Tree Modulus</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div id="38b21e43" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fractions <span class="im">import</span> Fraction</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus <span class="im">import</span> demo</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus.spanning_tree_modulus <span class="im">import</span> (</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    rank,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    create_flow_graph,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    cunningham_min,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    graph_vulnerability,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    spanning_tree_modulus,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="d76c68cd" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'figure.figsize'</span>] <span class="op">=</span> (<span class="dv">4</span>, <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="introduction" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">5.1</span> Introduction</h2>
+<p>The <a href="./Dual_Families.html">Dual Families</a> chapter showed that the spanning tree family <span class="math inline">\(\Gamma\)</span> (with the usual <span class="math inline">\((0,1)\)</span> usage matrix) has a beautifully characterized blocking dual <span class="math inline">\(\hat{\Gamma}\)</span>: Chopra’s <em>feasible partitions</em> <span class="citation" data-cites="chopra1989spanningtreepolyhedron">(<a href="References.html#ref-chopra1989spanningtreepolyhedron" role="doc-biblioref">Chopra 1989</a>)</span>, whose usage weights are <span class="math inline">\(1/(k-1)\)</span> for a partition into <span class="math inline">\(k\)</span> components. That chapter only computed the corresponding modulus by enumerating a polyhedron with <code>pycddlib</code>, which is only practical for tiny graphs.</p>
+<p>This chapter gives an <em>exact</em>, combinatorial algorithm (see <span class="citation" data-cites="albin2025exactarithmeticspanningtree">Albin et al. (<a href="References.html#ref-albin2025exactarithmeticspanningtree" role="doc-biblioref">2025</a>)</span>) that computes this same quantity directly, without ever enumerating <span class="math inline">\(\hat{\Gamma}\)</span>, and that scales to much larger graphs. The algorithm builds on Cunningham’s algorithm for polymatroids <span class="citation" data-cites="cunningham1985optimalattackreinforcement">(<a href="References.html#ref-cunningham1985optimalattackreinforcement" role="doc-biblioref">Cunningham 1985</a>)</span>, which works on a generic matroid but is particularly easy to understand when specialized to the language of spanning trees, as we do below. It’s implemented in <code>discrete_modulus.spanning_tree_modulus</code>.</p>
+</section>
+<section id="rank" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="rank"><span class="header-section-number">5.2</span> Rank</h2>
+<p>Consider an undirected graph <span class="math inline">\(G=(V,E)\)</span> with vertex set <span class="math inline">\(V\)</span> and edge set <span class="math inline">\(E\)</span>. The <strong>rank function</strong> on <span class="math inline">\(G\)</span> is a function <span class="math inline">\(f:2^E\to\mathbb{N}_0\)</span>. Given a subset of edges <span class="math inline">\(J\subseteq E\)</span>, the rank of <span class="math inline">\(J\)</span> is defined as</p>
+<p><span class="math display">\[
+f(J) = |V| - Q(G_J),
+\]</span></p>
+<p>where <span class="math inline">\(G_J=(V,J)\)</span> is the subgraph of <span class="math inline">\(G\)</span> created by removing the edges not in <span class="math inline">\(J\)</span> and <span class="math inline">\(Q\)</span> is the function that counts the number of connected components (including isolated vertices) of a graph.</p>
+<p>Another way to think about rank is as follows. Let <span class="math inline">\(J'\subseteq J\)</span> be an acyclic set of edges (i.e., a forest). The rank of <span class="math inline">\(J\)</span> is equal to the size, <span class="math inline">\(|J'|\)</span>, of the largest such subset. Although this function is never used internally by <code>spanning_tree_modulus</code>, <code>rank</code> is included in the library since it may help build intuition.</p>
+<div id="651c7133" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># example graph</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>G, pos <span class="op">=</span> demo.house_graph()</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># edge sets to compute the rank of</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>examples <span class="op">=</span> [</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    [],</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    [(<span class="dv">0</span>, <span class="dv">1</span>)],</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    [(<span class="dv">0</span>, <span class="dv">1</span>), (<span class="dv">1</span>, <span class="dv">2</span>)],</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    [(<span class="dv">0</span>, <span class="dv">2</span>), (<span class="dv">3</span>, <span class="dv">4</span>)],</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    [(<span class="dv">0</span>, <span class="dv">1</span>), (<span class="dv">1</span>, <span class="dv">2</span>), (<span class="dv">2</span>, <span class="dv">0</span>)],</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">list</span>(G.edges),</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co"># draw examples with rank computed</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">6</span>))</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, J <span class="kw">in</span> <span class="bu">enumerate</span>(examples):</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    plt.subplot(<span class="dv">2</span>, <span class="dv">3</span>, i <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    nx.draw(G, pos, node_size<span class="op">=</span><span class="dv">50</span>, node_color<span class="op">=</span><span class="st">"black"</span>, edge_color<span class="op">=</span><span class="st">"#ccc"</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    nx.draw_networkx_edges(G, pos, edgelist<span class="op">=</span>J, edge_color<span class="op">=</span><span class="st">"black"</span>, width<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    plt.title(<span class="st">"rank = </span><span class="sc">{}</span><span class="st">"</span>.<span class="bu">format</span>(rank(G, J)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Exact_Spanning_Tree_Modulus_files/figure-html/cell-4-output-1.png" width="689" height="483" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="polymatroid" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="polymatroid"><span class="header-section-number">5.3</span> Polymatroid</h2>
+<p>From the rank function, <span class="math inline">\(f\)</span> (which is an example of what Cunningham calls a <strong>polymatroid function</strong>), we define the <strong>polymatroid</strong> <span class="math inline">\(P(f)\)</span> as</p>
+<p><span class="math display">\[
+P(f) = \{x\in\mathbb{R}^E_{\ge 0} : x(J)\le f(J)\text{ for all }J\subseteq E\}.
+\]</span></p>
+<p>To unpack this definition, we start with <span class="math inline">\(x\in\mathbb{R}^E_{\ge 0}\)</span>. This defines <span class="math inline">\(x\)</span> as a non-negative vector indexed by the edge set <span class="math inline">\(E\)</span>. Such a vector can be thought of as a function from <span class="math inline">\(E\)</span> to the non-negative real numbers <span class="math inline">\(\mathbb{R}_{\ge 0}\)</span>. So <span class="math inline">\(x\)</span> is just a way of assigning a value <span class="math inline">\(x(e)\ge 0\)</span> to each edge <span class="math inline">\(e\in E\)</span>. Given a subset of edges <span class="math inline">\(J\subseteq E\)</span>, we define <span class="math inline">\(x(J)\)</span> to be the sum of <span class="math inline">\(x\)</span> over all <span class="math inline">\(e\in J\)</span>. In other words,</p>
+<p><span class="math display">\[
+x(J) = \sum_{e\in J}x(e).
+\]</span></p>
+<p>The polymatroid <span class="math inline">\(P(f)\)</span> is defined to be the non-negative vectors, <span class="math inline">\(x\)</span>, with the property that <span class="math inline">\(x(J)\le f(J)\)</span> for every subset of edges <span class="math inline">\(J\subseteq E\)</span>.</p>
+<p>As an example, consider the polymatroid for the cycle graph <span class="math inline">\(C_3\)</span> on three vertices. This graph has three edges, which we can label <span class="math inline">\(e_1\)</span>, <span class="math inline">\(e_2\)</span> and <span class="math inline">\(e_3\)</span>. A vector <span class="math inline">\(x\in\mathbb{R}^E_{\ge 0}\)</span> assigns a non-negative value to each of these edges. Now, let’s consider the requirements for <span class="math inline">\(x\)</span> to belong to the polymatroid <span class="math inline">\(P(f)\)</span>. The empty set <span class="math inline">\(J=\emptyset\)</span> doesn’t place any conditions on <span class="math inline">\(x\)</span>. Next, there are three singleton subsets of the form <span class="math inline">\(\{e_i\}\)</span> for <span class="math inline">\(i=1,2,3\)</span>. Each of these sets has rank <span class="math inline">\(1\)</span>, so we get three constraints on <span class="math inline">\(x\)</span>:</p>
+<p><span class="math display">\[
+x(e_i)\le 1\quad\text{for }i=1,2,3.
+\]</span></p>
+<p>There are also three subsets containing exactly two edges. Each of these subsets has rank 2, so we get three additional conditions on <span class="math inline">\(x\)</span>:</p>
+<p><span class="math display">\[
+x(e_1) + x(e_2) \le 2,\quad x(e_1)+x(e_3) \le 2,\quad\text{and}\quad x(e_2)+x(e_3)\le 2.
+\]</span></p>
+<p>Finally, there is a single subset of <span class="math inline">\(E\)</span> that contains all three edges, namely <span class="math inline">\(J=E\)</span>. This set has rank 2 and therefore gives one final condition on <span class="math inline">\(x\)</span>:</p>
+<p><span class="math display">\[
+x(e_1) + x(e_2) + x(e_3) \le 2.
+\]</span></p>
+<p>The set <span class="math inline">\(P(f)\)</span> in this case is exactly the set of non-negative vectors <span class="math inline">\(x\in\mathbb{R}^E_{\ge 0}\)</span> that satisfy all 7 of the above inequalities. (Of course, the second set of three inequalities is implied by the first set of three, so there are in reality only four important inequalities.)</p>
+</section>
+<section id="polymatroid-bases" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="polymatroid-bases"><span class="header-section-number">5.4</span> Polymatroid bases</h2>
+<p>Let <span class="math inline">\(y\in\mathbb{R}^E_{\ge 0}\)</span>. We say that <span class="math inline">\(x\in\mathbb{R}^E_{\ge 0}\)</span> is a <strong><span class="math inline">\(P(f)\)</span>-basis</strong> of <span class="math inline">\(y\)</span> if the following conditions hold.</p>
+<ol type="1">
+<li><span class="math inline">\(x\in P(f)\)</span>,</li>
+<li><span class="math inline">\(x\preceq y\)</span> (elementwise comparison), and</li>
+<li><span class="math inline">\(x\)</span> is maximal in the sense that it cannot be increased on any edge without violating one of the two previous properties.</li>
+</ol>
+</section>
+<section id="cunninghams-algorithm" class="level2" data-number="5.5">
+<h2 data-number="5.5" class="anchored" data-anchor-id="cunninghams-algorithm"><span class="header-section-number">5.5</span> Cunningham’s algorithm</h2>
+<p>A key ingredient in this method of finding spanning tree modulus is computing lots of <span class="math inline">\(P(f)\)</span>-bases for various <span class="math inline">\(y\)</span>. To do this, we use Cunningham’s algorithm.</p>
+<p>Cunningham’s algorithm is a greedy algorithm. Essentially, we initialize <span class="math inline">\(x=0\)</span> on all edges. Then, we loop over every edge <span class="math inline">\(j\in E\)</span> and increase <span class="math inline">\(x\)</span> on <span class="math inline">\(j\)</span> until either we run into an inequality in the polymatroid <span class="math inline">\(P(f)\)</span> or we reach <span class="math inline">\(y(j)\)</span>. Cunningham proved that this greedy procedure of looping through all edges once and making <span class="math inline">\(x\)</span> on each as large as possible without violating any of the inequality constraints (<span class="math inline">\(x\in P(f)\)</span> and <span class="math inline">\(x\preceq y\)</span>) results in <span class="math inline">\(x\)</span> being a <span class="math inline">\(P(f)\)</span>-basis of <span class="math inline">\(y\)</span>. At the end of this procedure, there will be some set of edges <span class="math inline">\(J\subseteq E\)</span> that is <strong>tight</strong> in the sense that <span class="math inline">\(x(J)=f(J)\)</span>. This tight set is also used in the computation of modulus.</p>
+</section>
+<section id="the-max-flow-problem" class="level2" data-number="5.6">
+<h2 data-number="5.6" class="anchored" data-anchor-id="the-max-flow-problem"><span class="header-section-number">5.6</span> The max-flow problem</h2>
+<p>At each step of the algorithm, we will either set <span class="math inline">\(x(j)=y(j)\)</span> or we will discover that we can’t make <span class="math inline">\(x(j)\)</span> that large without violating one of the inequalities <span class="math inline">\(x(J)\le f(J)\)</span> for all <span class="math inline">\(J\subseteq E\)</span>. Checking these inequalities is the hard part. The number of subsets to check is <span class="math inline">\(2^{|E|}\)</span>, which makes a brute force approach computationally expensive. Fortunately, Cunningham formulated an equivalent max-flow problem that can identify a critical subset <span class="math inline">\(J\)</span>. Without getting into the details of why it works, there is a relatively simple procedure for producing a capacitated flow network to solve the problem. Using a max-flow solver then produces the answer to the question “How big can I make <span class="math inline">\(x(j)\)</span> without leaving the polymatroid <span class="math inline">\(P(f)\)</span>?”</p>
+</section>
+<section id="integer-arithmetic" class="level2" data-number="5.7">
+<h2 data-number="5.7" class="anchored" data-anchor-id="integer-arithmetic"><span class="header-section-number">5.7</span> Integer arithmetic</h2>
+<p>The implementation in <code>discrete_modulus.spanning_tree_modulus</code> is not quite the one Cunningham described. We want to compute everything in exact arithmetic (not floating point arithmetic), so we need to perform a little transformation. In the spanning tree modulus code, we always look for a <span class="math inline">\(P(f)\)</span>-basis of a rational constant vector <span class="math inline">\(y\equiv\frac{p}{q}\)</span>. This can be transformed into looking for a <span class="math inline">\(P(qf)\)</span>-basis of the constant vector <span class="math inline">\(y\equiv p\)</span>. This transformation produces a max-flow problem with integer capacities that can be solved exactly.</p>
+<p>Here’s a small example of Cunningham’s algorithm in action.</p>
+<div id="009e3667" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create and draw the graph</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> nx.cycle_graph(<span class="dv">6</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>G.add_edge(<span class="dv">0</span>, <span class="dv">2</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>pos <span class="op">=</span> nx.circular_layout(G)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>nx.draw(G, pos, with_labels<span class="op">=</span><span class="va">True</span>, node_color<span class="op">=</span><span class="st">'#ccc'</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># find a P(f) basis for the constant function 3/4</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>F <span class="op">=</span> create_flow_graph(G)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>x, J <span class="op">=</span> cunningham_min(G, F, <span class="dv">3</span>, <span class="dv">4</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>nx.draw_networkx_edge_labels(</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    G, pos, edge_labels<span class="op">=</span>{(u, v): x[(u, v)] <span class="cf">for</span> u, v <span class="kw">in</span> G.edges}</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"P(qf) basis"</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(x)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"tight set"</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(J)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>P(qf) basis
+(0,1): 3, (0,5): 3, (0,2): 3, (1,2): 2, (2,3): 3, (3,4): 3, (4,5): 3
+
+tight set
+{(0, 1), (0, 2), (1, 2)}</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Exact_Spanning_Tree_Modulus_files/figure-html/cell-5-output-2.png" width="403" height="403" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In order to interpret the results, remember that the code computes a <span class="math inline">\(P(qf)\)</span>-basis. In this case, <span class="math inline">\(q=4\)</span>. To translate the result back to a <span class="math inline">\(P(f)\)</span>-basis, we need to divide by <span class="math inline">\(q\)</span>. The code has found a <span class="math inline">\(P(f)\)</span> basis for the constant function <span class="math inline">\(y\equiv \frac{3}{4}\)</span> that assigns <span class="math inline">\(\frac{3}{4}\)</span> to all edges except <span class="math inline">\(\{2,3\}\)</span>, to which it assigns <span class="math inline">\(\frac{2}{4}=\frac{1}{2}\)</span>.</p>
+<p>To see why we can’t assign <span class="math inline">\(\frac{3}{4}\)</span> to the last edge, look at the tight set returned. Evidently the triangle of edges <span class="math inline">\(J\)</span> among the vertices <span class="math inline">\(0\)</span>, <span class="math inline">\(1\)</span> and <span class="math inline">\(2\)</span> is tight for this <span class="math inline">\(x\)</span>. To verify this, note that <span class="math inline">\(J\)</span> has rank 2. Summing <span class="math inline">\(x\)</span> on those three edges gives <span class="math inline">\(\frac{3}{4} + \frac{3}{4} + \frac{2}{4} = \frac{8}{4}=2\)</span>. Since <span class="math inline">\(x(J)=f(J)\)</span>, it’s not possible to increase <span class="math inline">\(x\)</span> on any of those edges while keeping <span class="math inline">\(x\)</span> inside the polymatroid.</p>
+</section>
+<section id="graph-vulnerability" class="level2" data-number="5.8">
+<h2 data-number="5.8" class="anchored" data-anchor-id="graph-vulnerability"><span class="header-section-number">5.8</span> Graph vulnerability</h2>
+<p>The way Cunningham’s algorithm is used in the modulus code is as a way of finding <strong>vulnerable</strong> sets of edges on the graph. Without getting into detailed definitions, we’ll just say that there is a value, <span class="math inline">\(\theta(G)\)</span>, that is called the vulnerability of <span class="math inline">\(G\)</span>. In the modulus code, we need to compute this vulnerability. There are two interesting facts about graph vulnerability that make Cunningham’s algorithm useful for this problem.</p>
+<p>First, the value of <span class="math inline">\(\theta(G)\)</span> can take one of only finitely many values. Specifically,</p>
+<p><span class="math display">\[
+\theta(G) \in \left\{\frac{p}{q} : 1\le p\le\min\{|V|-1,q\},\;1\le q\le |E|\right\}.
+\]</span></p>
+<p>Second, given a rational number <span class="math inline">\(\frac{p}{q}\)</span>, Cunningham’s algorithm can be used to answer the question “Is <span class="math inline">\(\theta(G)\le\frac{p}{q}\)</span>?” In a little more detail, it works like this. We take the rational number <span class="math inline">\(\frac{p}{q}\)</span> and find a <span class="math inline">\(P(f)\)</span>-basis, <span class="math inline">\(x\)</span>, of <span class="math inline">\(\frac{p}{q}\)</span>. It can be shown that <span class="math inline">\(\theta(G)\le\frac{p}{q}\)</span> if and only if <span class="math inline">\(x(E)\ge|V|-1\)</span>. More precisely, in order to use integer arithmetic, we find a <span class="math inline">\(P(qf)\)</span>-basis, <span class="math inline">\(x\)</span>, of the constant function <span class="math inline">\(p\)</span>, and check if <span class="math inline">\(x(E)\ge q(|V|-1)\)</span>. Here’s some code that shows that working.</p>
+<div id="f423a6dc" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># count the number of edges and vertices</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>m, n <span class="op">=</span> <span class="bu">len</span>(G.edges), <span class="bu">len</span>(G.nodes)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># create the set of all possible theta values</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>Theta <span class="op">=</span> <span class="bu">sorted</span>(</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    {Fraction(p, q) <span class="cf">for</span> q <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, m <span class="op">+</span> <span class="dv">1</span>) <span class="cf">for</span> p <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="bu">min</span>(n <span class="op">-</span> <span class="dv">1</span>, q) <span class="op">+</span> <span class="dv">1</span>)}</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co"># loop to query about the size of theta</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"| </span><span class="sc">{</span><span class="st">'p/q'</span><span class="sc">:^8}</span><span class="ss"> | </span><span class="sc">{</span><span class="st">'x(E)'</span><span class="sc">:^6}</span><span class="ss"> | </span><span class="sc">{</span><span class="st">'q(|V|-1)'</span><span class="sc">:^10}</span><span class="ss"> | </span><span class="sc">{</span><span class="st">'theta(G) &lt;= p/q'</span><span class="sc">:^15}</span><span class="ss"> |"</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> theta <span class="kw">in</span> Theta:</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    p, q <span class="op">=</span> theta.numerator, theta.denominator</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    x, J <span class="op">=</span> cunningham_min(G, F, p, q)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    xE <span class="op">=</span> <span class="bu">sum</span>(x.values())</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    ok <span class="op">=</span> xE <span class="op">&gt;=</span> q <span class="op">*</span> (n <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"| </span><span class="sc">{</span><span class="bu">str</span>(theta)<span class="sc">:^8}</span><span class="ss"> | </span><span class="sc">{</span>xE<span class="sc">:^6}</span><span class="ss"> | </span><span class="sc">{</span>q <span class="op">*</span> (n <span class="op">-</span> <span class="dv">1</span>)<span class="sc">:^10}</span><span class="ss"> | </span><span class="sc">{</span><span class="bu">str</span>(ok)<span class="sc">:^15}</span><span class="ss"> |"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>|   p/q    |  x(E)  |  q(|V|-1)  | theta(G) &lt;= p/q |
+|   1/7    |   7    |     35     |      False      |
+|   1/6    |   7    |     30     |      False      |
+|   1/5    |   7    |     25     |      False      |
+|   1/4    |   7    |     20     |      False      |
+|   2/7    |   14   |     35     |      False      |
+|   1/3    |   7    |     15     |      False      |
+|   2/5    |   14   |     25     |      False      |
+|   3/7    |   21   |     35     |      False      |
+|   1/2    |   7    |     10     |      False      |
+|   4/7    |   28   |     35     |      False      |
+|   3/5    |   21   |     25     |      False      |
+|   2/3    |   14   |     15     |      False      |
+|   5/7    |   34   |     35     |      False      |
+|   3/4    |   20   |     20     |      True       |
+|   4/5    |   25   |     25     |      True       |
+|   5/6    |   30   |     30     |      True       |
+|    1     |   5    |     5      |      True       |</code></pre>
+</div>
+</div>
+<p>This shows that the graph vulnerability in this case is <span class="math inline">\(\frac{3}{4}\)</span>.</p>
+<section id="binary-search" class="level3" data-number="5.8.1">
+<h3 data-number="5.8.1" class="anchored" data-anchor-id="binary-search"><span class="header-section-number">5.8.1</span> Binary search</h3>
+<p>Since the possible <span class="math inline">\(\theta(G)\)</span> values are ordered and since we can query about which side of a particular value <span class="math inline">\(\theta(G)\)</span> falls, we can use a binary search to locate the value. This is exactly what <code>graph_vulnerability</code> does.</p>
+<div id="544761bf" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>theta, J <span class="op">=</span> graph_vulnerability(G, F)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"theta(G) ="</span>, theta)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"tight set:"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(J)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>theta(G) = 3/4
+
+tight set:
+{(0, 1), (0, 2), (1, 2)}</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="computing-modulus" class="level2" data-number="5.9">
+<h2 data-number="5.9" class="anchored" data-anchor-id="computing-modulus"><span class="header-section-number">5.9</span> Computing modulus</h2>
+<p>Computing the spanning tree modulus using Cunningham’s algorithm amounts to finding a certain value <span class="math inline">\(\eta^*(e)\)</span> for every edge of the graph. The algorithm proceeds as follows. We begin with a graph <span class="math inline">\(G\)</span> and perform a binary search to find <span class="math inline">\(\theta(G)\)</span>, along with a tight set <span class="math inline">\(J\)</span>. This tells us two things:</p>
+<ol type="1">
+<li><span class="math inline">\(\eta^*(e)=\theta(G)\)</span> for every edge in the complement <span class="math inline">\(\overline{J}\)</span>, and</li>
+<li>If we remove <span class="math inline">\(\overline{J}\)</span> from the graph, then the computation can be repeated on each connected component of the remaining edges.</li>
+</ol>
+<p>In this way, we disassemble the graph by discovering <span class="math inline">\(\eta^*\)</span> on subsets of the edges, removing those edges, and finding <span class="math inline">\(\eta^*\)</span> on more edges. Since there are only finitely many edges in the graph, eventually this process terminates (when all edges have been removed), and we will know the value of <span class="math inline">\(\eta^*\)</span> on every edge.</p>
+<p>There is one small caveat. It is possible for Cunningham’s algorithm to return with the tight set equaling the entire set of edges. When this happens, there <em>is</em> a smaller set of edges that is tight, but <span class="math inline">\(E\)</span> itself is always tight, and it’s not the one we want. If we get <span class="math inline">\(J=E\)</span> back, then the complement <span class="math inline">\(\overline{J}=\emptyset\)</span> is empty, so we don’t learn about the edges where <span class="math inline">\(\eta^*\)</span> is equal to <span class="math inline">\(\theta(G)\)</span>.</p>
+<p>The trick to getting around this is to rerun Cunningham’s algorithm with a slightly smaller value <span class="math inline">\(\frac{p'}{q'}&lt;\frac{p}{q}\)</span>. As long as <span class="math inline">\(\frac{p'}{q'}\)</span> is larger than the next smallest possible <span class="math inline">\(\theta\)</span> value, the complement of the tight set returned (which now can’t be all of <span class="math inline">\(E\)</span>) is the set where we should set <span class="math inline">\(\eta^*\)</span>. This rerun has to operate on the connected component currently being processed, not the original graph; by the time this fallback is needed, the graph may already have been split into several components, and only one of them is what the flow network was built for.</p>
+<div id="86a21acb" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create the graph</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>G, pos <span class="op">=</span> demo.house_graph()</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># compute eta^*</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>eta_star <span class="op">=</span> spanning_tree_modulus(G)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the graph</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>nx.draw(G, pos, node_color<span class="op">=</span><span class="st">"black"</span>, node_size<span class="op">=</span><span class="dv">50</span>, edge_color<span class="op">=</span><span class="st">"#ccc"</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>edge_labels <span class="op">=</span> {(u, v): eta_star[(u, v)] <span class="cf">for</span> u, v <span class="kw">in</span> G.edges}</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>nx.draw_networkx_edge_labels(G, pos, edge_labels<span class="op">=</span>edge_labels)<span class="op">;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Exact_Spanning_Tree_Modulus_files/figure-html/cell-8-output-1.png" width="403" height="403" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="b30373b6" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create the graph</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>G, pos <span class="op">=</span> demo.nested_graph(<span class="dv">10</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># compute eta^*</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>eta_star <span class="op">=</span> spanning_tree_modulus(G)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the graph</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>nx.draw(</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    G, pos, node_color<span class="op">=</span><span class="st">"black"</span>, node_size<span class="op">=</span><span class="dv">50</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    edge_color<span class="op">=</span>[<span class="bu">float</span>(eta_star[e]) <span class="cf">for</span> e <span class="kw">in</span> G.edges], edge_cmap<span class="op">=</span>plt.cm.Set2,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Exact_Spanning_Tree_Modulus_files/figure-html/cell-9-output-1.png" width="403" height="403" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Note how this connects back to the <a href="./Dual_Families.html">Dual Families</a> chapter: <span class="math inline">\(\eta^*\)</span> computed above is exactly the optimal density for the blocking dual of the spanning tree family (Chopra’s feasible partitions). We have computed this <span class="math inline">\(\eta^*\)</span> exactly, and without ever enumerating the feasible partition family.</p>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" role="list" style="display: none">
+<div id="ref-albin2025exactarithmeticspanningtree" class="csl-entry" role="listitem">
+Albin, Nathan, Kapila Kottegoda, and Pietro Poggi-Corradini. 2025. <span>“An Exact-Arithmetic Algorithm for Spanning Tree Modulus.”</span> <em>Networks</em> 85 (4): 412–24. <a href="https://doi.org/10.1002/net.22270">https://doi.org/10.1002/net.22270</a>.
+</div>
+<div id="ref-chopra1989spanningtreepolyhedron" class="csl-entry" role="listitem">
+Chopra, Sunil. 1989. <span>“On the Spanning Tree Polyhedron.”</span> <em>Operations Research Letters</em> 8 (1): 25–29. <a href="https://doi.org/10.1016/0167-6377(89)90029-1">https://doi.org/10.1016/0167-6377(89)90029-1</a>.
+</div>
+<div id="ref-cunningham1985optimalattackreinforcement" class="csl-entry" role="listitem">
+Cunningham, William H. 1985. <span>“Optimal Attack and Reinforcement of a Network.”</span> <em>Journal of the ACM</em> 32 (3): 549–61. <a href="https://doi.org/10.1145/3828.3829">https://doi.org/10.1145/3828.3829</a>.
+</div>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./Dual_Families.html" class="pagination-link" aria-label="Dual Families">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Dual Families</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./References.html" class="pagination-link" aria-label="References">
+        <span class="nav-page-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">References</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/nathan-albin/discrete-modulus/edit/main/book/Exact_Spanning_Tree_Modulus.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/nathan-albin/discrete-modulus/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

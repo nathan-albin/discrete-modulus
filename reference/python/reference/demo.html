@@ -142,10 +142,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Generates the house graph.</td>
 </tr>
 <tr class="even">
+<td><a href="#discrete_modulus.demo.nested_graph">nested_graph</a></td>
+<td>Generates a graph with three concentric “layers”: a complete graph on</td>
+</tr>
+<tr class="odd">
 <td><a href="#discrete_modulus.demo.slashed_house_graph">slashed_house_graph</a></td>
 <td>Generates a house graph with a diagonal slash through it.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#discrete_modulus.demo.spanning_trees">spanning_trees</a></td>
 <td>Generates all spanning trees of a graph.</td>
 </tr>
@@ -180,12 +184,73 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 </section>
-<section id="discrete_modulus.demo.slashed_house_graph" class="level3">
-<h3 class="anchored" data-anchor-id="discrete_modulus.demo.slashed_house_graph">slashed_house_graph</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>demo.slashed_house_graph()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Generates a house graph with a diagonal slash through it.</p>
+<section id="discrete_modulus.demo.nested_graph" class="level3">
+<h3 class="anchored" data-anchor-id="discrete_modulus.demo.nested_graph">nested_graph</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>demo.nested_graph(n<span class="op">=</span><span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Generates a graph with three concentric “layers”: a complete graph on <code>n</code> nodes, surrounded by two rings of <code>n</code> nodes each, with radial connections between consecutive layers.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 67%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>n</td>
+<td>int</td>
+<td>The number of nodes in each layer (<code>3*n</code> nodes total).</td>
+<td><code>10</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="returns-1" class="level4 doc-section doc-section-returns">
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 13%">
+<col style="width: 79%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td>networkx graph</td>
+<td>The nested graph.</td>
+</tr>
+<tr class="even">
+<td>pos</td>
+<td>dict</td>
+<td>Position dictionary for drawing the graph, placing the three layers on concentric circles.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="discrete_modulus.demo.slashed_house_graph" class="level3">
+<h3 class="anchored" data-anchor-id="discrete_modulus.demo.slashed_house_graph">slashed_house_graph</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>demo.slashed_house_graph()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Generates a house graph with a diagonal slash through it.</p>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -211,10 +276,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="discrete_modulus.demo.spanning_trees" class="level3">
 <h3 class="anchored" data-anchor-id="discrete_modulus.demo.spanning_trees">spanning_trees</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>demo.spanning_trees(G)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>demo.spanning_trees(G)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Generates all spanning trees of a graph.</p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -234,8 +299,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-2" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 5%">
