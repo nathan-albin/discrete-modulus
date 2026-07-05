@@ -268,6 +268,8 @@ plt.tight_layout()
 
 This set of objects has an interesting interpretation, given by Chopra @chopra1989spanningtreepolyhedron.  Consider any of the figures above.  Removing the darkened edges will disconnect the graph into $k>1$ connected components.  The weights on the edges are $1/(k-1)$.  The objects shown are all such edge sets that are minimal in the sense that removing a strict subset of the darkened edges will result in fewer connected components.  Chopra called these objects *feasible partitions*.  In this sense, the family $\Gamma$ of spanning trees (with $(0,1)$ usage matrix) is the blocking dual of the family $\hat{\Gamma}$ of feasible partitions (with usage matrix based on number of connected components just described).
 
+Enumerating $\hat{\Gamma}$ like this only works for small graphs. The [Exact Spanning Tree Modulus](Exact_Spanning_Tree_Modulus.qmd) chapter gives an exact, combinatorial algorithm that computes this same modulus directly, without ever enumerating $\hat{\Gamma}$, and that scales to much larger graphs.
+
 ## Example: Via walks
 
 Although every family $\Gamma$ necessarily has a blocking dual $\hat{\Gamma}$, nice characterizations of these dual families (like those above) are not always yet known.  For example, consider the family of walks between $s$ and $t$ via $u$.  More precisely, these are the walks formed by concatenating a path from $s$ to $u$ with a path from $u$ to $t$.  Here is a visualization of this family on our example graph.  For fun, see if you can figure out from the edge labels which two paths were concatenated.

@@ -15,6 +15,9 @@ book:
         - Intro_to_Modulus.qmd
         - The_Basic_Algorithm.qmd
         - Dual_Families.qmd
+    - part: "Case Studies"
+      chapters:
+        - Exact_Spanning_Tree_Modulus.qmd
     - References.qmd
 
 bibliography: References.bib
