@@ -20,4 +20,9 @@ protocols
     Shared result types (`ShortestResult`, `SubproblemResult`,
     `ModulusResult`) and structural interfaces (`ShortestObjectFinder`,
     `SubproblemSolver`).
+spanning_tree_modulus
+    Cunningham's algorithm: an exact, combinatorial solver
+    (`spanning_tree_modulus`) specific to the spanning-tree/
+    feasible-partition case, as an alternative to the general, iterative
+    `algorithms.modulus`.
 """

@@ -36,6 +36,19 @@ def test_slashed_house_graph_is_house_graph_plus_one_edge():
     assert len(slashed_edges) == len(house_edges) + 1
 
 
+def test_nested_graph_structure():
+    n = 6
+    G, pos = demo.nested_graph(n)
+
+    assert G.number_of_nodes() == 3 * n
+    assert set(pos.keys()) == set(G.nodes())
+    assert nx.is_connected(G)
+
+    # the innermost layer (nodes 0..n-1) is a complete graph
+    inner = G.subgraph(range(n))
+    assert inner.number_of_edges() == n * (n - 1) // 2
+
+
 def test_spanning_trees_count_matches_kirchhoff_theorem():
     G, _ = demo.house_graph()
     trees = list(demo.spanning_trees(G))
