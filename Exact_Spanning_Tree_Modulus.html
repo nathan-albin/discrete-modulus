@@ -302,7 +302,7 @@ window.Quarto = {
 </header>
 
 
-<div id="40a92dda" class="cell" data-execution_count="1">
+<div id="7035c270" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -317,7 +317,7 @@ window.Quarto = {
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    spanning_tree_modulus,</span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div id="2e59548b" class="cell" data-execution_count="2">
+<div id="ccd329c9" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'figure.figsize'</span>] <span class="op">=</span> (<span class="dv">4</span>, <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="introduction" class="level2" data-number="5.1">
@@ -333,7 +333,7 @@ f(J) = |V| - Q(G_J),
 \]</span></p>
 <p>where <span class="math inline">\(G_J=(V,J)\)</span> is the subgraph of <span class="math inline">\(G\)</span> created by removing the edges not in <span class="math inline">\(J\)</span> and <span class="math inline">\(Q\)</span> is the function that counts the number of connected components (including isolated vertices) of a graph.</p>
 <p>Another way to think about rank is as follows. Let <span class="math inline">\(J'\subseteq J\)</span> be an acyclic set of edges (i.e., a forest). The rank of <span class="math inline">\(J\)</span> is equal to the size, <span class="math inline">\(|J'|\)</span>, of the largest such subset. Although this function is never used internally by <code>spanning_tree_modulus</code>, <code>rank</code> is included in the library since it may help build intuition.</p>
-<div id="95c09911" class="cell" data-execution_count="3">
+<div id="89d5f34e" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># example graph</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>G, pos <span class="op">=</span> demo.house_graph()</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -410,7 +410,7 @@ x(e_1) + x(e_2) + x(e_3) \le 2.
 <h2 data-number="5.7" class="anchored" data-anchor-id="integer-arithmetic"><span class="header-section-number">5.7</span> Integer arithmetic</h2>
 <p>The implementation in <code>discrete_modulus.spanning_tree_modulus</code> is not quite the one Cunningham described. We want to compute everything in exact arithmetic (not floating point arithmetic), so we need to perform a little transformation. In the spanning tree modulus code, we always look for a <span class="math inline">\(P(f)\)</span>-basis of a rational constant vector <span class="math inline">\(y\equiv\frac{p}{q}\)</span>. This can be transformed into looking for a <span class="math inline">\(P(qf)\)</span>-basis of the constant vector <span class="math inline">\(y\equiv p\)</span>. This transformation produces a max-flow problem with integer capacities that can be solved exactly.</p>
 <p>Here’s a small example of Cunningham’s algorithm in action.</p>
-<div id="6245bd1b" class="cell" data-execution_count="4">
+<div id="5c793e50" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create and draw the graph</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> nx.cycle_graph(<span class="dv">6</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>G.add_edge(<span class="dv">0</span>, <span class="dv">2</span>)</span>
@@ -456,7 +456,7 @@ tight set
 \theta(G) \in \left\{\frac{p}{q} : 1\le p\le\min\{|V|-1,q\},\;1\le q\le |E|\right\}.
 \]</span></p>
 <p>Second, given a rational number <span class="math inline">\(\frac{p}{q}\)</span>, Cunningham’s algorithm can be used to answer the question “Is <span class="math inline">\(\theta(G)\le\frac{p}{q}\)</span>?” In a little more detail, it works like this. We take the rational number <span class="math inline">\(\frac{p}{q}\)</span> and find a <span class="math inline">\(P(f)\)</span>-basis, <span class="math inline">\(x\)</span>, of <span class="math inline">\(\frac{p}{q}\)</span>. It can be shown that <span class="math inline">\(\theta(G)\le\frac{p}{q}\)</span> if and only if <span class="math inline">\(x(E)\ge|V|-1\)</span>. More precisely, in order to use integer arithmetic, we find a <span class="math inline">\(P(qf)\)</span>-basis, <span class="math inline">\(x\)</span>, of the constant function <span class="math inline">\(p\)</span>, and check if <span class="math inline">\(x(E)\ge q(|V|-1)\)</span>. Here’s some code that shows that working.</p>
-<div id="61ed8ce1" class="cell" data-execution_count="5">
+<div id="494a6165" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># count the number of edges and vertices</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>m, n <span class="op">=</span> <span class="bu">len</span>(G.edges), <span class="bu">len</span>(G.nodes)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -498,7 +498,7 @@ tight set
 <section id="binary-search" class="level3" data-number="5.8.1">
 <h3 data-number="5.8.1" class="anchored" data-anchor-id="binary-search"><span class="header-section-number">5.8.1</span> Binary search</h3>
 <p>Since the possible <span class="math inline">\(\theta(G)\)</span> values are ordered and since we can query about which side of a particular value <span class="math inline">\(\theta(G)\)</span> falls, we can use a binary search to locate the value. This is exactly what <code>graph_vulnerability</code> does.</p>
-<div id="3e28a3dd" class="cell" data-execution_count="6">
+<div id="4e8de0c7" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>theta, J <span class="op">=</span> graph_vulnerability(G, F)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"theta(G) ="</span>, theta)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
@@ -523,7 +523,7 @@ tight set:
 <p>In this way, we disassemble the graph by discovering <span class="math inline">\(\eta^*\)</span> on subsets of the edges, removing those edges, and finding <span class="math inline">\(\eta^*\)</span> on more edges. Since there are only finitely many edges in the graph, eventually this process terminates (when all edges have been removed), and we will know the value of <span class="math inline">\(\eta^*\)</span> on every edge.</p>
 <p>There is one small caveat. It is possible for Cunningham’s algorithm to return with the tight set equaling the entire set of edges. When this happens, there <em>is</em> a smaller set of edges that is tight, but <span class="math inline">\(E\)</span> itself is always tight, and it’s not the one we want. If we get <span class="math inline">\(J=E\)</span> back, then the complement <span class="math inline">\(\overline{J}=\emptyset\)</span> is empty, so we don’t learn about the edges where <span class="math inline">\(\eta^*\)</span> is equal to <span class="math inline">\(\theta(G)\)</span>.</p>
 <p>The trick to getting around this is to rerun Cunningham’s algorithm with a slightly smaller value <span class="math inline">\(\frac{p'}{q'}&lt;\frac{p}{q}\)</span>. As long as <span class="math inline">\(\frac{p'}{q'}\)</span> is larger than the next smallest possible <span class="math inline">\(\theta\)</span> value, the complement of the tight set returned (which now can’t be all of <span class="math inline">\(E\)</span>) is the set where we should set <span class="math inline">\(\eta^*\)</span>. This rerun has to operate on the connected component currently being processed, not the original graph; by the time this fallback is needed, the graph may already have been split into several components, and only one of them is what the flow network was built for.</p>
-<div id="9477eaa3" class="cell" data-execution_count="7">
+<div id="fca49763" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create the graph</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>G, pos <span class="op">=</span> demo.house_graph()</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -542,7 +542,7 @@ tight set:
 </div>
 </div>
 </div>
-<div id="918567cd" class="cell" data-execution_count="8">
+<div id="5e91d493" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create the graph</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>G, pos <span class="op">=</span> demo.nested_graph(<span class="dv">10</span>)</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>

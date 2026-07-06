@@ -4,7 +4,27 @@
     "href": "index.html",
     "title": "The Modulus Book",
     "section": "",
-    "text": "The purpose of this book is to provide the reader with a brief introduction to the concept of discrete modulus along with the Python modulus code hosted here. The source of the book can be found here. For the Python API itself, see the API reference.\nThis material is based upon work supported by the National Science Foundation under Grant No. 1515810.",
+    "text": "Resources\nThe purpose of this book is to provide the reader with a brief introduction to the concept of discrete modulus along with the accompanying Python modulus code.",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "index.html#resources",
+    "href": "index.html#resources",
+    "title": "The Modulus Book",
+    "section": "",
+    "text": "GitHub repository\n\nBook source\nPython modulus code\n\nPython API reference",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "index.html#acknowledgments",
+    "href": "index.html#acknowledgments",
+    "title": "The Modulus Book",
+    "section": "Acknowledgments",
+    "text": "Acknowledgments\nThis material is based upon work supported by the National Science Foundation under:\n\nGrant No. 1515810\nGrant No. 2154032",
     "crumbs": [
       "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
     ]
