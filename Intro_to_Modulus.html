@@ -306,7 +306,7 @@ window.Quarto = {
 </header>
 
 
-<div id="21603db2" class="cell" data-execution_count="1">
+<div id="8d6a510c" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -336,7 +336,7 @@ window.Quarto = {
 <h3 data-number="2.1.1" class="anchored" data-anchor-id="example-the-family-of-triangles"><span class="header-section-number">2.1.1</span> Example: the family of triangles</h3>
 <p>The following code cell produces the <span class="math inline">\(\mathcal{N}\)</span> matrix for the family of triangles on a particular graph. Notice that, in order to write <span class="math inline">\(\mathcal{N}\)</span> as a two-dimensional array of numbers, we need to choose some ordering for the edges and objects. These orderings can be chosen arbitrarily, as long as they are used consistently.</p>
 <p>The code also draws the three triangles of the graph. The labels on the edges show the edge enumeration. The figure on the left corresponds to the first row of <span class="math inline">\(\mathcal{N}\)</span>, the middle figure to the second row, and the right figure to the third row.</p>
-<div id="a35e54f8" class="cell" data-execution_count="2">
+<div id="5fc5b756" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the demo graph</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>G, pos <span class="op">=</span> demo.slashed_house_graph()</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -395,7 +395,7 @@ window.Quarto = {
 <section id="example-a-family-of-simple-paths" class="level3" data-number="2.1.2">
 <h3 data-number="2.1.2" class="anchored" data-anchor-id="example-a-family-of-simple-paths"><span class="header-section-number">2.1.2</span> Example: a family of simple paths</h3>
 <p>Consider, instead, the family of simple paths that connect the top vertex of the previous graph to the bottom-right vertex. The following code generates and prints the <span class="math inline">\(\mathcal{N}\)</span> matrix for this family, along with a corresponding series of pictures.</p>
-<div id="67b63107" class="cell" data-execution_count="3">
+<div id="a5bd74dd" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># find all simple paths</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">NOTE</span><span class="co">: again, not a good idea for large graphs</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>paths <span class="op">=</span> <span class="bu">list</span>(nx.all_simple_paths(G, <span class="dv">1</span>, <span class="dv">3</span>))</span>
@@ -458,7 +458,7 @@ window.Quarto = {
 <section id="example-densities-and-triangles" class="level3" data-number="2.2.1">
 <h3 data-number="2.2.1" class="anchored" data-anchor-id="example-densities-and-triangles"><span class="header-section-number">2.2.1</span> Example: densities and triangles</h3>
 <p>Returning to the example of the family of triangles, the following code generates a set of densities and checks for admissibility. Each row in the figure produced represents a density. In each row, the triangles are colored either green or red depending on whether or not the <span class="math inline">\(\rho\)</span>-length of that triangle is at least 1. A density is admissible for the triangles if all triangles in that row are colored green.</p>
-<div id="bcda5c4b" class="cell" data-execution_count="4">
+<div id="f8e0c60d" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># seed the random number generator</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">88198283</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -522,7 +522,7 @@ window.Quarto = {
 <section id="example-densities-and-paths" class="level3" data-number="2.2.2">
 <h3 data-number="2.2.2" class="anchored" data-anchor-id="example-densities-and-paths"><span class="header-section-number">2.2.2</span> Example: densities and paths</h3>
 <p>The code below does the same thing, but for the path family we considered earlier.</p>
-<div id="8c333531" class="cell" data-execution_count="5">
+<div id="92420ed3" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># seed the random number generator</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">88198283</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -611,7 +611,7 @@ window.Quarto = {
 <section id="example-triangle-modulus" class="level3" data-number="2.3.1">
 <h3 data-number="2.3.1" class="anchored" data-anchor-id="example-triangle-modulus"><span class="header-section-number">2.3.1</span> Example: triangle modulus</h3>
 <p>Modulus, as defined above, is an example of a convex optimization problem. Therefore, at least for small graphs, modulus can be computed using any software tool that can solve convex optimization problems. An example of a function for computing modulus in this way is <code>matrix_modulus</code> found in <code>discrete_modulus/algorithms.py</code>. Given the <span class="math inline">\(\mathcal{N}\)</span> matrix along with the exponent <span class="math inline">\(p\)</span>, this function finds a numerical approximation the modulus along with an optimal <span class="math inline">\(\rho^*\)</span>. The code below computes the modulus of triangles on our example graph for a few different values of <span class="math inline">\(p\)</span>. The value <span class="math inline">\(\text{Mod}_p(\Gamma)\)</span> is printed above each plot, while the values of the optimal density <span class="math inline">\(\rho^*\)</span> are shown on the edges.</p>
-<div id="9aef19bf" class="cell" data-execution_count="6">
+<div id="7607911d" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus.algorithms <span class="im">import</span> matrix_modulus</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'font.size'</span>] <span class="op">=</span> <span class="dv">12</span></span>
@@ -645,7 +645,7 @@ window.Quarto = {
 <section id="example-path-modulus" class="level3" data-number="2.3.2">
 <h3 data-number="2.3.2" class="anchored" data-anchor-id="example-path-modulus"><span class="header-section-number">2.3.2</span> Example: path modulus</h3>
 <p>The code above requires only a small modification if we wish to compute the modulus of the family of paths from top to lower right.</p>
-<div id="25c654a6" class="cell" data-execution_count="7">
+<div id="33c04ecb" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>))</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># loop over a few p values</span></span>
@@ -703,25 +703,25 @@ window.Quarto = {
 
 <div id="refs" class="references csl-bib-body hanging-indent" role="list" style="display: none">
 <div id="ref-albin2015modulusgraphsas" class="csl-entry" role="listitem">
-Albin, Nathan, Megan Brunner, Roberto Perez, Pietro Poggi-Corradini, and Natalie Wiens. 2015. <span>“Modulus on Graphs as a Generalization of Standard Graph Theoretic Quantities.”</span> <em>Conformal Geometry and Dynamics</em> 19 (13): 298–317. <a href="https://doi.org/10.1090/ecgd/287">https://doi.org/10.1090/ecgd/287</a>.
+Albin, Nathan, Megan Brunner, Roberto Perez, Pietro Poggi-Corradini, and Natalie Wiens. 2015. <span>“Modulus on Graphs as a Generalization of Standard Graph Theoretic Quantities.”</span> <em>Conformal Geometry and Dynamics</em> 19 (13): 298–317. <a href="https://doi.org/10.1090/ecgd/287">https://doi.org/10.1090/ecgd/287</a>. <a href="https://arxiv.org/abs/1504.02418">https://arxiv.org/abs/1504.02418</a>.
 </div>
 <div id="ref-albin2019blockingdualityp" class="csl-entry" role="listitem">
-Albin, Nathan, Jason Clemens, Nethali Fernando, and Pietro Poggi-Corradini. 2019. <span>“Blocking Duality for p-Modulus on Networks and Applications.”</span> <em>Annali Di Matematica Pura Ed Applicata</em> 198 (3): 973–99. <a href="https://doi.org/10.1007/s10231-018-0806-0">https://doi.org/10.1007/s10231-018-0806-0</a>.
+Albin, Nathan, Jason Clemens, Nethali Fernando, and Pietro Poggi-Corradini. 2019. <span>“Blocking Duality for p-Modulus on Networks and Applications.”</span> <em>Annali Di Matematica Pura Ed Applicata</em> 198 (3): 973–99. <a href="https://doi.org/10.1007/s10231-018-0806-0">https://doi.org/10.1007/s10231-018-0806-0</a>. <a href="https://arxiv.org/abs/1612.00435">https://arxiv.org/abs/1612.00435</a>.
 </div>
 <div id="ref-albin2018fairestedgeusage" class="csl-entry" role="listitem">
-Albin, Nathan, Jason Clemens, Derek Hoare, Pietro Poggi-Corradini, Brandon Sit, and Sarah Tymochko. 2021. <span>“Fairest Edge Usage and Minimum Expected Overlap for Random Spanning Trees.”</span> <em>Discrete Mathematics</em> 344 (5): 112282. <a href="https://doi.org/10.1016/j.disc.2020.112282">https://doi.org/10.1016/j.disc.2020.112282</a>.
+Albin, Nathan, Jason Clemens, Derek Hoare, Pietro Poggi-Corradini, Brandon Sit, and Sarah Tymochko. 2021. <span>“Fairest Edge Usage and Minimum Expected Overlap for Random Spanning Trees.”</span> <em>Discrete Mathematics</em> 344 (5): 112282. <a href="https://doi.org/10.1016/j.disc.2020.112282">https://doi.org/10.1016/j.disc.2020.112282</a>. <a href="https://arxiv.org/abs/1805.10112">https://arxiv.org/abs/1805.10112</a>.
 </div>
 <div id="ref-albin2018modulusmetricsnetworks" class="csl-entry" role="listitem">
-Albin, Nathan, Nethali Fernando, and Pietro Poggi-Corradini. 2018. <span>“Modulus Metrics on Networks.”</span> <em>Discrete &amp; Continuous Dynamical Systems - B</em> 22. <a href="https://doi.org/10.3934/dcdsb.2018161">https://doi.org/10.3934/dcdsb.2018161</a>.
+Albin, Nathan, Nethali Fernando, and Pietro Poggi-Corradini. 2018. <span>“Modulus Metrics on Networks.”</span> <em>Discrete &amp; Continuous Dynamical Systems - B</em> 22. <a href="https://doi.org/10.3934/dcdsb.2018161">https://doi.org/10.3934/dcdsb.2018161</a>. <a href="http://aimsciences.org//article/id/e84e04ba-e6fc-493f-8b82-eb1a2f7dfa6b">http://aimsciences.org//article/id/e84e04ba-e6fc-493f-8b82-eb1a2f7dfa6b</a>.
 </div>
 <div id="ref-albin2016minimalsubfamiliesprobabilistic" class="csl-entry" role="listitem">
-Albin, Nathan, and Pietro Poggi-Corradini. 2016. <span>“Minimal Subfamilies and the Probabilistic Interpretation for Modulus on Graphs.”</span> <em>The Journal of Analysis</em> 24 (2): 183–208. <a href="https://doi.org/10.1007/s41478-016-0002-9">https://doi.org/10.1007/s41478-016-0002-9</a>.
+Albin, Nathan, and Pietro Poggi-Corradini. 2016. <span>“Minimal Subfamilies and the Probabilistic Interpretation for Modulus on Graphs.”</span> <em>The Journal of Analysis</em> 24 (2): 183–208. <a href="https://doi.org/10.1007/s41478-016-0002-9">https://doi.org/10.1007/s41478-016-0002-9</a>. <a href="https://arxiv.org/abs/1605.08462">https://arxiv.org/abs/1605.08462</a>.
 </div>
 <div id="ref-albin2017modulusfamilieswalks" class="csl-entry" role="listitem">
-Albin, Nathan, Faryad Sahneh, Max Goering, and Pietro Poggi-Corradini. 2017. <em>Modulus of Families of Walks on Graphs</em>. American Mathematical Society. <a href="https://doi.org/10.1090/conm/699/14080">https://doi.org/10.1090/conm/699/14080</a>.
+Albin, Nathan, Faryad Sahneh, Max Goering, and Pietro Poggi-Corradini. 2017. <em>Modulus of Families of Walks on Graphs</em>. American Mathematical Society. <a href="https://doi.org/10.1090/conm/699/14080">https://doi.org/10.1090/conm/699/14080</a>. <a href="https://arxiv.org/abs/1401.7640">https://arxiv.org/abs/1401.7640</a>.
 </div>
 <div id="ref-shakeri2018generalizationeffectiveconductance" class="csl-entry" role="listitem">
-Shakeri, Heman, Behnaz Moradi-Jamei, Pietro Poggi-Corradini, Nathan Albin, and Caterina Scoglio. 2018. <span>“Generalization of Effective Conductance Centrality for Egonetworks.”</span> <em>Physica A: Statistical Mechanics and Its Applications</em> 511: 127–38. https://doi.org/<a href="https://doi.org/10.1016/j.physa.2018.07.039">https://doi.org/10.1016/j.physa.2018.07.039</a>.
+Shakeri, Heman, Behnaz Moradi-Jamei, Pietro Poggi-Corradini, Nathan Albin, and Caterina Scoglio. 2018. <span>“Generalization of Effective Conductance Centrality for Egonetworks.”</span> <em>Physica A: Statistical Mechanics and Its Applications</em> 511: 127–38. <a href="https://doi.org/10.1016/j.physa.2018.07.039">https://doi.org/10.1016/j.physa.2018.07.039</a>.
 </div>
 <div id="ref-shakeri2017networkclusteringcommunity" class="csl-entry" role="listitem">
 Shakeri, Heman, Pietro Poggi-Corradini, Nathan Albin, and Caterina Scoglio. 2017. <span>“Network Clustering and Community Detection Using Modulus of Families of Loops.”</span> <em>Physical Review E</em> 95 (1): 012316. <a href="https://doi.org/10.1103/PhysRevE.95.012316">https://doi.org/10.1103/PhysRevE.95.012316</a>.
