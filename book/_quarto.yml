@@ -21,6 +21,7 @@ book:
     - References.qmd
 
 bibliography: References.bib
+csl: chicago-author-date-arxiv.csl
 
 execute:
   freeze: auto
