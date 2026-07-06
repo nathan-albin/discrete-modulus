@@ -2,6 +2,18 @@
 title: "Introduction"
 ---
 
-The purpose of this book is to provide the reader with a brief introduction to the concept of discrete modulus along with the Python modulus code hosted [here](https://github.com/nathan-albin/discrete-modulus/tree/main/python/src/discrete_modulus).  The source of the book can be found [here](https://github.com/nathan-albin/discrete-modulus/tree/main/book).  For the Python API itself, see the [API reference](reference/python/).
+The purpose of this book is to provide the reader with a brief introduction to the concept of discrete modulus along with the accompanying Python modulus code.
 
-This material is based upon work supported by the National Science Foundation under [Grant No. 1515810](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1515810).
+## Resources {.unnumbered}
+
+- [GitHub repository](https://github.com/nathan-albin/discrete-modulus)
+  - [Book source](https://github.com/nathan-albin/discrete-modulus/tree/main/book)
+  - [Python modulus code](https://github.com/nathan-albin/discrete-modulus/tree/main/python/src/discrete_modulus)
+- [Python API reference](reference/python/)
+
+## Acknowledgments {.unnumbered}
+
+This material is based upon work supported by the National Science Foundation under:
+
+- [Grant No. 1515810](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1515810)
+- [Grant No. 2154032](https://www.nsf.gov/awardsearch/show-award?AWD_ID=2154032)
