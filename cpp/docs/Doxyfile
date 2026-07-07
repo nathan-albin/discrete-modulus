@@ -16,6 +16,12 @@ FILE_PATTERNS          = *.hpp
 RECURSIVE              = YES
 USE_MDFILE_AS_MAINPAGE = ../README.md
 
+# Without this, Doxygen falls back to stripping the directory it was run
+# from (cpp/docs), which isn't a prefix of ../include, so graph nodes and
+# file names show the full absolute CI runner path instead.
+STRIP_FROM_PATH        = ..
+STRIP_FROM_INC_PATH    = ../include
+
 EXTRACT_ALL            = YES
 EXTRACT_STATIC         = YES
 
