@@ -1,23 +1,16 @@
 # discrete-modulus
 
-Reference implementations of algorithms for **discrete modulus**, a
-combinatorial/optimization-based generalization of classical modulus of curve
-families. Currently this means a Python library (`discrete_modulus`) and a
-narrower C++ library (`cpp/`, exact spanning tree modulus only);
-[`julia/`](julia/) is a placeholder for a future Julia reference
-implementation. Each is an **independent** implementation of the same
-underlying theory, not bindings or wrappers around the others — the
-languages aren't meant to interoperate.
+This repo contains code and documentation for computing the **discrete modulus**
+of families of objects on graphs. It serves as a reference implementation of the
+theory, and includes a [companion
+book](https://nathan-albin.com/discrete-modulus/) that introduces the theory and
+walks through the code.
 
-A companion book, built with Quarto from the pages in [`book/`](book/),
-introduces the theory and walks through the code, with the Python API
-reference (generated from docstrings via `mkdocstrings`) linked from it. Read
-it here: **https://nathan-albin.com/discrete-modulus/**
-
-> [!NOTE]
-> This repository recently went through a restructuring (new name,
-> code-first layout, modernized packaging, Quarto book, CI, devcontainer).
-> That work is tracked in [PR #28](https://github.com/nathan-albin/discrete-modulus/pull/28).
+Currently the code includes a  Python library (`discrete_modulus`, located in
+[`python/`](python/)) and a specialized C++ library ([`cpp/`](cpp/))
+implementing an exact-arithmetic algorithm for computing spanning tree modulus.
+[`julia/`](julia/) is a placeholder for a future Julia code. Each is an
+**independent** implementation of the same underlying theory, they aren't intended to interoperate (yet).
 
 ## Repository layout
 
@@ -147,8 +140,9 @@ cmake --build cpp/build
 ctest --test-dir cpp/build --output-on-failure
 ```
 
-(`-DCMAKE_BUILD_TYPE=Release` matters more than usual here — this is a
-CPU-bound algorithm, and an unoptimized build is dramatically slower.)
+> [!WARNING]
+> `-DCMAKE_BUILD_TYPE=Release` is critical. This is a CPU-bound algorithm, and
+an unoptimized build is dramatically slower.
 
 See [`cpp/README.md`](cpp/README.md) for more, including running the
 `spt_mod` CLI and building its Doxygen API reference.
