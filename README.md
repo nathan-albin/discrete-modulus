@@ -11,7 +11,7 @@ languages aren't meant to interoperate.
 
 A companion book, built with Quarto from the pages in [`book/`](book/),
 introduces the theory and walks through the code, with the Python API
-reference (generated from docstrings via `quartodoc`) linked from it. Read
+reference (generated from docstrings via `mkdocstrings`) linked from it. Read
 it here: **https://nathan-albin.com/discrete-modulus/**
 
 > [!NOTE]
@@ -27,8 +27,8 @@ it here: **https://nathan-albin.com/discrete-modulus/**
   [`uv`](https://docs.astral.sh/uv/) (`python/pyproject.toml` +
   `python/uv.lock`). Requires Python >= 3.11.
   - `python/tests/` — the `pytest` suite.
-  - `python/docs/` — a standalone Quarto website that generates the Python
-    API reference from docstrings via `quartodoc`.
+  - `python/docs/` — a standalone `mkdocs` site that generates the Python
+    API reference from docstrings via `mkdocstrings`.
 - [`book/`](book/) — the `.qmd` pages that make up the companion book, built
   with [Quarto](https://quarto.org/).
 - [`cpp/`](cpp/) — the `discrete_modulus` C++ library (header-only,
@@ -73,7 +73,8 @@ or `uv sync --all-groups` for everything at once):
   code cells. `pycddlib` builds a C extension against `cddlib`'s headers
   (Ubuntu/Debian: `apt install libcdd-dev`) — already present in the
   devcontainer image.
-- `docs` — `quartodoc`, needed to build the Python API reference.
+- `docs` — `mkdocs` + `mkdocstrings`, needed to build the Python API
+  reference.
 
 The `.qmd` pages in `book/` import the library the same way, via
 `import discrete_modulus`, in executable code cells.
@@ -105,13 +106,18 @@ quarto preview
 From `python/docs/`, with the `docs` group installed:
 
 ```sh
-uv run python -m quartodoc build
-quarto render
+uv run mkdocs build
 ```
 
-`quartodoc build` generates the reference pages from docstrings; since
-`python/docs/` is a Quarto *website* project (not a book), every generated
-page renders automatically — no manual chapter listing needed.
+or, for live-reloading while editing:
+
+```sh
+uv run mkdocs serve
+```
+
+`mkdocstrings` renders the reference pages directly from docstrings at
+build time, driven by the `::: module.path` directives in
+`python/docs/reference/*.md`.
 
 ## Building the C++ library
 

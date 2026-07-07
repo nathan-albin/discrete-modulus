@@ -1,6 +1,1 @@
-/.quarto/
-**/*.quarto_ipynb
 /_site/
-/_freeze/
-/reference/
-/objects.json

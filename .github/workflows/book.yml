@@ -64,14 +64,7 @@ jobs:
       - run: uv sync --group docs
         working-directory: python
 
-      - uses: quarto-dev/quarto-actions/setup@v2
-        with:
-          version: "1.9.38"
-
-      - run: uv run python -m quartodoc build
-        working-directory: python/docs
-
-      - run: quarto render .
+      - run: uv run mkdocs build
         working-directory: python/docs
 
       - uses: actions/upload-artifact@v7
