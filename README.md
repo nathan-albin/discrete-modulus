@@ -48,21 +48,28 @@ it here: **https://nathan-albin.com/discrete-modulus/**
 
 ## Running the code
 
-The package is managed with [`uv`](https://docs.astral.sh/uv/). From the
-`python/` directory:
+The package is managed with [`uv`](https://docs.astral.sh/uv/):
 
 ```sh
+cd python
 uv sync
 ```
 
 This creates a `.venv` with the library and its runtime dependencies
 (numpy, scipy, cvxpy, networkx). There are three more dependency groups for
-other tasks, addable individually or together (`uv sync --group dev --group book --group docs`,
-or `uv sync --all-groups` for everything at once):
+other tasks, addable individually or together:
+
+```sh
+cd python
+uv sync --group dev --group book --group docs
+```
+
+or `uv sync --all-groups` for everything at once.
 
 - `dev` — `ruff`, `mypy`, `pytest`, for linting, type-checking, and testing:
 
   ```sh
+  cd python
   uv sync --group dev
   uv run ruff check src/ tests/
   uv run mypy src/ tests/
@@ -72,9 +79,9 @@ or `uv sync --all-groups` for everything at once):
 - `book` — Jupyter, matplotlib, `pycddlib`, needed to execute the book's
   code cells. `pycddlib` builds a C extension against `cddlib`'s headers
   (Ubuntu/Debian: `apt install libcdd-dev`) — already present in the
-  devcontainer image.
+  devcontainer image. See "Building the book" below.
 - `docs` — `mkdocs` + `mkdocstrings`, needed to build the Python API
-  reference.
+  reference. See "Building the Python API reference" below.
 
 The `.qmd` pages in `book/` import the library the same way, via
 `import discrete_modulus`, in executable code cells.
@@ -86,38 +93,46 @@ CLI separately (it's not a Python package): see the
 [get-started guide](https://quarto.org/docs/get-started/).
 
 Quarto's Python code cells run via Jupyter, against the `uv`-managed
-environment (with the `book` group installed). `book/_environment` already
-points Quarto at it (`QUARTO_PYTHON=../python/.venv/bin/python`), so no
-manual setup is needed beyond `uv sync --group book` in `python/`. Then,
-from the `book/` directory:
+environment. `book/_environment` already points Quarto at it
+(`QUARTO_PYTHON=../python/.venv/bin/python`):
 
 ```sh
+cd python
+uv sync --group book
+cd ../book
 quarto render
 ```
 
 or, for live-reloading while editing:
 
 ```sh
+cd python
+uv sync --group book
+cd ../book
 quarto preview
 ```
 
 ## Building the Python API reference
 
-From `python/docs/`, with the `docs` group installed:
-
 ```sh
+cd python
+uv sync --group docs
+cd docs
 uv run mkdocs build
 ```
 
 or, for live-reloading while editing:
 
 ```sh
+cd python
+uv sync --group docs
+cd docs
 uv run mkdocs serve
 ```
 
 `mkdocstrings` renders the reference pages directly from docstrings at
 build time, driven by the `::: module.path` directives in
-`python/docs/reference/*.md`.
+`python/docs/pages/reference/*.md`.
 
 ## Building the C++ library
 
