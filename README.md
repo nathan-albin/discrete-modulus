@@ -145,7 +145,19 @@ ctest --test-dir cpp/build --output-on-failure
 an unoptimized build is dramatically slower.
 
 See [`cpp/README.md`](cpp/README.md) for more, including running the
-`spt_mod` CLI and building its Doxygen API reference.
+`spt_mod` CLI.
+
+## Building the C++ API reference
+
+Requires [Doxygen](https://www.doxygen.nl/) (and, optionally,
+[Graphviz](https://graphviz.org/) for diagrams):
+
+```sh
+cd cpp/docs
+doxygen Doxyfile
+```
+
+generates `cpp/docs/_site/html/`.
 
 ## Development environment
 
