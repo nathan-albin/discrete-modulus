@@ -1,6 +1,6 @@
 # discrete-modulus
 
-This repo contains code and documentation for computing the **discrete modulus**
+Code and documentation for computing the **discrete modulus**
 of families of objects on graphs. It serves as a reference implementation of the
 theory, and includes a [companion
 book](https://nathan-albin.com/discrete-modulus/) that introduces the theory and
