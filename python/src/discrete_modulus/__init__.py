@@ -11,6 +11,12 @@ Modules
 algorithms
     The core solvers: `matrix_modulus` (direct LP) and `modulus` (the
     incremental "basic algorithm").
+core_deflation
+    Minimal-core detection (via exact-integer max-flow) and the
+    recursive deflation sequence for homogeneous-but-not-strictly-
+    homogeneous graphs -- separates a shrunk multigraph into rigid
+    pieces with no forbidden trees, safe to hand to
+    `min_norm_point.min_norm_point_wolfe`.
 families
     Functor classes/operators implementing families of objects
     (`ShortestObjectFinder`s) for use with `algorithms.modulus`.
