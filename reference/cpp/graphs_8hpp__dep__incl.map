@@ -1,5 +1,8 @@
 <map id="include/discrete_modulus/graphs.hpp" name="include/discrete_modulus/graphs.hpp">
 <area shape="rect" id="Node000001" title="Graph/flow&#45;graph type aliases, subgraph/component helpers, and demo graph generators used by cunningh..." alt="" coords="5,5,193,45"/>
-<area shape="rect" id="Node000002" href="$cunningham_8hpp.html" title="Exact spanning tree modulus via Cunningham&#39;s algorithm." alt="" coords="5,93,193,133"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,59,102,93,97,93,97,59"/>
+<area shape="rect" id="Node000002" href="$cunningham_8hpp.html" title="Exact spanning tree modulus via Cunningham&#39;s algorithm." alt="" coords="5,181,193,221"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="79,58,62,94,58,113,62,133,72,158,86,179,82,182,68,160,57,134,53,113,57,93,74,56"/>
+<area shape="rect" id="Node000003" href="$solver__trace_8hpp.html" title="Opt&#45;in per&#45;round trace recording for spanning_tree_modulus, and a versioned JSON writer for the recor..." alt="" coords="72,93,260,133"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="125,55,153,91,149,95,120,58"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="145,146,116,183,112,179,141,143"/>
 </map>

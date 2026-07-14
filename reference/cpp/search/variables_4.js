@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['src_0',['src',['../structdiscrete__modulus_1_1FlowContext.html#aa83bfd21500acb7baf33e7f45576b9a2',1,'discrete_modulus::FlowContext']]]
+  ['m_5fa_0',['m_A',['../structdiscrete__modulus_1_1NonCriticalEdge.html#af2d075b9c1cb2d2aa8279929a46473dd',1,'discrete_modulus::NonCriticalEdge']]]
 ];

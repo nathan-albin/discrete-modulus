@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>discrete-modulus (C++): include/discrete_modulus Directory Reference</title>
+<title>discrete-modulus (C++): discrete_modulus::SolverTrace Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -70,31 +70,47 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_c7700f775feef876a55f8179333fce8e.html">discrete_modulus</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacediscrete__modulus.html">discrete_modulus</a></li><li class="navelem"><a class="el" href="structdiscrete__modulus_1_1SolverTrace.html">SolverTrace</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
-  <div class="headertitle"><div class="title">discrete_modulus Directory Reference</div></div>
+  <div class="summary">
+<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="structdiscrete__modulus_1_1SolverTrace-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">discrete_modulus::SolverTrace Struct Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="dynheader">
-Directory dependency graph for discrete_modulus:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="dir_c7700f775feef876a55f8179333fce8e_dep.svg" width="192" height="104"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
+
+<p>The full recorded trace of a <a class="el" href="namespacediscrete__modulus.html#a56facab6b13081b44dc1897289ddbb77">spanning_tree_modulus</a> run.  
+ <a href="structdiscrete__modulus_1_1SolverTrace.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="solver__trace_8hpp_source.html">discrete_modulus/solver_trace.hpp</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="files" name="files"></a>
-Files</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top"><a href="cunningham_8hpp_source.html"><span class="icondoc"></span></a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cunningham_8hpp.html">cunningham.hpp</a></td></tr>
-<tr class="memdesc:cunningham_8hpp"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact spanning tree modulus via Cunningham's algorithm. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top"><a href="graphs_8hpp_source.html"><span class="icondoc"></span></a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="graphs_8hpp.html">graphs.hpp</a></td></tr>
-<tr class="memdesc:graphs_8hpp"><td class="mdescLeft">&#160;</td><td class="mdescRight">Graph/flow-graph type aliases, subgraph/component helpers, and demo graph generators used by <a class="el" href="cunningham_8hpp.html">cunningham.hpp</a>. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top"><a href="solver__trace_8hpp_source.html"><span class="icondoc"></span></a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="solver__trace_8hpp.html">solver_trace.hpp</a></td></tr>
-<tr class="memdesc:solver__trace_8hpp"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opt-in per-round trace recording for spanning_tree_modulus, and a versioned JSON writer for the recorded trace. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a7d576d6ad87a94a79c6a41685eb451fd" id="r_a7d576d6ad87a94a79c6a41685eb451fd"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="structdiscrete__modulus_1_1TraceRound.html">TraceRound</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structdiscrete__modulus_1_1SolverTrace.html#a7d576d6ad87a94a79c6a41685eb451fd">rounds</a></td></tr>
+<tr class="separator:a7d576d6ad87a94a79c6a41685eb451fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>The full recorded trace of a <a class="el" href="namespacediscrete__modulus.html#a56facab6b13081b44dc1897289ddbb77">spanning_tree_modulus</a> run. </p>
+</div><h2 class="groupheader">Member Data Documentation</h2>
+<a id="a7d576d6ad87a94a79c6a41685eb451fd" name="a7d576d6ad87a94a79c6a41685eb451fd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7d576d6ad87a94a79c6a41685eb451fd">&#9670;&#160;</a></span>rounds</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="structdiscrete__modulus_1_1TraceRound.html">TraceRound</a>&gt; discrete_modulus::SolverTrace::rounds</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>include/discrete_modulus/<a class="el" href="solver__trace_8hpp_source.html">solver_trace.hpp</a></li>
+</ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

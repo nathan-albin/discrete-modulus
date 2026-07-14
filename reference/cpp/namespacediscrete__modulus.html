@@ -87,10 +87,16 @@ Namespaces</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structdiscrete__modulus_1_1FlowContext.html">FlowContext</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The reusable max-flow network for <a class="el" href="namespacediscrete__modulus.html#a56af0a590bb9b11a09619985e96bfafe">cunningham_min</a> / <a class="el" href="namespacediscrete__modulus.html#ac3cce1996bb7d788de9b4830d69cebc1">graph_vulnerability</a> / <a class="el" href="namespacediscrete__modulus.html#aaa17004b82759fec47ecdcfb8d7b4f78">spanning_tree_modulus</a>, built once per graph by <a class="el" href="namespacediscrete__modulus.html#a7e9cb1137b75dcb6c18ab8708a52aa25">create_flow_graph</a>.  <a href="structdiscrete__modulus_1_1FlowContext.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The reusable max-flow network for <a class="el" href="namespacediscrete__modulus.html#a56af0a590bb9b11a09619985e96bfafe">cunningham_min</a> / <a class="el" href="namespacediscrete__modulus.html#ac3cce1996bb7d788de9b4830d69cebc1">graph_vulnerability</a> / <a class="el" href="namespacediscrete__modulus.html#a56facab6b13081b44dc1897289ddbb77">spanning_tree_modulus</a>, built once per graph by <a class="el" href="namespacediscrete__modulus.html#a7e9cb1137b75dcb6c18ab8708a52aa25">create_flow_graph</a>.  <a href="structdiscrete__modulus_1_1FlowContext.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structdiscrete__modulus_1_1NonCriticalEdge.html">NonCriticalEdge</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Edge filter selecting edges <em>not</em> in a given critical/tight set.  <a href="structdiscrete__modulus_1_1NonCriticalEdge.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structdiscrete__modulus_1_1SolverTrace.html">SolverTrace</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The full recorded trace of a <a class="el" href="namespacediscrete__modulus.html#a56facab6b13081b44dc1897289ddbb77">spanning_tree_modulus</a> run.  <a href="structdiscrete__modulus_1_1SolverTrace.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structdiscrete__modulus_1_1TraceRound.html">TraceRound</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">One round of <a class="el" href="namespacediscrete__modulus.html#a56facab6b13081b44dc1897289ddbb77">spanning_tree_modulus</a>'s main loop: the component it was carved from, the edge set dispatched at eta* = theta, and theta itself.  <a href="structdiscrete__modulus_1_1TraceRound.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
@@ -131,9 +137,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ac3cce1996bb7d788de9b4830d69cebc1" id="r_ac3cce1996bb7d788de9b4830d69cebc1"><td class="memItemLeft" align="right" valign="top">std::pair&lt; rational&lt; long &gt;, std::set&lt; <a class="el" href="namespacediscrete__modulus.html#aa471c39644508465a8c9efec6656ef61">Edge</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacediscrete__modulus.html#ac3cce1996bb7d788de9b4830d69cebc1">graph_vulnerability</a> (<a class="el" href="namespacediscrete__modulus.html#a1d5fab15156ff5803b3df81364aae9ff">Graph</a> &amp;g, <a class="el" href="structdiscrete__modulus_1_1FlowContext.html">FlowContext</a> &amp;ctx, rational&lt; long &gt; ubound=rational&lt; long &gt;(1, 1))</td></tr>
 <tr class="memdesc:ac3cce1996bb7d788de9b4830d69cebc1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the vulnerability theta(G) of a graph by binary search, along with an optimal tight set.  <br /></td></tr>
 <tr class="separator:ac3cce1996bb7d788de9b4830d69cebc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaa17004b82759fec47ecdcfb8d7b4f78" id="r_aaa17004b82759fec47ecdcfb8d7b4f78"><td class="memItemLeft" align="right" valign="top">std::map&lt; <a class="el" href="namespacediscrete__modulus.html#aa471c39644508465a8c9efec6656ef61">Edge</a>, rational&lt; long &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacediscrete__modulus.html#aaa17004b82759fec47ecdcfb8d7b4f78">spanning_tree_modulus</a> (<a class="el" href="namespacediscrete__modulus.html#a1d5fab15156ff5803b3df81364aae9ff">Graph</a> &amp;g, bool verbose=false)</td></tr>
-<tr class="memdesc:aaa17004b82759fec47ecdcfb8d7b4f78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the exact spanning tree modulus of <code>g</code> using Cunningham's algorithm.  <br /></td></tr>
-<tr class="separator:aaa17004b82759fec47ecdcfb8d7b4f78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56facab6b13081b44dc1897289ddbb77" id="r_a56facab6b13081b44dc1897289ddbb77"><td class="memItemLeft" align="right" valign="top">std::map&lt; <a class="el" href="namespacediscrete__modulus.html#aa471c39644508465a8c9efec6656ef61">Edge</a>, rational&lt; long &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacediscrete__modulus.html#a56facab6b13081b44dc1897289ddbb77">spanning_tree_modulus</a> (<a class="el" href="namespacediscrete__modulus.html#a1d5fab15156ff5803b3df81364aae9ff">Graph</a> &amp;g, bool verbose=false, <a class="el" href="structdiscrete__modulus_1_1SolverTrace.html">SolverTrace</a> *trace=nullptr)</td></tr>
+<tr class="memdesc:a56facab6b13081b44dc1897289ddbb77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the exact spanning tree modulus of <code>g</code> using Cunningham's algorithm.  <br /></td></tr>
+<tr class="separator:a56facab6b13081b44dc1897289ddbb77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fdae89f726f48f2187978763a477407" id="r_a8fdae89f726f48f2187978763a477407"><td class="memTemplParams" colspan="2">template&lt;typename G &gt; </td></tr>
 <tr class="memitem:a8fdae89f726f48f2187978763a477407"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="namespacediscrete__modulus.html#a1d5fab15156ff5803b3df81364aae9ff">Graph</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacediscrete__modulus.html#a8fdae89f726f48f2187978763a477407">subgraph</a> (const G &amp;g, std::vector&lt; <a class="el" href="namespacediscrete__modulus.html#abc9b2a86881324f4d07c68ae34ad392b">Vertex</a> &gt; v)</td></tr>
 <tr class="memdesc:a8fdae89f726f48f2187978763a477407"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds the subgraph of <code>g</code> induced by the given vertices.  <br /></td></tr>
@@ -172,6 +178,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ad39845fd80e612631bb350fe5fdb728c" id="r_ad39845fd80e612631bb350fe5fdb728c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacediscrete__modulus.html#a1d5fab15156ff5803b3df81364aae9ff">Graph</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacediscrete__modulus.html#ad39845fd80e612631bb350fe5fdb728c">random_geometric_graph</a> (int n, double r, int seed=381928)</td></tr>
 <tr class="memdesc:ad39845fd80e612631bb350fe5fdb728c"><td class="mdescLeft">&#160;</td><td class="mdescRight">A random geometric graph: n uniform points in the unit square, connected within radius r.  <br /></td></tr>
 <tr class="separator:ad39845fd80e612631bb350fe5fdb728c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a642370b2365a60cacabcca0514739862" id="r_a642370b2365a60cacabcca0514739862"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacediscrete__modulus.html#a642370b2365a60cacabcca0514739862">write_trace_json</a> (std::ostream &amp;os, const <a class="el" href="structdiscrete__modulus_1_1SolverTrace.html">SolverTrace</a> &amp;trace)</td></tr>
+<tr class="memdesc:a642370b2365a60cacabcca0514739862"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes <code>trace</code> to <code>os</code> as versioned JSON (<code>"version": 1</code>).  <br /></td></tr>
+<tr class="separator:a642370b2365a60cacabcca0514739862"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a id="aa471c39644508465a8c9efec6656ef61" name="aa471c39644508465a8c9efec6656ef61"></a>
@@ -790,8 +799,8 @@ template&lt;typename G &gt; </div>
 
 </div>
 </div>
-<a id="aaa17004b82759fec47ecdcfb8d7b4f78" name="aaa17004b82759fec47ecdcfb8d7b4f78"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaa17004b82759fec47ecdcfb8d7b4f78">&#9670;&#160;</a></span>spanning_tree_modulus()</h2>
+<a id="a56facab6b13081b44dc1897289ddbb77" name="a56facab6b13081b44dc1897289ddbb77"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a56facab6b13081b44dc1897289ddbb77">&#9670;&#160;</a></span>spanning_tree_modulus()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -809,7 +818,13 @@ template&lt;typename G &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>verbose</em> = <code>false</code>&#160;</td>
+          <td class="paramname"><em>verbose</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structdiscrete__modulus_1_1SolverTrace.html">SolverTrace</a> *&#160;</td>
+          <td class="paramname"><em>trace</em> = <code>nullptr</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -829,6 +844,7 @@ template&lt;typename G &gt; </div>
   <table class="params">
     <tr><td class="paramname">g</td><td>Graph to compute on. </td></tr>
     <tr><td class="paramname">verbose</td><td>If true, prints a progress table to stdout as edges are assigned their eta* value. </td></tr>
+    <tr><td class="paramname">trace</td><td>If non-null, appends one <a class="el" href="structdiscrete__modulus_1_1TraceRound.html">TraceRound</a> per round of the main loop below (opt-in; leaving this null, the default, reproduces the exact behavior of every existing caller). </td></tr>
   </table>
   </dd>
 </dl>
@@ -894,6 +910,45 @@ template&lt;typename G &gt; </div>
 </div><div class="memdoc">
 
 <p>The wheel graph: a cycle on n-1 vertices plus one hub vertex n-1. </p>
+
+</div>
+</div>
+<a id="a642370b2365a60cacabcca0514739862" name="a642370b2365a60cacabcca0514739862"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a642370b2365a60cacabcca0514739862">&#9670;&#160;</a></span>write_trace_json()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void discrete_modulus::write_trace_json </td>
+          <td>(</td>
+          <td class="paramtype">std::ostream &amp;&#160;</td>
+          <td class="paramname"><em>os</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structdiscrete__modulus_1_1SolverTrace.html">SolverTrace</a> &amp;&#160;</td>
+          <td class="paramname"><em>trace</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Writes <code>trace</code> to <code>os</code> as versioned JSON (<code>"version": 1</code>). </p>
+<p>Every value is either an integer or an array of them, so this is a plain hand-written emitter &ndash; no JSON library dependency, no escaping concerns (there are no free-form strings in the schema). </p>
 
 </div>
 </div>
