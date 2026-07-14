@@ -45,6 +45,7 @@
 #include <boost/rational.hpp>
 
 #include "graphs.hpp"
+#include "solver_trace.hpp"
 
 namespace discrete_modulus {
 
@@ -330,11 +331,15 @@ inline std::pair<rational<long>, std::set<Edge>> graph_vulnerability(
  * @param g Graph to compute on.
  * @param verbose If true, prints a progress table to stdout as edges are
  * assigned their eta* value.
+ * @param trace If non-null, appends one @ref TraceRound per round of the
+ * main loop below (opt-in; leaving this null, the default, reproduces the
+ * exact behavior of every existing caller).
  * @return eta*: the exact spanning tree modulus edge weighting, whose
  * blocking dual is Chopra's family of feasible partitions (see the
  * companion book's "Exact Spanning Tree Modulus" chapter).
  */
-inline std::map<Edge, rational<long>> spanning_tree_modulus(Graph& g, bool verbose = false) {
+inline std::map<Edge, rational<long>> spanning_tree_modulus(Graph& g, bool verbose = false,
+                                                              SolverTrace* trace = nullptr) {
     std::map<Edge, rational<long>> eta_star;
     long remain = static_cast<long>(num_edges(g));
 
@@ -391,10 +396,26 @@ inline std::map<Edge, rational<long>> spanning_tree_modulus(Graph& g, bool verbo
             }
         }
 
+        TraceRound trace_round;
+        if (trace != nullptr) {
+            VertexIterator hvi, hvi_end;
+            for (boost::tie(hvi, hvi_end) = vertices(h); hvi != hvi_end; ++hvi) {
+                trace_round.vertices.push_back(get(vertex_name, h, *hvi));
+            }
+            trace_round.theta = theta;
+        }
+
         for (const Edge& e : crit_set) {
             Vertex uu = get(vertex_name, h, source(e, h));
             Vertex vv = get(vertex_name, h, target(e, h));
             eta_star[edge(uu, vv, g).first] = theta;
+            if (trace != nullptr) {
+                trace_round.crit_set.emplace_back(uu, vv);
+            }
+        }
+
+        if (trace != nullptr) {
+            trace->rounds.push_back(std::move(trace_round));
         }
 
         // split into connected components after removing crit_set (via a

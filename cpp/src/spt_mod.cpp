@@ -15,6 +15,10 @@
  * Vertices are assumed to be numbered 0, 1, ..., n-1. Upon completion,
  * eta* is written to "<prefix>.eta", with rows "a b p q" indicating that
  * edge {a,b} has eta* value p/q.
+ *
+ * With an optional "--trace" flag, also writes a versioned per-round
+ * solver trace to "<prefix>.trace.json" (see solver_trace.hpp); default
+ * invocations are unaffected.
  */
 
 #include <fstream>
@@ -23,16 +27,18 @@
 
 #include <discrete_modulus/cunningham.hpp>
 #include <discrete_modulus/graphs.hpp>
+#include <discrete_modulus/solver_trace.hpp>
 
 using namespace discrete_modulus;
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "\nUsage:\n  " << argv[0] << " <prefix>\n\n";
+        std::cerr << "\nUsage:\n  " << argv[0] << " <prefix> [--trace]\n\n";
         return 1;
     }
 
     std::string prefix = argv[1];
+    bool emit_trace = (argc >= 3 && std::string(argv[2]) == "--trace");
 
     int n, u, v;
 
@@ -48,7 +54,8 @@ int main(int argc, char** argv) {
     }
     is.close();
 
-    auto eta = spanning_tree_modulus(g, true);
+    SolverTrace trace;
+    auto eta = spanning_tree_modulus(g, true, emit_trace ? &trace : nullptr);
 
     std::ofstream os(prefix + ".eta");
     EdgeIterator ei, ei_end;
@@ -58,6 +65,11 @@ int main(int argc, char** argv) {
            << it->second.denominator() << "\n";
     }
     os.close();
+
+    if (emit_trace) {
+        std::ofstream trace_os(prefix + ".trace.json");
+        write_trace_json(trace_os, trace);
+    }
 
     return 0;
 }
