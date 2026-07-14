@@ -26,6 +26,13 @@ min_norm_point
     Away-step Frank-Wolfe and Wolfe's (1976) minimum-norm-point algorithm:
     exact-arithmetic pmf construction on conv(Gamma) given a
     `ShortestObjectFinder` oracle.
+pmf_construction
+    Builds an exact pmf on spanning trees of a homogeneous shrunk
+    (multi)graph: deflates it via `core_deflation`, runs
+    `min_norm_point_wolfe` on each resulting piece, and represents the
+    result as a factored pmf (independent local pmfs plus edge
+    provenance) rather than a flat list over the whole graph's spanning
+    trees.
 protocols
     Shared result types (`ShortestResult`, `SubproblemResult`,
     `ModulusResult`) and structural interfaces (`ShortestObjectFinder`,

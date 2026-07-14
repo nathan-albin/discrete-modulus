@@ -20,6 +20,15 @@ Test strategy
    probe is not enough for -- `deflation_sequence` must still peel
    exactly one story per level, matching a level count fixed by
    construction, not some larger nested union.
+
+4. Multigraph correctness: `find_core`'s internal max-flow network must
+   accumulate capacity across parallel edges, not just the last one
+   seen for a given vertex pair (a real bug caught while building this:
+   `G.edges()` yields one tuple per parallel edge, and naively adding
+   each to a `DiGraph` just overwrites the same directed edge's
+   capacity instead of summing it). Doubling an edge inside a candidate
+   pair must change which vertex set is densest, exactly like adding a
+   real extra edge would.
 """
 
 from __future__ import annotations
@@ -66,11 +75,11 @@ def test_no_core_on_complete_graph(n: int) -> None:
 
 def test_house_graph_core_is_the_chord_triangle() -> None:
     G, _pos = demo.house_graph()
-    core = find_core(G)
-    assert core == {frozenset({0, 1}), frozenset({0, 2}), frozenset({1, 2})}
+    core_vertices = find_core(G)
+    assert core_vertices == {0, 1, 2}
 
     cores = deflation_sequence(G)
-    assert cores == [core]
+    assert cores == [{frozenset({0, 1}), frozenset({0, 2}), frozenset({1, 2})}]
 
 
 @pytest.mark.parametrize("levels", [1, 2, 3, 4, 5])
@@ -101,3 +110,25 @@ def test_multi_level_house_peels_one_story_per_level(levels: int) -> None:
 def test_find_core_rejects_too_small_or_edgeless_graphs() -> None:
     assert find_core(nx.Graph([(0, 1)])) is None
     assert find_core(nx.empty_graph(3)) is None
+
+
+def test_find_core_accumulates_parallel_edge_capacity() -> None:
+    # A triangle (density 3/2) with one edge doubled has vertex-pair
+    # {0, 1} at density 2/1 = 2 > 3/2, so {0, 1} becomes the graph's own
+    # densest proper subset -- but only if find_core's internal flow
+    # network actually sums the two parallel edges' capacity instead of
+    # counting the pair once (the bug this test guards against).
+    G: nx.MultiGraph = nx.MultiGraph()
+    G.add_edge(0, 1)
+    G.add_edge(0, 1)
+    G.add_edge(1, 2)
+    G.add_edge(2, 0)
+    assert find_core(G) == {0, 1}
+
+
+def test_find_core_on_multigraph_house_graph_matches_simple_graph() -> None:
+    # Wrapping demo.house_graph() as a MultiGraph with no actual
+    # parallel edges must give exactly the same core as the plain Graph.
+    G, _pos = demo.house_graph()
+    MG: nx.MultiGraph = nx.MultiGraph(G)
+    assert find_core(MG) == find_core(G) == {0, 1, 2}

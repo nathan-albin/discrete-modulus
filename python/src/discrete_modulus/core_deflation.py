@@ -19,21 +19,22 @@ densest-subgraph method, adapted from `|E|/|V|` to our `|E|/(|V|-1)`
 density -- see the module-level notes below for the two traps that
 adaptation runs into). `deflation_sequence` repeatedly finds and
 contracts the top core until nothing is left but a rigid, strictly
-homogeneous base -- the construction behind Theorem 8.1 of Albin, Lind,
-Melikyan, Poggi-Corradini, "Minimizing the Determinant of the Graph
-Laplacian" (`scratch/determinant_paper.pdf`): every core, once
-contracted to a point, exposes a new (smaller) core one level down,
-terminating at a rigid base with no forbidden trees at all.
+homogeneous base: every core, once contracted to a point, exposes a new
+(smaller) core one level down (Albin, Lind, Melikyan, Poggi-Corradini,
+"Minimizing the Determinant of the Graph Laplacian," Journal of Graph
+Theory, 2025 -- Theorem 8.1), terminating at a rigid base with no
+forbidden trees at all.
 
-Why not a direct continuous optimization (the paper's own minimum-
-determinant formulation)? Prototyped first (`scratch/core_deflation.py`,
-not carried into the package): it correctly identifies cores via where
-the optimizer's edge log-weights diverge, but the divergence-detection
-step (comparing solves at two floating-point tolerances) is unreliable
-in practice -- the exact analytic gradient converges far too precisely
-for a "does this keep drifting" heuristic to separate genuine divergence
-from settled convergence. The max-flow construction here has no such
-numerical-tolerance problem: every capacity is an exact integer.
+Why not a direct continuous optimization (that paper's own minimum-
+determinant formulation, which identifies a core via where a
+log-weight optimization's edge weights diverge)? Tried first: it does
+correctly identify cores, but the divergence-detection step (comparing
+solves at two floating-point tolerances, to separate "still diverging"
+from "converged") is unreliable in practice -- the exact analytic
+gradient available for that objective converges far too precisely for
+a "does this keep drifting" heuristic to tell the two apart. The
+max-flow construction here has no such numerical-tolerance problem:
+every capacity is an exact integer.
 
 Adapting Goldberg's construction from `|E(S)|/|S|` to `|E(S)|/(|S|-1)`
 hits two traps, both handled below:
@@ -75,10 +76,12 @@ deeply; revisit if that assumption doesn't hold up in practice.
 
 from __future__ import annotations
 
+from collections import Counter
+
 import networkx as nx
 
 
-def find_core(G: nx.Graph) -> set[frozenset] | None:
+def find_core(G: nx.Graph) -> set | None:
     """
     Finds the minimal core of `G`: the unique minimal proper,
     vertex-induced subgraph whose spanning-tree density
@@ -86,20 +89,20 @@ def find_core(G: nx.Graph) -> set[frozenset] | None:
 
     Parameters
     ----------
-    G : networkx graph
-        A simple, connected, homogeneous graph (theta(H) <= theta(G) for
-        every vertex-induced H) with at least 3 vertices and one edge --
-        the shape of a shrunk multigraph dispatched by the solver, minus
-        parallel edges (parallel edges never affect which vertex subset
-        is densest, only which spanning trees exist on top of it, so
-        callers with a multigraph should pass its underlying simple
-        graph here).
+    G : networkx graph or multigraph
+        A connected, homogeneous graph (theta(H) <= theta(G) for every
+        vertex-induced H) with at least 3 vertices and one edge -- the
+        shape of a shrunk multigraph dispatched by the solver. Parallel
+        edges are handled directly (each one adds to `|E(H)|` for every
+        H containing both its endpoints), not approximated away.
 
     Returns
     -------
-    set of frozenset, or None
-        The core's edges (each a `frozenset({u, v})`), or `None` if `G`
-        is strictly homogeneous (no proper subgraph ties `theta(G)`).
+    set of nodes, or None
+        The core's vertex set (its edges are `G`'s own induced
+        (multi)edges on that vertex set -- get them via
+        `G.subgraph(core_vertices)`), or `None` if `G` is strictly
+        homogeneous (no proper subgraph ties `theta(G)`).
     """
 
     nodes = list(G.nodes())
@@ -110,9 +113,18 @@ def find_core(G: nx.Graph) -> set[frozenset] | None:
 
     deg = dict(G.degree())
 
+    # Parallel edges between the same pair contribute their full
+    # multiplicity to |E(H)| for any H containing both endpoints, so the
+    # internal edge-arc capacity below must be summed per pair, not set
+    # once per (possibly repeated) entry in G.edges() -- otherwise a
+    # MultiGraph's parallel edges silently collapse to a single unit of
+    # capacity, undercounting how dense a candidate set really is.
+    multiplicity: Counter = Counter(frozenset((a, b)) for a, b in G.edges())
+
     # g = theta(G) = m / (n - 1); every capacity below is scaled by
     # (n - 1) to keep this exact in integers: s->v becomes m*(n-1), v->t
-    # becomes m*(n+1) - (n-1)*deg(v), and each edge arc becomes (n-1).
+    # becomes m*(n+1) - (n-1)*deg(v), and each edge arc becomes
+    # (n-1)*multiplicity.
     s, t = "__source__", "__sink__"
     cap_sv = m * (n - 1)
     big = cap_sv * n * 10 + 1  # exceeds any achievable cut value
@@ -126,9 +138,10 @@ def find_core(G: nx.Graph) -> set[frozenset] | None:
             F.add_edge(s, v, capacity=(big if v in (u0, v0) else cap_sv))
             cap_vt = m * (n + 1) - (n - 1) * deg[v]
             F.add_edge(v, t, capacity=cap_vt)
-        for a, b in G.edges():
-            F.add_edge(a, b, capacity=n - 1)
-            F.add_edge(b, a, capacity=n - 1)
+        for pair, k in multiplicity.items():
+            a, b = tuple(pair)
+            F.add_edge(a, b, capacity=(n - 1) * k)
+            F.add_edge(b, a, capacity=(n - 1) * k)
 
         _flow_value, flow_dict = nx.maximum_flow(F, s, t, capacity="capacity")
         residual: nx.DiGraph = nx.DiGraph()
@@ -143,14 +156,10 @@ def find_core(G: nx.Graph) -> set[frozenset] | None:
         core_vertices = nx.descendants(residual, s)
 
         if 0 < len(core_vertices) < n:
-            core_edges = {
-                frozenset((a, b)) for a, b in G.edges() if a in core_vertices and b in core_vertices
-            }
-            if core_edges:
-                # This tied set might not be minimal (nested ties): recurse
-                # into it to look for a smaller one before returning.
-                smaller = find_core(G.subgraph(core_vertices))
-                return smaller if smaller is not None else core_edges
+            # This tied set might not be minimal (nested ties): recurse
+            # into it to look for a smaller one before returning.
+            smaller = find_core(G.subgraph(core_vertices))
+            return smaller if smaller is not None else core_vertices
 
     return None
 
@@ -172,8 +181,12 @@ def deflation_sequence(G: nx.Graph, verbose: bool = False) -> list[set[frozenset
     Returns
     -------
     list of set of frozenset
-        The cores found, outermost first, each expressed in `G`'s
-        original vertex labels.
+        The cores found, outermost first, each as the set of distinct
+        `G`-vertex-pairs (`frozenset({u, v})`) its core induces --
+        informational only: a pair with parallel edges in `G` is
+        reported once here regardless of multiplicity. Callers that
+        need exact per-edge (multi)provenance, e.g. to build a pmf, use
+        `find_core` directly instead (see `pmf_construction`).
     """
 
     cores: list[set[frozenset]] = []
@@ -182,8 +195,8 @@ def deflation_sequence(G: nx.Graph, verbose: bool = False) -> list[set[frozenset
 
     level = 0
     while True:
-        core = find_core(current)
-        if core is None:
+        core_vertices = find_core(current)
+        if core_vertices is None:
             if verbose:
                 print(
                     f"level {level}: rigid base, {current.number_of_nodes()} vertices, "
@@ -191,13 +204,8 @@ def deflation_sequence(G: nx.Graph, verbose: bool = False) -> list[set[frozenset
                 )
             break
 
-        core_vertices: set = set()
-        for e in core:
-            core_vertices |= set(e)
-
         orig_edges: set[frozenset] = set()
-        for e in core:
-            u, v = tuple(e)
+        for u, v in current.subgraph(core_vertices).edges():
             orig_edges |= {
                 frozenset((ou, ov))
                 for ou in represents[u]
