@@ -867,7 +867,12 @@ in NetworkX.</p>
 
         <p>Functor class for finding the minimum rho-length spanning tree.</p>
 <p>Implements <code>ShortestObjectFinder</code> for the family of spanning trees
-of <code>G</code>.</p>
+of <code>G</code>. <code>G</code> may be a <code>nx.Graph</code> or a <code>nx.MultiGraph</code> -- a shrunk
+multigraph produced by repeatedly contracting a graph's vertices
+(as the C++ solver's rounds do, and as <code>core_deflation</code> does when
+contracting a core to a point) generally has parallel edges, so both
+are supported: with a <code>MultiGraph</code>, <code>cons</code> disambiguates parallel
+edges as <code>(u, v, key)</code> triples instead of plain <code>(u, v)</code> pairs.</p>
 
 
 
@@ -887,7 +892,7 @@ of <code>G</code>.</p>
                 <code>G</code>
             </td>
             <td>
-                  <code>networkx graph</code>
+                  <code>networkx graph or multigraph</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -906,7 +911,11 @@ of <code>G</code>.</p>
   <summary>Notes</summary>
   <p>This mutates <code>G</code> by adding an <code>'enum'</code> edge attribute (an index
 into <code>rho</code>/the usage matrix), and, on each call, a <code>'rho'</code> edge
-attribute holding the most recently assigned density.</p>
+attribute holding the most recently assigned density. Iterating
+with <code>data=True</code> and mutating the yielded attribute dict
+in place (rather than indexing <code>G[u][v]</code>, which for a
+<code>MultiGraph</code> is a dict-of-parallel-edges, not a single edge's
+attributes) keeps this correct for both graph types.</p>
 </details>
 
 
@@ -917,12 +926,7 @@ attribute holding the most recently assigned density.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>discrete_modulus/families/networkx_families.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">125</span>
 <span class="normal">126</span>
 <span class="normal">127</span>
 <span class="normal">128</span>
@@ -937,27 +941,42 @@ attribute holding the most recently assigned density.</p>
 <span class="normal">137</span>
 <span class="normal">138</span>
 <span class="normal">139</span>
-<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">G</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">G</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    G : networkx graph</span>
+<span class="sd">    G : networkx graph or multigraph</span>
 <span class="sd">        The graph whose spanning trees make up the family.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    This mutates `G` by adding an `&#39;enum&#39;` edge attribute (an index</span>
 <span class="sd">    into `rho`/the usage matrix), and, on each call, a `&#39;rho&#39;` edge</span>
-<span class="sd">    attribute holding the most recently assigned density.</span>
+<span class="sd">    attribute holding the most recently assigned density. Iterating</span>
+<span class="sd">    with `data=True` and mutating the yielded attribute dict</span>
+<span class="sd">    in place (rather than indexing `G[u][v]`, which for a</span>
+<span class="sd">    `MultiGraph` is a dict-of-parallel-edges, not a single edge&#39;s</span>
+<span class="sd">    attributes) keeps this correct for both graph types.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># remember the graph</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="n">G</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">is_multigraph</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">is_multigraph</span><span class="p">()</span>
 
     <span class="c1"># enumerate the edges so we can keep track of them when</span>
     <span class="c1"># processing a spanning tree</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">()):</span>
-        <span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;enum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">_u</span><span class="p">,</span> <span class="n">_v</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;enum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -1057,8 +1076,10 @@ interface.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p><code>cons</code> is the list of edges in the minimum spanning tree.
-<code>n</code> is its usage vector, with the same dtype as <code>rho</code>.</p>
+                <p><code>cons</code> is the list of edges in the minimum spanning tree --
+<code>(u, v)</code> pairs for a plain <code>Graph</code>, <code>(u, v, key)</code> triples for
+a <code>MultiGraph</code>. <code>n</code> is its usage vector, with the same dtype
+as <code>rho</code>.</p>
               </div>
             </td>
           </tr>
@@ -1068,17 +1089,7 @@ interface.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>discrete_modulus/families/networkx_families.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">152</span>
 <span class="normal">153</span>
 <span class="normal">154</span>
 <span class="normal">155</span>
@@ -1103,7 +1114,27 @@ interface.</p>
 <span class="normal">174</span>
 <span class="normal">175</span>
 <span class="normal">176</span>
-<span class="normal">177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span><span class="p">:</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Finds a minimum rho-length spanning tree of `G`.</span>
 
@@ -1121,22 +1152,32 @@ interface.</p>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    ShortestResult</span>
-<span class="sd">        `cons` is the list of edges in the minimum spanning tree.</span>
-<span class="sd">        `n` is its usage vector, with the same dtype as `rho`.</span>
+<span class="sd">        `cons` is the list of edges in the minimum spanning tree --</span>
+<span class="sd">        `(u, v)` pairs for a plain `Graph`, `(u, v, key)` triples for</span>
+<span class="sd">        a `MultiGraph`. `n` is its usage vector, with the same dtype</span>
+<span class="sd">        as `rho`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># assign rho to the graph edges</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">()):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;rho&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-    <span class="c1"># find a minimum spanning tree</span>
-    <span class="n">T</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">minimum_spanning_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">_u</span><span class="p">,</span> <span class="n">_v</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;rho&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
     <span class="c1"># form the row vector. mypy can&#39;t infer, from a union-typed rho,</span>
     <span class="c1"># that dtype=rho.dtype produces a same-union-member array.</span>
     <span class="n">n</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">rho</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>  <span class="c1"># type: ignore[assignment]</span>
-    <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">T</span><span class="p">:</span>
-        <span class="n">n</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;enum&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_multigraph</span><span class="p">:</span>
+        <span class="c1"># keys=True disambiguates which parallel edge the MST used</span>
+        <span class="c1"># -- needed both to look up its &#39;enum&#39; index below and so</span>
+        <span class="c1"># `cons` identifies a genuine spanning tree, not just a</span>
+        <span class="c1"># multiset of vertex pairs.</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">minimum_spanning_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">T</span><span class="p">:</span>
+            <span class="n">n</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="n">k</span><span class="p">][</span><span class="s2">&quot;enum&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">minimum_spanning_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">T</span><span class="p">:</span>
+            <span class="n">n</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;enum&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
 
     <span class="k">return</span> <span class="n">ShortestResult</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
