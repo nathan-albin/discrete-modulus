@@ -296,7 +296,7 @@ window.Quarto = {
 </header>
 
 
-<div id="1d03fa05" class="cell" data-execution_count="1">
+<div id="5d08d9af" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -313,7 +313,7 @@ window.Quarto = {
 \]</span></p>
 <p>In the case that <span class="math inline">\(G\)</span> is a relatively small graph and <span class="math inline">\(\Gamma\)</span> is a relatively small family, this can be done by directly using any standard convex optimization solver. The <code>matrix_modulus</code> function in <code>discrete_modulus/algorithms.py</code> demonstrates this technique.</p>
 <p>However, for many graphs and families of interest, the <span class="math inline">\(\Gamma\times E\)</span> usage matrix <span class="math inline">\(\mathcal{N}\)</span> is too large to compute and store on any reasonable computer. As an example, consider the following graph.</p>
-<div id="8ad78655" class="cell" data-execution_count="2">
+<div id="e07803be" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> nx.random_geometric_graph(<span class="dv">150</span>, <span class="fl">0.16</span>, seed<span class="op">=</span><span class="dv">3810312</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>pos <span class="op">=</span> {v:d[<span class="st">'pos'</span>] <span class="cf">for</span> v,d <span class="kw">in</span> G.nodes(data<span class="op">=</span><span class="va">True</span>)}</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">5</span>,<span class="dv">5</span>))</span>
@@ -327,7 +327,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Suppose we want to compute the modulus of <span class="math inline">\(\Gamma\)</span>, where <span class="math inline">\(\Gamma\)</span> is the family of all spanning trees of <span class="math inline">\(G\)</span>. Using Kirchhoff’s matrix tree theorem, we can compute the number of spanning trees from the spectrum of <span class="math inline">\(G\)</span>’s Laplacian matrix. Rather than compute the number exactly in this case, the following code will give a fairly accurate approximation.</p>
-<div id="4a662035" class="cell" data-execution_count="3">
+<div id="fc4563d6" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># get the eigenvalues</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>l <span class="op">=</span> nx.laplacian_spectrum(G)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -404,7 +404,7 @@ while True:
 <section id="example-spanning-tree-modulus" class="level2" data-number="3.3">
 <h2 data-number="3.3" class="anchored" data-anchor-id="example-spanning-tree-modulus"><span class="header-section-number">3.3</span> Example: Spanning tree modulus</h2>
 <p>The following code cell shows the application of the <code>modulus</code> function to the spanning tree modulus problem from the beginning of the chapter. Note that the algorithm can compute modulus to within a reasonable tolerance using only a tiny fraction of the rows of <span class="math inline">\(\mathcal{N}\)</span>. This code uses the <code>matrix_modulus</code> function we saw before along with a <code>MinimumSpanningTree</code> class defined in <code>discrete_modulus/families/networkx_families.py</code>. This class provides a simple implementation of <code>shortest</code> when <span class="math inline">\(\Gamma\)</span> is the family of spanning trees. An object of this class has a NetworkX graph attached. Calling the object like a function has the effect of running Kruskal’s algorithm, with the given <span class="math inline">\(\rho'\)</span> and returning the minimum spanning tree.</p>
-<div id="c92a5ef3" class="cell" data-execution_count="4">
+<div id="17a8c935" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus.algorithms <span class="im">import</span> matrix_modulus, modulus</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus.families.networkx_families <span class="im">import</span> MinimumSpanningTree</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -420,7 +420,7 @@ modulus = 0.03365707111077632</code></pre>
 </div>
 </div>
 <p>Here is a visualization of the values of <span class="math inline">\(\rho^*\)</span> on the graph. Notice the large groups of edges with the same color. This is not an accident. This phenomenon was explained in <span class="citation" data-cites="albin2018fairestedgeusage">Albin et al. (<a href="References.html#ref-albin2018fairestedgeusage" role="doc-biblioref">2021</a>)</span>.</p>
-<div id="d27908cc" class="cell" data-execution_count="5">
+<div id="1e0542fc" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">5</span>,<span class="dv">5</span>))</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>nx.draw(</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    G, pos, node_size<span class="op">=</span><span class="dv">50</span>, node_color<span class="op">=</span><span class="st">'black'</span>, width<span class="op">=</span><span class="dv">2</span>,</span>
@@ -438,7 +438,7 @@ modulus = 0.03365707111077632</code></pre>
 <section id="example-modulus-of-connecting-paths" class="level2" data-number="3.4">
 <h2 data-number="3.4" class="anchored" data-anchor-id="example-modulus-of-connecting-paths"><span class="header-section-number">3.4</span> Example: Modulus of connecting paths</h2>
 <p>Now let’s consider the modulus of another family. Consider the family <span class="math inline">\(\Gamma=\Gamma(S,T)\)</span> of paths connecting one set of nodes <span class="math inline">\(S\)</span> (shown in blue below) to another set of nodes <span class="math inline">\(T\)</span> (shown in red). We call such a family a <em>connecting family of paths</em>.</p>
-<div id="f18e3ce8" class="cell" data-execution_count="6">
+<div id="acb1f385" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">12</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> nx.grid_2d_graph(<span class="dv">2</span><span class="op">*</span>n<span class="op">+</span><span class="dv">1</span>, n)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>S <span class="op">=</span> [(a,b) <span class="cf">for</span> (a,b) <span class="kw">in</span> G.nodes() <span class="cf">if</span> a <span class="op">==</span> <span class="dv">0</span>]</span>
@@ -457,7 +457,7 @@ modulus = 0.03365707111077632</code></pre>
 </div>
 </div>
 <p>In order to compute the modulus of this family, all we need to do is replace the <code>MinimumSpanningTree</code> object with a <code>ShortestConnectingPath</code> object, as shown below. This object is essentially a wrapper for Dijkstra’s algorithm for computing the distance between to sets of points.</p>
-<div id="29dae936" class="cell" data-execution_count="7">
+<div id="d3930559" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus.families.networkx_families <span class="im">import</span> ShortestConnectingPath</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> <span class="bu">len</span>(G.edges())</span>
@@ -472,7 +472,7 @@ modulus = 0.6823788403569889</code></pre>
 </div>
 </div>
 <p>Below, we plot the graph again with edges colored according to the value of <span class="math inline">\(\rho^*\)</span>. Light blue edges have small <span class="math inline">\(\rho\)</span> values while magenta edges have higher <span class="math inline">\(\rho\)</span> value.</p>
-<div id="cb7c085a" class="cell" data-execution_count="8">
+<div id="c33a93dc" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">5</span>))</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>nx.draw(</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    G, pos, node_size<span class="op">=</span><span class="dv">0</span>, node_color<span class="op">=</span><span class="st">'black'</span>,</span>
@@ -497,7 +497,7 @@ modulus = 0.6823788403569889</code></pre>
     \phi(v) = \min_{\gamma}\ell_{\rho^*}(\gamma)
 \]</span></p>
 <p>where the minimum is taken over paths beginning at an arbitrary blue node and ending at <span class="math inline">\(v\)</span>. The following code produces a plot of <span class="math inline">\(\phi\)</span> that can help in visualizing <span class="math inline">\(\rho^*\)</span>.</p>
-<div id="e2387388" class="cell" data-execution_count="9">
+<div id="fb509063" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (u,v) <span class="kw">in</span> <span class="bu">enumerate</span>(G.edges()):</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    G[u][v][<span class="st">'rho'</span>] <span class="op">=</span> rho[i]</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>potential <span class="op">=</span> []</span>
@@ -520,7 +520,7 @@ modulus = 0.6823788403569889</code></pre>
 <section id="example-via-modulus" class="level2" data-number="3.5">
 <h2 data-number="3.5" class="anchored" data-anchor-id="example-via-modulus"><span class="header-section-number">3.5</span> Example: Via modulus</h2>
 <p>Now imagine we identify three disjoint sets of nodes <span class="math inline">\(S\)</span>, <span class="math inline">\(T\)</span> and <span class="math inline">\(M\)</span>. For example, in the following figure <span class="math inline">\(S\)</span> comprises the blue nodes, <span class="math inline">\(T\)</span> the red nodes and <span class="math inline">\(M\)</span> the green.</p>
-<div id="f39cddf8" class="cell" data-execution_count="10">
+<div id="19a46817" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>S <span class="op">=</span> [(a,b) <span class="cf">for</span> (a,b) <span class="kw">in</span> G.nodes() <span class="cf">if</span> a <span class="op">==</span> <span class="dv">0</span>]</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>T <span class="op">=</span> [(a,b) <span class="cf">for</span> (a,b) <span class="kw">in</span> G.nodes() <span class="cf">if</span> a <span class="op">==</span> <span class="dv">2</span><span class="op">*</span>n]</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>M <span class="op">=</span> [(a,b) <span class="cf">for</span> (a,b) <span class="kw">in</span> G.nodes() <span class="cf">if</span> <span class="bu">abs</span>(a<span class="op">-</span>n) <span class="op">&lt;</span> n<span class="op">/</span><span class="dv">2</span> <span class="kw">and</span> b <span class="op">==</span> <span class="dv">0</span>]</span>
@@ -552,7 +552,7 @@ modulus = 0.6823788403569889</code></pre>
 \end{cases}
 \]</span></p>
 <p>Since we can find the shortest object in <span class="math inline">\(\Gamma(S,M)\)</span> and the shortest in <span class="math inline">\(\Gamma(M,T)\)</span>, we can find the shortest object in their “sum” by combining these. The class <code>SumShortest</code> in <code>discrete_modulus/families/family_operators.py</code> is designed for such a case.</p>
-<div id="dda69d66" class="cell" data-execution_count="11">
+<div id="05b0e5f0" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus.families.family_operators <span class="im">import</span> SumShortest</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>shortest1 <span class="op">=</span>ShortestConnectingPath(G, S, M)</span>
@@ -569,7 +569,7 @@ modulus = 0.464137738887024</code></pre>
 </div>
 </div>
 <p>Below we can see the values of <span class="math inline">\(\rho^*\)</span> on the graph.</p>
-<div id="0d3f3738" class="cell" data-execution_count="12">
+<div id="de2a3910" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">5</span>))</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>nx.draw(</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    G, pos, node_size<span class="op">=</span><span class="dv">0</span>, node_color<span class="op">=</span><span class="st">'black'</span>,</span>
@@ -587,7 +587,7 @@ modulus = 0.464137738887024</code></pre>
 </div>
 </div>
 <p>Although the concept of “potential” for this family isn’t quite as straightforward, for visualization it is perfectly reasonable to define a function <span class="math inline">\(\phi(v)\)</span> based on <span class="math inline">\(v\)</span>’s <span class="math inline">\(\rho^*\)</span>-distance from, say, the set <span class="math inline">\(M\)</span>. The code below shows what that looks like.</p>
-<div id="9a035ed3" class="cell" data-execution_count="13">
+<div id="688aa816" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (u,v) <span class="kw">in</span> <span class="bu">enumerate</span>(G.edges()):</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    G[u][v][<span class="st">'rho'</span>] <span class="op">=</span> rho[i]</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>potential <span class="op">=</span> []</span>
@@ -610,7 +610,7 @@ modulus = 0.464137738887024</code></pre>
 <section id="example-a-union-of-families" class="level2" data-number="3.6">
 <h2 data-number="3.6" class="anchored" data-anchor-id="example-a-union-of-families"><span class="header-section-number">3.6</span> Example: A union of families</h2>
 <p>As a final example for this chapter, consider the family <span class="math inline">\(\Gamma=\Gamma(S_1,T_1)\cup\Gamma(S_2,T_2)\)</span> consisting of the collection of all paths that either connect a blue node to a red node or connect a green node to a yellow node in the following figure.</p>
-<div id="f3f6b6fd" class="cell" data-execution_count="14">
+<div id="52a30d09" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>S1 <span class="op">=</span> [(a,b) <span class="cf">for</span> (a,b) <span class="kw">in</span> G.nodes() <span class="cf">if</span> a <span class="op">==</span> <span class="dv">0</span>]</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>T1 <span class="op">=</span> [(a,b) <span class="cf">for</span> (a,b) <span class="kw">in</span> G.nodes() <span class="cf">if</span> b <span class="op">==</span> <span class="dv">0</span> <span class="kw">and</span> a <span class="op">&lt;</span> <span class="dv">2</span><span class="op">*</span>n <span class="kw">and</span> a <span class="op">&gt;</span> n]</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>S2 <span class="op">=</span> [(a,b) <span class="cf">for</span> (a,b) <span class="kw">in</span> G.nodes() <span class="cf">if</span> a <span class="op">==</span> <span class="dv">2</span><span class="op">*</span>n]</span>
@@ -633,7 +633,7 @@ modulus = 0.464137738887024</code></pre>
 </div>
 </div>
 <p>The <code>UnionShortest</code> class in in <code>discrete_modulus/families/family_operators.py</code> handles such families.</p>
-<div id="e9674320" class="cell" data-execution_count="15">
+<div id="89afcd3f" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus.families.family_operators <span class="im">import</span> UnionShortest</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>shortest1 <span class="op">=</span> ShortestConnectingPath(G, S1, T1)</span>
@@ -650,7 +650,7 @@ modulus = 0.9904255457761012</code></pre>
 </div>
 </div>
 <p>Here is a visualization of <span class="math inline">\(\rho^*\)</span> on the edges.</p>
-<div id="7c5fca3b" class="cell" data-execution_count="16">
+<div id="9dab8a21" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">5</span>))</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>nx.draw(</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    G, pos, node_size<span class="op">=</span><span class="dv">0</span>, node_color<span class="op">=</span><span class="st">'black'</span>,</span>
@@ -671,7 +671,7 @@ modulus = 0.9904255457761012</code></pre>
 </div>
 </div>
 <p>For comparison, the following two plots show <span class="math inline">\(\rho^*\)</span>-distance to blue and to green respectively.</p>
-<div id="a037af3d" class="cell" data-execution_count="17">
+<div id="5d39c80d" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (u,v) <span class="kw">in</span> <span class="bu">enumerate</span>(G.edges()):</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    G[u][v][<span class="st">'rho'</span>] <span class="op">=</span> rho[i]</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>potential1 <span class="op">=</span> []</span>

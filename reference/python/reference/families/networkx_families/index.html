@@ -917,9 +917,7 @@ attribute holding the most recently assigned density.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>discrete_modulus/families/networkx_families.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">120</span>
 <span class="normal">121</span>
 <span class="normal">122</span>
 <span class="normal">123</span>
@@ -937,7 +935,9 @@ attribute holding the most recently assigned density.</p>
 <span class="normal">135</span>
 <span class="normal">136</span>
 <span class="normal">137</span>
-<span class="normal">138</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">G</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">G</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -982,7 +982,9 @@ attribute holding the most recently assigned density.</p>
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__call__</span><span class="p">(</span><span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__call__</span><span class="p">(</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1011,7 +1013,8 @@ attribute holding the most recently assigned density.</p>
             <td>
               <div class="doc-md-description">
                 <p>The current density, one entry per edge of <code>G</code> (in the order
-<code>G.edges()</code> iterates).</p>
+<code>G.edges()</code> iterates). May be an <code>ExactArray</code> for an exact
+result (see <code>ExactArray</code>).</p>
               </div>
             </td>
             <td>
@@ -1055,7 +1058,7 @@ interface.</p>
             <td>
               <div class="doc-md-description">
                 <p><code>cons</code> is the list of edges in the minimum spanning tree.
-<code>n</code> is its usage vector.</p>
+<code>n</code> is its usage vector, with the same dtype as <code>rho</code>.</p>
               </div>
             </td>
           </tr>
@@ -1065,9 +1068,7 @@ interface.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>discrete_modulus/families/networkx_families.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
 <span class="normal">143</span>
 <span class="normal">144</span>
 <span class="normal">145</span>
@@ -1098,7 +1099,11 @@ interface.</p>
 <span class="normal">170</span>
 <span class="normal">171</span>
 <span class="normal">172</span>
-<span class="normal">173</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span><span class="p">:</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Finds a minimum rho-length spanning tree of `G`.</span>
 
@@ -1106,7 +1111,8 @@ interface.</p>
 <span class="sd">    ----------</span>
 <span class="sd">    rho : numpy array</span>
 <span class="sd">        The current density, one entry per edge of `G` (in the order</span>
-<span class="sd">        `G.edges()` iterates).</span>
+<span class="sd">        `G.edges()` iterates). May be an `ExactArray` for an exact</span>
+<span class="sd">        result (see `ExactArray`).</span>
 
 <span class="sd">    tol : float</span>
 <span class="sd">        Unused; accepted to satisfy the `ShortestObjectFinder`</span>
@@ -1116,7 +1122,7 @@ interface.</p>
 <span class="sd">    -------</span>
 <span class="sd">    ShortestResult</span>
 <span class="sd">        `cons` is the list of edges in the minimum spanning tree.</span>
-<span class="sd">        `n` is its usage vector.</span>
+<span class="sd">        `n` is its usage vector, with the same dtype as `rho`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># assign rho to the graph edges</span>
@@ -1126,8 +1132,9 @@ interface.</p>
     <span class="c1"># find a minimum spanning tree</span>
     <span class="n">T</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">minimum_spanning_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 
-    <span class="c1"># form the row vector</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="c1"># form the row vector. mypy can&#39;t infer, from a union-typed rho,</span>
+    <span class="c1"># that dtype=rho.dtype produces a same-union-member array.</span>
+    <span class="n">n</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">rho</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>  <span class="c1"># type: ignore[assignment]</span>
     <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">T</span><span class="p">:</span>
         <span class="n">n</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;enum&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
 
@@ -1356,7 +1363,9 @@ shortest-path search; <code>G</code> itself is otherwise left untouched.</p>
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__call__</span><span class="p">(</span><span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__call__</span><span class="p">(</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1385,7 +1394,8 @@ shortest-path search; <code>G</code> itself is otherwise left untouched.</p>
             <td>
               <div class="doc-md-description">
                 <p>The current density, one entry per edge of <code>G</code> (in the order
-<code>G.edges()</code> iterates).</p>
+<code>G.edges()</code> iterates). May be an <code>ExactArray</code> for an exact
+result (see <code>ExactArray</code>).</p>
               </div>
             </td>
             <td>
@@ -1430,7 +1440,7 @@ interface.</p>
               <div class="doc-md-description">
                 <p><code>cons</code> is the path found, as a list of nodes from <code>S</code> to <code>T</code>
 (the dummy source/target nodes are already trimmed off).
-<code>n</code> is its usage vector.</p>
+<code>n</code> is its usage vector, with the same dtype as <code>rho</code>.</p>
               </div>
             </td>
           </tr>
@@ -1477,7 +1487,9 @@ interface.</p>
 <span class="normal">104</span>
 <span class="normal">105</span>
 <span class="normal">106</span>
-<span class="normal">107</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span><span class="p">:</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Finds the shortest rho-length path from `S` to `T`.</span>
 
@@ -1485,7 +1497,8 @@ interface.</p>
 <span class="sd">    ----------</span>
 <span class="sd">    rho : numpy array</span>
 <span class="sd">        The current density, one entry per edge of `G` (in the order</span>
-<span class="sd">        `G.edges()` iterates).</span>
+<span class="sd">        `G.edges()` iterates). May be an `ExactArray` for an exact</span>
+<span class="sd">        result (see `ExactArray`).</span>
 
 <span class="sd">    tol : float</span>
 <span class="sd">        Unused; accepted to satisfy the `ShortestObjectFinder`</span>
@@ -1496,7 +1509,7 @@ interface.</p>
 <span class="sd">    ShortestResult</span>
 <span class="sd">        `cons` is the path found, as a list of nodes from `S` to `T`</span>
 <span class="sd">        (the dummy source/target nodes are already trimmed off).</span>
-<span class="sd">        `n` is its usage vector.</span>
+<span class="sd">        `n` is its usage vector, with the same dtype as `rho`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># assign rho to the graph edges</span>
@@ -1509,8 +1522,9 @@ interface.</p>
     <span class="c1"># the actual path omits the source and target dummy nodes</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="c1"># form the row vector</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="c1"># form the row vector. mypy can&#39;t infer, from a union-typed rho,</span>
+    <span class="c1"># that dtype=rho.dtype produces a same-union-member array.</span>
+    <span class="n">n</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">rho</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>  <span class="c1"># type: ignore[assignment]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
         <span class="n">n</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">p</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]][</span><span class="s2">&quot;enum&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
 

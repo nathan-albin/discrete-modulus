@@ -949,7 +949,9 @@ combining the shortest object from each family -- i.e. implements
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__call__</span><span class="p">(</span><span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__call__</span><span class="p">(</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1021,7 +1023,7 @@ combining the shortest object from each family -- i.e. implements
               <div class="doc-md-description">
                 <p><code>cons</code> is the list of each family's individual result (in
 the order of <code>F</code>); <code>n</code> is the elementwise sum of their usage
-vectors.</p>
+vectors, with the same dtype as <code>rho</code>.</p>
               </div>
             </td>
           </tr>
@@ -1059,7 +1061,9 @@ vectors.</p>
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
-<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span><span class="p">:</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Combines the shortest object from each family in the sum.</span>
 
@@ -1076,16 +1080,18 @@ vectors.</p>
 <span class="sd">    ShortestResult</span>
 <span class="sd">        `cons` is the list of each family&#39;s individual result (in</span>
 <span class="sd">        the order of `F`); `n` is the elementwise sum of their usage</span>
-<span class="sd">        vectors.</span>
+<span class="sd">        vectors, with the same dtype as `rho`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="c1"># mypy can&#39;t infer, from a union-typed rho, that dtype=rho.dtype</span>
+    <span class="c1"># produces a same-union-member array.</span>
+    <span class="n">n</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">rho</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>  <span class="c1"># type: ignore[assignment]</span>
     <span class="n">cons</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">tol</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">n</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="n">cons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">cons</span><span class="p">)</span>
-        <span class="n">n</span> <span class="o">+=</span> <span class="n">result</span><span class="o">.</span><span class="n">n</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="n">result</span><span class="o">.</span><span class="n">n</span>
 
     <span class="k">return</span> <span class="n">ShortestResult</span><span class="p">(</span><span class="n">cons</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -1204,7 +1210,9 @@ Gamma_1 U Gamma_2 U ... U Gamma_k.</p>
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__call__</span><span class="p">(</span><span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__call__</span><span class="p">(</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1310,7 +1318,7 @@ of smallest rho-length.</p>
 <span class="normal">53</span>
 <span class="normal">54</span>
 <span class="normal">55</span>
-<span class="normal">56</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span><span class="p">:</span>
+<span class="normal">56</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="n">FloatArray</span> <span class="o">|</span> <span class="n">ExactArray</span><span class="p">,</span> <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShortestResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Finds the shortest object across all families in the union.</span>
 
