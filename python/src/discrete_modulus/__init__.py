@@ -16,6 +16,10 @@ families
     (`ShortestObjectFinder`s) for use with `algorithms.modulus`.
 demo
     Small graphs and brute-force helpers for demonstrations.
+min_norm_point
+    Away-step Frank-Wolfe and Wolfe's (1976) minimum-norm-point algorithm:
+    exact-arithmetic pmf construction on conv(Gamma) given a
+    `ShortestObjectFinder` oracle.
 protocols
     Shared result types (`ShortestResult`, `SubproblemResult`,
     `ModulusResult`) and structural interfaces (`ShortestObjectFinder`,

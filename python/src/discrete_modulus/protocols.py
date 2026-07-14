@@ -28,6 +28,21 @@ from numpy.typing import NDArray
 
 FloatArray = NDArray[np.float64]
 
+ExactArray = NDArray[np.object_]
+"""
+A numpy object-dtype array, for exact-arithmetic alternatives to
+`FloatArray`.
+
+Not tied to any specific element type -- `dtype=object` erases it anyway,
+so this covers an array of `fractions.Fraction` (the element type used
+throughout this package, e.g. `min_norm_point`), but equally an array of
+`mpmath.mpf`, a custom interval type, or anything else whose `+`/`*`/`<`
+etc. numpy's elementwise dispatch can call. Anywhere a `FloatArray` is
+accepted, an `ExactArray` may be used instead to get exact results end to
+end (e.g. through `families.networkx_families`'s MST/shortest-path
+lookups, which only rely on comparison and addition of edge weights).
+"""
+
 
 class ShortestResult(NamedTuple):
     """
@@ -46,7 +61,7 @@ class ShortestResult(NamedTuple):
     """
 
     cons: Any
-    n: FloatArray | None
+    n: FloatArray | ExactArray | None
 
 
 class ShortestObjectFinder(Protocol):
@@ -55,12 +70,14 @@ class ShortestObjectFinder(Protocol):
     given family, given the current density `rho`.
     """
 
-    def __call__(self, rho: FloatArray, tol: float) -> ShortestResult:
+    def __call__(self, rho: FloatArray | ExactArray, tol: float) -> ShortestResult:
         """
         Parameters
         ----------
         rho : numpy array
-            The current density.
+            The current density. An `ExactArray` may be passed instead of
+            a `FloatArray` to get an exact result, if the implementation
+            supports it (see `ExactArray`).
 
         tol : float
             The tolerance; may be ignored by implementations that don't

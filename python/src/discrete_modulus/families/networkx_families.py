@@ -8,7 +8,7 @@ from collections.abc import Iterable
 import networkx as nx
 import numpy as np
 
-from ..protocols import FloatArray, ShortestResult
+from ..protocols import ExactArray, FloatArray, ShortestResult
 
 
 class ShortestConnectingPath:
@@ -67,7 +67,7 @@ class ShortestConnectingPath:
         for v in T:
             self.H.add_edge(v, self.tgt, rho=0)
 
-    def __call__(self, rho: FloatArray, tol: float) -> ShortestResult:
+    def __call__(self, rho: FloatArray | ExactArray, tol: float) -> ShortestResult:
         """
         Finds the shortest rho-length path from `S` to `T`.
 
@@ -75,7 +75,8 @@ class ShortestConnectingPath:
         ----------
         rho : numpy array
             The current density, one entry per edge of `G` (in the order
-            `G.edges()` iterates).
+            `G.edges()` iterates). May be an `ExactArray` for an exact
+            result (see `ExactArray`).
 
         tol : float
             Unused; accepted to satisfy the `ShortestObjectFinder`
@@ -86,7 +87,7 @@ class ShortestConnectingPath:
         ShortestResult
             `cons` is the path found, as a list of nodes from `S` to `T`
             (the dummy source/target nodes are already trimmed off).
-            `n` is its usage vector.
+            `n` is its usage vector, with the same dtype as `rho`.
         """
 
         # assign rho to the graph edges
@@ -99,8 +100,9 @@ class ShortestConnectingPath:
         # the actual path omits the source and target dummy nodes
         p = p[1:-1]
 
-        # form the row vector
-        n = np.zeros(rho.shape)
+        # form the row vector. mypy can't infer, from a union-typed rho,
+        # that dtype=rho.dtype produces a same-union-member array.
+        n: FloatArray | ExactArray = np.zeros(rho.shape, dtype=rho.dtype)  # type: ignore[assignment]
         for i in range(len(p) - 1):
             n[self.G[p[i]][p[i + 1]]["enum"]] = 1
 
@@ -137,7 +139,7 @@ class MinimumSpanningTree:
         for i, (u, v) in enumerate(G.edges()):
             G[u][v]["enum"] = i
 
-    def __call__(self, rho: FloatArray, tol: float) -> ShortestResult:
+    def __call__(self, rho: FloatArray | ExactArray, tol: float) -> ShortestResult:
         """
         Finds a minimum rho-length spanning tree of `G`.
 
@@ -145,7 +147,8 @@ class MinimumSpanningTree:
         ----------
         rho : numpy array
             The current density, one entry per edge of `G` (in the order
-            `G.edges()` iterates).
+            `G.edges()` iterates). May be an `ExactArray` for an exact
+            result (see `ExactArray`).
 
         tol : float
             Unused; accepted to satisfy the `ShortestObjectFinder`
@@ -155,7 +158,7 @@ class MinimumSpanningTree:
         -------
         ShortestResult
             `cons` is the list of edges in the minimum spanning tree.
-            `n` is its usage vector.
+            `n` is its usage vector, with the same dtype as `rho`.
         """
 
         # assign rho to the graph edges
@@ -165,8 +168,9 @@ class MinimumSpanningTree:
         # find a minimum spanning tree
         T = list(nx.minimum_spanning_edges(self.G, weight="rho", data=False))
 
-        # form the row vector
-        n = np.zeros(rho.shape)
+        # form the row vector. mypy can't infer, from a union-typed rho,
+        # that dtype=rho.dtype produces a same-union-member array.
+        n: FloatArray | ExactArray = np.zeros(rho.shape, dtype=rho.dtype)  # type: ignore[assignment]
         for u, v in T:
             n[self.G[u][v]["enum"]] = 1
 

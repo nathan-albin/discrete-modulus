@@ -6,7 +6,7 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from ..protocols import FloatArray, ShortestObjectFinder, ShortestResult
+from ..protocols import ExactArray, FloatArray, ShortestObjectFinder, ShortestResult
 
 
 class UnionShortest:
@@ -28,7 +28,7 @@ class UnionShortest:
         """
         self.F = F
 
-    def __call__(self, rho: FloatArray, tol: float) -> ShortestResult:
+    def __call__(self, rho: FloatArray | ExactArray, tol: float) -> ShortestResult:
         """
         Finds the shortest object across all families in the union.
 
@@ -74,7 +74,7 @@ class SumShortest:
         """
         self.F = F
 
-    def __call__(self, rho: FloatArray, tol: float) -> ShortestResult:
+    def __call__(self, rho: FloatArray | ExactArray, tol: float) -> ShortestResult:
         """
         Combines the shortest object from each family in the sum.
 
@@ -91,15 +91,17 @@ class SumShortest:
         ShortestResult
             `cons` is the list of each family's individual result (in
             the order of `F`); `n` is the elementwise sum of their usage
-            vectors.
+            vectors, with the same dtype as `rho`.
         """
 
-        n = np.zeros(rho.shape)
+        # mypy can't infer, from a union-typed rho, that dtype=rho.dtype
+        # produces a same-union-member array.
+        n: FloatArray | ExactArray = np.zeros(rho.shape, dtype=rho.dtype)  # type: ignore[assignment]
         cons = []
         for f in self.F:
             result = f(rho, tol)
             assert result.n is not None
             cons.append(result.cons)
-            n += result.n
+            n = n + result.n
 
         return ShortestResult(cons, n)
