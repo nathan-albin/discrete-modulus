@@ -306,7 +306,7 @@ window.Quarto = {
 </header>
 
 
-<div id="5fb90b0e" class="cell" data-execution_count="1">
+<div id="37b459e0" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -336,7 +336,7 @@ window.Quarto = {
 <h3 data-number="2.1.1" class="anchored" data-anchor-id="example-the-family-of-triangles"><span class="header-section-number">2.1.1</span> Example: the family of triangles</h3>
 <p>The following code cell produces the <span class="math inline">\(\mathcal{N}\)</span> matrix for the family of triangles on a particular graph. Notice that, in order to write <span class="math inline">\(\mathcal{N}\)</span> as a two-dimensional array of numbers, we need to choose some ordering for the edges and objects. These orderings can be chosen arbitrarily, as long as they are used consistently.</p>
 <p>The code also draws the three triangles of the graph. The labels on the edges show the edge enumeration. The figure on the left corresponds to the first row of <span class="math inline">\(\mathcal{N}\)</span>, the middle figure to the second row, and the right figure to the third row.</p>
-<div id="743989ef" class="cell" data-execution_count="2">
+<div id="2a2a3d6b" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the demo graph</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>G, pos <span class="op">=</span> demo.slashed_house_graph()</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -395,7 +395,7 @@ window.Quarto = {
 <section id="example-a-family-of-simple-paths" class="level3" data-number="2.1.2">
 <h3 data-number="2.1.2" class="anchored" data-anchor-id="example-a-family-of-simple-paths"><span class="header-section-number">2.1.2</span> Example: a family of simple paths</h3>
 <p>Consider, instead, the family of simple paths that connect the top vertex of the previous graph to the bottom-right vertex. The following code generates and prints the <span class="math inline">\(\mathcal{N}\)</span> matrix for this family, along with a corresponding series of pictures.</p>
-<div id="1b79d514" class="cell" data-execution_count="3">
+<div id="f02ef1d9" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># find all simple paths</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">NOTE</span><span class="co">: again, not a good idea for large graphs</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>paths <span class="op">=</span> <span class="bu">list</span>(nx.all_simple_paths(G, <span class="dv">1</span>, <span class="dv">3</span>))</span>
@@ -458,7 +458,7 @@ window.Quarto = {
 <section id="example-densities-and-triangles" class="level3" data-number="2.2.1">
 <h3 data-number="2.2.1" class="anchored" data-anchor-id="example-densities-and-triangles"><span class="header-section-number">2.2.1</span> Example: densities and triangles</h3>
 <p>Returning to the example of the family of triangles, the following code generates a set of densities and checks for admissibility. Each row in the figure produced represents a density. In each row, the triangles are colored either green or red depending on whether or not the <span class="math inline">\(\rho\)</span>-length of that triangle is at least 1. A density is admissible for the triangles if all triangles in that row are colored green.</p>
-<div id="acdd90c9" class="cell" data-execution_count="4">
+<div id="876c0fd7" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># seed the random number generator</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">88198283</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -522,7 +522,7 @@ window.Quarto = {
 <section id="example-densities-and-paths" class="level3" data-number="2.2.2">
 <h3 data-number="2.2.2" class="anchored" data-anchor-id="example-densities-and-paths"><span class="header-section-number">2.2.2</span> Example: densities and paths</h3>
 <p>The code below does the same thing, but for the path family we considered earlier.</p>
-<div id="00232a68" class="cell" data-execution_count="5">
+<div id="94cb496b" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># seed the random number generator</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">88198283</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -611,7 +611,7 @@ window.Quarto = {
 <section id="example-triangle-modulus" class="level3" data-number="2.3.1">
 <h3 data-number="2.3.1" class="anchored" data-anchor-id="example-triangle-modulus"><span class="header-section-number">2.3.1</span> Example: triangle modulus</h3>
 <p>Modulus, as defined above, is an example of a convex optimization problem. Therefore, at least for small graphs, modulus can be computed using any software tool that can solve convex optimization problems. An example of a function for computing modulus in this way is <code>matrix_modulus</code> found in <code>discrete_modulus/algorithms.py</code>. Given the <span class="math inline">\(\mathcal{N}\)</span> matrix along with the exponent <span class="math inline">\(p\)</span>, this function finds a numerical approximation the modulus along with an optimal <span class="math inline">\(\rho^*\)</span>. The code below computes the modulus of triangles on our example graph for a few different values of <span class="math inline">\(p\)</span>. The value <span class="math inline">\(\text{Mod}_p(\Gamma)\)</span> is printed above each plot, while the values of the optimal density <span class="math inline">\(\rho^*\)</span> are shown on the edges.</p>
-<div id="400a735f" class="cell" data-execution_count="6">
+<div id="db95bc08" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> discrete_modulus.algorithms <span class="im">import</span> matrix_modulus</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'font.size'</span>] <span class="op">=</span> <span class="dv">12</span></span>
@@ -645,7 +645,7 @@ window.Quarto = {
 <section id="example-path-modulus" class="level3" data-number="2.3.2">
 <h3 data-number="2.3.2" class="anchored" data-anchor-id="example-path-modulus"><span class="header-section-number">2.3.2</span> Example: path modulus</h3>
 <p>The code above requires only a small modification if we wish to compute the modulus of the family of paths from top to lower right.</p>
-<div id="5f2f8287" class="cell" data-execution_count="7">
+<div id="d63d626d" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>))</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># loop over a few p values</span></span>

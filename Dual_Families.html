@@ -294,7 +294,7 @@ window.Quarto = {
 </header>
 
 
-<div id="67653fda" class="cell" data-execution_count="1">
+<div id="17ccc5fb" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -331,7 +331,7 @@ window.Quarto = {
 <section id="example-connecting-paths" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="example-connecting-paths"><span class="header-section-number">4.2</span> Example: Connecting paths</h2>
 <p>Consider, for example, the set of all paths connecting two distinct nodes <span class="math inline">\(s\)</span> and <span class="math inline">\(t\)</span>. These are called <span class="math inline">\(st\)</span>-paths. The following code generates and visualizes a list of all paths on a demo graph. Labels on the edges show values of the usage vector. Edges with positive usage are drawn with thicker lines.</p>
-<div id="08906ecc" class="cell" data-execution_count="2">
+<div id="27aec290" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the demo graph</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>G, pos <span class="op">=</span> demo.slashed_house_graph()</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -381,7 +381,7 @@ window.Quarto = {
 -\mathbf{1} &amp; \mathcal{N}
 \end{bmatrix}.
 \]</span></p>
-<div id="595f2438" class="cell" data-execution_count="3">
+<div id="0187be82" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># count the number of edges</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> <span class="bu">len</span>(G.edges)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -426,7 +426,7 @@ end</code></pre>
 </div>
 </div>
 <p>Next, we ask <code>cdd</code> to produce the V-representation of this polyhedron.</p>
-<div id="9c66009a" class="cell" data-execution_count="4">
+<div id="edf9e778" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ext <span class="op">=</span> cdd.copy_generators(poly)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ext)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -450,7 +450,7 @@ end</code></pre>
 </div>
 </div>
 <p>The V-representation contains two types of information. Rows beginning with 1 signal an extreme point of the polyhedron, rows beginning with 0 signal an extreme direction. Since the admissible set recedes into the positive orthant, there should always be <span class="math inline">\(|E|\)</span> of these extreme directions. The extreme points correspond to the objects in <span class="math inline">\(\hat{\Gamma}\)</span>. The following code cell provides a visualization of these objects. Again, we draw the graph with edges labeled by object usage and highlight edges with positive edge usage.</p>
-<div id="8b9bb8b2" class="cell" data-execution_count="5">
+<div id="94a3634e" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># list of dual objects</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>dual <span class="op">=</span> []</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -496,7 +496,7 @@ end</code></pre>
 <section id="example-spanning-trees" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="example-spanning-trees"><span class="header-section-number">4.3</span> Example: Spanning trees</h2>
 <p>Another interesting example of an object family is the family <span class="math inline">\(\Gamma\)</span> of all spanning trees of a graph (again, with the standard <span class="math inline">\((0,1)\)</span> usage matrix).</p>
-<div id="3bc44cf0" class="cell" data-execution_count="6">
+<div id="b694e767" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># get a list of spanning trees</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>trees <span class="op">=</span> <span class="bu">list</span>(demo.spanning_trees(G))</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -523,7 +523,7 @@ end</code></pre>
 </div>
 </div>
 <p>Here’s the H-representation of the admissible densities.</p>
-<div id="2f86b1f5" class="cell" data-execution_count="7">
+<div id="236360f6" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># count the number of edges</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> <span class="bu">len</span>(G.edges)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -583,7 +583,7 @@ end</code></pre>
 </div>
 </div>
 <p>And here’s the V-representation.</p>
-<div id="2da7f02e" class="cell" data-execution_count="8">
+<div id="1dc795d3" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>ext <span class="op">=</span> cdd.copy_generators(poly)</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ext)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -627,7 +627,7 @@ end</code></pre>
 </div>
 </div>
 <p>Already, you can see something interesting. Unlike in the case of connecting paths, the dual family here has usage vectors that are not just 0s and 1s. Visualizing this set will help us get a better picture of what they are.</p>
-<div id="05ecfdf8" class="cell" data-execution_count="9">
+<div id="d287f12e" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># list of dual objects</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>dual <span class="op">=</span> []</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -671,7 +671,7 @@ end</code></pre>
 <section id="example-via-walks" class="level2" data-number="4.4">
 <h2 data-number="4.4" class="anchored" data-anchor-id="example-via-walks"><span class="header-section-number">4.4</span> Example: Via walks</h2>
 <p>Although every family <span class="math inline">\(\Gamma\)</span> necessarily has a blocking dual <span class="math inline">\(\hat{\Gamma}\)</span>, nice characterizations of these dual families (like those above) are not always yet known. For example, consider the family of walks between <span class="math inline">\(s\)</span> and <span class="math inline">\(t\)</span> via <span class="math inline">\(u\)</span>. More precisely, these are the walks formed by concatenating a path from <span class="math inline">\(s\)</span> to <span class="math inline">\(u\)</span> with a path from <span class="math inline">\(u\)</span> to <span class="math inline">\(t\)</span>. Here is a visualization of this family on our example graph. For fun, see if you can figure out from the edge labels which two paths were concatenated.</p>
-<div id="8d47860c" class="cell" data-execution_count="10">
+<div id="89dd7ad5" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> <span class="bu">len</span>(G.edges)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># find all paths between nodes 1 (red) and 4 (purple)</span></span>
@@ -725,7 +725,7 @@ end</code></pre>
 </div>
 </div>
 <p>Once again, let’s from the H-representation for the admissible set of densities for our family.</p>
-<div id="d5be166c" class="cell" data-execution_count="11">
+<div id="ecf4b5bf" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># count the number of edges</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> <span class="bu">len</span>(G.edges)</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -789,7 +789,7 @@ end</code></pre>
 </div>
 </div>
 <p>The V-representation is</p>
-<div id="da624601" class="cell" data-execution_count="12">
+<div id="443cb11e" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>ext <span class="op">=</span> cdd.copy_generators(poly)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ext)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -815,7 +815,7 @@ end</code></pre>
 </div>
 </div>
 <p>So, here’s what the dual family looks like for the via family we picked.</p>
-<div id="dde375ae" class="cell" data-execution_count="13">
+<div id="d3529692" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># list of dual objects</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>dual <span class="op">=</span> []</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
