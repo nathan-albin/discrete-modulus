@@ -12,10 +12,8 @@ Test strategy
    trees of `demo.house_graph()` that no feasible uniform-marginal pmf can
    place any weight on. The forbidden set is derived independently of the
    algorithms under test, via a small `scipy.optimize.linprog` feasibility
-   check over all 11 spanning trees (`demo.spanning_trees`) -- not by
-   reusing the specific edge tuples from `scratch/wolfe_min_norm*.py`,
-   whose example graph labels its chord differently from
-   `demo.house_graph()`.
+   check over all 11 spanning trees (`demo.spanning_trees`), rather than
+   hardcoded from a specific edge labeling.
 
 3. The away-step/eviction mechanism: seeding the active set with one of
    the forbidden trees and confirming it gets removed. **Wolfe's
@@ -133,9 +131,9 @@ def test_complete_graph_converges_to_uniform_marginals(min_norm_point):
 
 
 def test_ground_truth_finds_exactly_two_forbidden_trees_on_house_graph():
-    # Sanity check on the independent ground truth itself, matching the
-    # claim validated in scratch/wolfe_min_norm.py: exactly 2 of the
-    # house graph's 11 spanning trees are unusable.
+    # Sanity check on the independent ground truth itself: exactly 2 of
+    # the house graph's 11 spanning trees are unusable by any feasible
+    # uniform-marginal pmf.
     G, _ = demo.house_graph()
     forbidden = _ground_truth_forbidden_trees(G, Fraction(2, 3))
     assert len(forbidden) == 2

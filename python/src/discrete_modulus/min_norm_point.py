@@ -1,9 +1,7 @@
 """
 Away-step Frank-Wolfe and Wolfe's (1976) minimum-norm-point algorithm:
 two ways to find a sparse pmf on a family Gamma (e.g. spanning trees) whose
-expected usage vector is a prescribed point eta in conv(Gamma) -- the
-"medium gap" pmf-construction step described in
-`scratch/Certification_Plan.md` Phase 0.
+expected usage vector is a prescribed point eta in conv(Gamma).
 
 Both algorithms minimize f(x) = ||x||^2 over conv(Gamma), given only a
 linear-minimization oracle (`ShortestObjectFinder`, the same protocol
@@ -42,9 +40,8 @@ negative:
 Everything is exact `fractions.Fraction` arithmetic (via `ExactArray`,
 a `dtype=object` numpy array of `Fraction`) -- no floating-point
 tolerances anywhere, matching `spanning_tree_modulus`'s exactness ethos.
-This is validated as reasonable by `scratch/wolfe_min_norm_exact.py`: the
-minor cycle only ever solves a small (r+1)x(r+1) linear system, cheap
-enough to do exactly.
+This is reasonable because the minor cycle only ever solves a small
+(r+1)x(r+1) linear system, cheap enough to do exactly.
 """
 
 from __future__ import annotations
@@ -286,7 +283,7 @@ def min_norm_point_afw(
     compounds denominators multiplicatively with no reduction, rather than
     re-deriving them from a small integer system each time (Wolfe's minor
     cycle does exactly that, which is why its denominators stay bounded in
-    practice -- see `scratch/Certification_Plan.md` for the theory).
+    practice).
 
     This isn't a theoretical worry -- it was confirmed, while implementing
     this module, to actually happen every time the away-step branch (the
