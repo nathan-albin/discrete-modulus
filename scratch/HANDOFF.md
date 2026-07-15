@@ -1,8 +1,15 @@
 # Handoff: Lean verifier scaffolding, mid-build-verification
 
-Written 2026-07-15 because the Codespace is about to be upgraded to more
+**RESOLVED, 2026-07-15, on the upgraded Codespace: `lake build` finished
+clean (`Build completed successfully`, both `#check`s resolved with the
+expected types).** Confirmed the 2-core Codespace really was just
+CPU-starving the build, not failing it — kept below for the record of
+that diagnosis. See `Certification_Plan.md`'s PR 3 entry for current
+status; this file no longer describes anything in flight.
+
+Written 2026-07-15 because the Codespace was about to be upgraded to more
 CPUs (the 2-core default was starving `lake build`) and the conversation
-context won't survive that. Read this first, then
+context might not survive that. Read this first, then
 [`Certification_Plan.md`](Certification_Plan.md) for the full project plan
 — this file is just "what's in flight right now and how to resume it."
 

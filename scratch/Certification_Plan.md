@@ -421,35 +421,38 @@ pinned Lake dependency, rather than adding it as a new entry inside
         *any* matroid, no graph-specific argument needed) — confirming the
         "no new graph theory needed for gluing" hope from the design
         discussion.
-      - **Status: migrating both into `lean-modulus` itself**
-        (`Common/GraphicMatroid.lean`), not keeping them spike-local — they're
-        general infrastructure about objects `lean-modulus` already owns, not
-        specific to this certificate. Branch `add-graphic-matroid-base-lemmas`
-        is committed and builds cleanly (single-file diff, `git log` message
-        has the details) but **not yet pushed/merged**: the Codespace's
-        injected `GITHUB_TOKEN` (`ghu_...` prefix) is hard-scoped to the
-        `discrete-modulus` repo only and can't push to `lean-modulus` even
-        though the same user owns both — confirmed via a 403 on `git push`
-        despite `gh api` reporting misleading full permissions. Needs a
-        push from somewhere with real credentials (local machine, a PAT, or
-        the GitHub web UI); the branch itself is ready as-is. Local copy:
-        `scratch/lean-modulus-pr/` (gitignored but persistent — survives
-        Codespace restarts, unlike `/tmp`).
+      - **Status: merged.** Both lemmas now live in `lean-modulus`'s own
+        `Common/GraphicMatroid.lean` on `main`, commit
+        `1c91aa7412e0421dc8992c15f0932dda9f8756b2` — pushed from outside
+        the Codespace's scoped `GITHUB_TOKEN` (which couldn't push
+        cross-repo, as originally noted here) and confirmed directly
+        against GitHub. This is the exact commit `lean/lakefile.toml`
+        pins (§4 Phase B, PR 3).
       - Reusable throwaway spike project (separate from the PR branch above):
         `scratch/lean_spike/` — a minimal `lakefile.toml` template if this
         needs to be redone or extended.
 
-**PR 3: Lean project scaffolding**
-- [ ] New `lean/` directory: `lakefile.toml`/`lakefile.lean`, Lean toolchain
-      matching `lean-modulus`'s (a prerequisite for the dependency to
-      resolve), `lean-modulus` pinned as a git dependency at a specific
-      commit, CI job (mirroring the existing `cpp-test.yml` pattern) that
-      runs `lake build`.
-- [ ] Land the spike above as this PR's first commit (import smoke test). The
-      spike itself (`scratch/lean_spike/`) is a working template for the
-      `lakefile.toml`/`lean-toolchain` — copy the config, don't reuse the
-      directory (it's throwaway; the real project should be deliberately
-      set up, not promoted from scratch/).
+**PR 3: Lean project scaffolding — done, merged to `main`**
+- [x] New `lean/` directory: `lakefile.toml`, Lean toolchain matching
+      `lean-modulus`'s (`v4.32.0-rc1`), `lean-modulus` pinned as a git
+      dependency at the specific commit above (not `rev = "main"`, for
+      TCB auditability per §3), CI job (`.github/workflows/lean-test.yml`,
+      mirroring `cpp-test.yml`'s shape) that runs `lake build`.
+- [x] Landed an import smoke test as the first real file
+      (`lean/DiscreteModulusCert/Basic.lean`), adapted from the spike's
+      config (`scratch/lean_spike/`, not reused directly, per the original
+      plan here). **Differs from the original plan in one way, for the
+      better:** since the two lemmas are now upstreamed into
+      `lean-modulus` itself rather than living spike-local, the smoke
+      test doesn't re-prove them — it just imports
+      `LeanModulus.Common.GraphicMatroid` and `#check`s both lemmas by
+      name, confirming the pinned commit actually exposes them.
+      `lake build` confirmed green (`Build completed successfully`, both
+      `#check`s resolve with the expected types) after re-running on a
+      bigger Codespace — the original 2-core/no-swap Codespace was CPU-
+      starving the build, not failing it (available RAM held steady
+      throughout; see `scratch/HANDOFF.md`'s now-resolved diagnosis,
+      kept for the record).
 - [x] **Decided: keep Lean out of the main devcontainer entirely.** Mathlib's
       binary cache alone is ~8600 files / several minutes / multiple GB —
       real cost on every codespace rebuild for contributors who never touch
@@ -464,8 +467,7 @@ pinned Lake dependency, rather than adding it as a new entry inside
       enough to justify the extra image/registry maintenance — not worth
       building now. CI (whenever PR 3's `lake build` job lands) installs its
       own `elan`/`lake` in-job, independent of whatever the interactive
-      devcontainer looks like. **Not yet implemented** — this is a decision,
-      the `lean/setup.sh` script itself doesn't exist yet.
+      devcontainer looks like. **Implemented**: `lean/setup.sh`.
 
 **PR 4: Bridge definitions + the certificate-optimality lemma**
 - [ ] Define spanning trees as a `FamilyOfObjects` (§ above): the usage
