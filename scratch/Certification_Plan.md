@@ -432,7 +432,8 @@ pinned Lake dependency, rather than adding it as a new entry inside
         `scratch/lean_spike/` — a minimal `lakefile.toml` template if this
         needs to be redone or extended.
 
-**PR 3: Lean project scaffolding — done, merged to `main`**
+**PR 3: Lean project scaffolding — done, on branch `spanning-tree-cert`
+(not yet merged to `main`)**
 - [x] New `lean/` directory: `lakefile.toml`, Lean toolchain matching
       `lean-modulus`'s (`v4.32.0-rc1`), `lean-modulus` pinned as a git
       dependency at the specific commit above (not `rev = "main"`, for
@@ -469,9 +470,9 @@ pinned Lake dependency, rather than adding it as a new entry inside
       own `elan`/`lake` in-job, independent of whatever the interactive
       devcontainer looks like. **Implemented**: `lean/setup.sh`.
 
-**PR 4: Bridge definitions + the certificate-optimality lemma — done,
-merged to `main`; one scope finding changes the §6 certificate-schema
-question**
+**PR 4: Bridge definitions + the certificate-optimality lemma — done, on
+branch `spanning-tree-cert` (not yet merged to `main`); one scope finding
+changes the §6 certificate-schema question**
 - [x] **Finding that reshapes this PR: `lean-modulus`'s own
       `Density`/`FamilyOfObjects`/`Adm` (`ℝ≥0`-valued) turned out not to be
       reusable for the optimality lemma at all, not just "vocabulary only"
@@ -539,21 +540,58 @@ question**
       Kruskal computation's output) needs the minimum to be attained,
       which needs a Kruskal implementation to exist first (§5.2) — no
       point proving it in the abstract before PR 5 needs the exact shape.
-- [ ] **New open item, surfaced by this PR, not previously in §5.1.5's
-      list:** composing per-block `Pmf`s (one per laminar-family block,
-      §5.1.5) into a single top-level `Pmf` on the *original* graph's
-      spanning trees — the Lean-side counterpart of "gluing pmfs across
-      rounds/cores" — doesn't have a proved combinator yet. The
-      ingredients exist (`isBase_union_of_isBase_restrict_isBase_contract`
-      for gluing the underlying trees, `isSpanningTree_iff_isBase` to move
-      between `IsSpanningTree` and `IsBase`), but turning "two independent
-      local `Pmf`s, one per side of a restrict/contract split" into "one
-      `Pmf` on the union, with the product-of-independent-choices weights"
-      hasn't been formalized. This is the same gap §5.1.5 already flagged
-      on the Python/certificate-schema side ("gluing across rounds"); now
-      there's a concrete Lean target for it (something like
-      `Pmf.glue : Pmf (G.graphicMatroid ↾ A) → Pmf (G.graphicMatroid ／ ·)
-      → Pmf G`, shape not yet finalized) rather than an abstract TODO.
+- [x] **Gluing combinator done: `DiscreteModulusCert.Pmf.glue`
+      (`lean/DiscreteModulusCert/Glue.lean`).** Composes a block's
+      tree-pmf (`μA : Pmf (M ↾ A)`) with a rest-of-graph tree-pmf
+      (`μRest : Pmf N`) into one pmf on `M`'s bases (product-measure
+      weights, `μA.weight I * μRest.weight J` on `J ∪ I`), via
+      `isBase_union_of_isBase_restrict_isBase_contract`. No `sorry`
+      (axiom-checked). This required a refactor first (see below), and
+      surfaced one genuine mathematical subtlety worth recording:
+    - **Refactor: `Pmf`/`IsAdmissible`/`Adm` moved from `Multigraph`
+      (`IsSpanningTree`-based) to `Matroid` (`IsBase`-based).** Necessary
+      because the gluing fact is stated for `M ↾ A` and `M ／ I` — neither
+      is obviously "the graphic matroid of some other multigraph" without
+      extra graph theory this project doesn't otherwise need. Working with
+      bare `Matroid E` throughout `Family.lean`/`Optimality.lean`/
+      `Glue.lean` sidesteps that entirely; the graph-language
+      interpretation for the *top-level* pmf (the one `certificate_optimality`
+      is invoked on) is a two-line corollary,
+      `isAdmissible_graphicMatroid_iff` (`Family.lean`), via
+      `isSpanningTree_iff_isBase` given `G` connected. `certificate_optimality`
+      itself is unaffected in substance — just restated over `{M : Matroid E}`
+      instead of `{G : Multigraph V E}`, which if anything is more honest
+      (it's really a fact about any matroid's base polytope, not
+      graph-specific — consistent with the plan's own earlier observation
+      that this problem is a submodular-minimization special case, §5.1).
+    - **The subtlety `hcompat` papers over, left as an explicit hypothesis
+      rather than proved:** the gluing fact needs `J` to be a base of
+      `M ／ I` for the *specific* `I` drawn from `μA` — a priori a
+      different matroid per `I`. Mathematically, which spanning tree of
+      the block was chosen never affects the rest of the graph (shrinking
+      a block to a point is about which *vertices* merge, not which
+      spanning tree justified it, so `M ／ I` and `M ／ I'` have the same
+      bases outside the block for any two block-bases `I`, `I'`) — but
+      proving that graph fact is exactly the kind of graph-specific
+      argument the matroid-abstraction approach exists to avoid, so
+      `Pmf.glue` instead takes it as a hypothesis (`hcompat`): the caller
+      must show one fixed `μRest` is a valid base-pmf for the contraction
+      by *every* tree in `μA`'s support, not just one. True by
+      construction in the actual algorithm (Python's `core_deflation`
+      literally builds one shrunk multigraph per level, independent of any
+      particular spanning tree), so this isn't a blocker — flagged here so
+      it doesn't get mistaken for something already proved from first
+      principles. A second explicit hypothesis, `hdisj` (`μRest`'s trees
+      never touch the block's edges at all), is also required and is
+      similarly true by construction (blocks partition edges disjointly
+      in the laminar design, §5.1.5).
+    - **Not yet done:** actually *calling* `Pmf.glue` up the laminar
+      family (once per level, composing bottom-up) to produce the single
+      top-level `Pmf` `certificate_optimality` needs — this PR only
+      supplies the one-level combinator, not a driver over the whole
+      block tree. That driver's shape depends on the still-undesigned
+      `blocks`/`parent` certificate schema (§6), so it's blocked on that,
+      not on more Lean proof work.
 
 ### Phase C — Verifier & integration
 
@@ -1180,11 +1218,15 @@ over its own induced edges, e.g. something in the shape of:
       *not* `ℝ≥0`/`NNReal` — `lean-modulus`'s own density vocabulary is
       `ℝ≥0`-valued and turned out not to be reusable here at all (§4's PR 4
       entry), so nothing in the trusted verifier ever needs an
-      `ℝ≥0`/`NNReal` coercion. Still open, unchanged by PR 4: the top-level
-      `blocks`/`parent` nesting shape itself, and — newly concrete — a
-      Lean combinator to glue two blocks' `Pmf`s into one (§4's PR 4 entry,
-      last bullet), which the certificate's `parent`-linked block list
-      needs to mirror structurally once designed.
+      `ℝ≥0`/`NNReal` coercion. **The one-level gluing combinator is now
+      also done** (`DiscreteModulusCert.Pmf.glue`, §4's PR 4 entry) —
+      composes a block's `Pmf` with a rest-of-graph `Pmf` into one `Pmf`
+      on the union, given two hypotheses true by construction in the
+      actual algorithm (see §4). Still open, unchanged by that: the
+      top-level `blocks`/`parent` nesting shape itself, and a driver that
+      calls `Pmf.glue` once per level up the whole block tree — its shape
+      depends on `blocks`/`parent` being designed first, so schema design
+      is now the *only* remaining blocker on that, not further proof work.
 - [ ] Keep `certificate_version` independent from the PR 1 solver-trace
       version — they change on different schedules.
 

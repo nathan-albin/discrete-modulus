@@ -21,7 +21,9 @@ swapped.
 
 namespace DiscreteModulusCert
 
-variable {V E : Type*} [Fintype E] {G : Multigraph V E}
+open scoped Matroid
+
+variable {E : Type*} [Fintype E] {M : Matroid E}
 
 private theorem sqNorm_div_const (f : E → ℚ) (c : ℚ) :
     sqNorm (fun e => f e / c) = sqNorm f / c ^ 2 := by
@@ -39,10 +41,10 @@ theorem sqNorm_mul_sqNorm_eq_one_of_eq_div {η ρ : CertDensity E} (hηpos : sqN
 /-- **Certificate optimality, primal half**: an admissible `ρ` of the form
 `η / ‖η‖²`, `η` a pmf's marginal, achieves the minimum squared norm among
 *all* admissible densities. -/
-theorem isMinOn_sqNorm_adm_of_certificate {ρ : CertDensity E} (_hρAdm : IsAdmissible G ρ)
-    {μ : Pmf G} {η : E → ℚ} (hη : η = μ.marginal) (hηpos : sqNorm η ≠ 0)
+theorem isMinOn_sqNorm_adm_of_certificate {ρ : CertDensity E} (_hρAdm : IsAdmissible M ρ)
+    {μ : Pmf M} {η : E → ℚ} (hη : η = μ.marginal) (hηpos : sqNorm η ≠ 0)
     (hρeq : ρ = fun e => η e / sqNorm η) :
-    ∀ ρ' : CertDensity E, IsAdmissible G ρ' → sqNorm ρ ≤ sqNorm ρ' := by
+    ∀ ρ' : CertDensity E, IsAdmissible M ρ' → sqNorm ρ ≤ sqNorm ρ' := by
   intro ρ' hρ'Adm
   have h1 : (1 : ℚ) ≤ pairing ρ' η := hη ▸ Pmf.one_le_pairing_marginal_of_admissible hρ'Adm μ
   have hcs : pairing ρ' η ^ 2 ≤ sqNorm ρ' * sqNorm η := sq_pairing_le_sqNorm_mul_sqNorm ρ' η
@@ -54,12 +56,12 @@ theorem isMinOn_sqNorm_adm_of_certificate {ρ : CertDensity E} (_hρAdm : IsAdmi
 
 /-- **Certificate optimality, dual half**: for `ρ` admissible of the form
 `η / ‖η‖²`, `η` achieves the minimum squared norm among the marginals of
-*all* pmfs on `G`'s spanning trees — exactly the quantity Wolfe's
-algorithm (`min_norm_point_wolfe` in the Python builder) computes. -/
-theorem isMinOn_sqNorm_marginal_of_certificate {ρ : CertDensity E} (hρAdm : IsAdmissible G ρ)
-    {μ : Pmf G} {η : E → ℚ} (_hη : η = μ.marginal) (hηpos : sqNorm η ≠ 0)
+*all* pmfs on `M`'s bases — exactly the quantity Wolfe's algorithm
+(`min_norm_point_wolfe` in the Python builder) computes. -/
+theorem isMinOn_sqNorm_marginal_of_certificate {ρ : CertDensity E} (hρAdm : IsAdmissible M ρ)
+    {μ : Pmf M} {η : E → ℚ} (_hη : η = μ.marginal) (hηpos : sqNorm η ≠ 0)
     (hρeq : ρ = fun e => η e / sqNorm η) :
-    ∀ μ' : Pmf G, sqNorm η ≤ sqNorm μ'.marginal := by
+    ∀ μ' : Pmf M, sqNorm η ≤ sqNorm μ'.marginal := by
   intro μ'
   have h1 : (1 : ℚ) ≤ pairing ρ μ'.marginal :=
     Pmf.one_le_pairing_marginal_of_admissible hρAdm μ'
@@ -76,33 +78,37 @@ theorem isMinOn_sqNorm_marginal_of_certificate {ρ : CertDensity E} (hρAdm : Is
     exact absurd hprod (by norm_num)
   exact le_of_mul_le_mul_left (hprod.trans_le hle) hρpos'
 
-/-- **Certificate optimality.** If `ρ` is admissible for `G`'s spanning
-trees, `μ` is a pmf on `G`'s spanning trees with marginal `η`, and
-`ρ = η / ‖η‖²`, then `ρ` and `μ` are simultaneously optimal: `ρ` solves the
-modulus problem (minimizes squared norm over admissible densities) and `μ`
-solves its dual (minimizes the squared norm of its own marginal over all
-pmfs). This is the theorem PR 5's verifier ultimately invokes: parse a
-certificate's `ρ`, `μ`, `η`, check the three hypotheses below in `ℚ`
-(admissibility via the Kruskal oracle, §5.2; `hη`/`hηpos`/`hρeq` purely
-arithmetic), and conclude both halves of optimality. -/
-theorem certificate_optimality {ρ : CertDensity E} (hρAdm : IsAdmissible G ρ)
-    {μ : Pmf G} {η : E → ℚ} (hη : η = μ.marginal) (hηpos : sqNorm η ≠ 0)
+/-- **Certificate optimality.** If `ρ` is admissible for `M`, `μ` is a pmf
+on `M`'s bases with marginal `η`, and `ρ = η / ‖η‖²`, then `ρ` and `μ` are
+simultaneously optimal: `ρ` solves the modulus problem (minimizes squared
+norm over admissible densities) and `μ` solves its dual (minimizes the
+squared norm of its own marginal over all pmfs). For `M = G.graphicMatroid`
+with `G` connected, `isAdmissible_graphicMatroid_iff` (`Family.lean`)
+translates `IsAdmissible M ρ` back into "every spanning tree of `G` has
+`ρ`-weight ≥ 1." This is the theorem PR 5's verifier ultimately invokes:
+parse a certificate's `ρ`, `μ`, `η`, check the three hypotheses below in
+`ℚ` (admissibility via the Kruskal oracle, §5.2; `hη`/`hηpos`/`hρeq`
+purely arithmetic), and conclude both halves of optimality. -/
+theorem certificate_optimality {ρ : CertDensity E} (hρAdm : IsAdmissible M ρ)
+    {μ : Pmf M} {η : E → ℚ} (hη : η = μ.marginal) (hηpos : sqNorm η ≠ 0)
     (hρeq : ρ = fun e => η e / sqNorm η) :
-    (∀ ρ' : CertDensity E, IsAdmissible G ρ' → sqNorm ρ ≤ sqNorm ρ') ∧
-      (∀ μ' : Pmf G, sqNorm η ≤ sqNorm μ'.marginal) :=
+    (∀ ρ' : CertDensity E, IsAdmissible M ρ' → sqNorm ρ ≤ sqNorm ρ') ∧
+      (∀ μ' : Pmf M, sqNorm η ≤ sqNorm μ'.marginal) :=
   ⟨isMinOn_sqNorm_adm_of_certificate hρAdm hη hηpos hρeq,
     isMinOn_sqNorm_marginal_of_certificate hρAdm hη hηpos hρeq⟩
 
-/-- **Admissibility definitional lemma.** `ρ` is admissible for `G` iff
-every spanning tree of `G` has `ρ`-weight at least `1` — genuinely
-definitional (`IsAdmissible` is stated exactly this way), kept as a named,
-discoverable lemma since it's the hinge PR 5's admissibility check
-actually invokes. The further equivalence to "the *minimum* spanning-tree
-weight is `≥ 1`" (the form that literally matches a Kruskal computation's
-output, §5.2) needs the minimum to be attained — deferred until PR 5
-actually wires in a Kruskal implementation to compute against. -/
-theorem isAdmissible_iff_one_le_pairing_spanningTreeUsage {ρ : CertDensity E} :
-    IsAdmissible G ρ ↔ ∀ T : Set E, G.IsSpanningTree T → 1 ≤ pairing ρ (spanningTreeUsage T) :=
+/-- **Admissibility definitional lemma.** `ρ` is admissible for `M` iff
+every base of `M` has `ρ`-weight at least `1` — genuinely definitional
+(`IsAdmissible` is stated exactly this way), kept as a named, discoverable
+lemma since it's the hinge PR 5's admissibility check actually invokes
+(composed with `isAdmissible_graphicMatroid_iff` for the graph-language
+version, "every spanning tree"). The further equivalence to "the
+*minimum* base weight is `≥ 1`" (the form that literally matches a
+Kruskal computation's output, §5.2) needs the minimum to be attained —
+deferred until PR 5 actually wires in a Kruskal implementation to compute
+against. -/
+theorem isAdmissible_iff_one_le_pairing_usageVector {ρ : CertDensity E} :
+    IsAdmissible M ρ ↔ ∀ T : Set E, M.IsBase T → 1 ≤ pairing ρ (usageVector T) :=
   Iff.rfl
 
 end DiscreteModulusCert

@@ -1,3 +1,4 @@
 import DiscreteModulusCert.Basic
 import DiscreteModulusCert.Family
 import DiscreteModulusCert.Optimality
+import DiscreteModulusCert.Glue
