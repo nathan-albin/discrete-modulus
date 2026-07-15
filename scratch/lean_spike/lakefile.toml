@@ -1,0 +1,10 @@
+name = "lean_spike"
+defaultTargets = ["LeanSpike"]
+
+[[require]]
+name = "LeanModulus"
+git = "https://github.com/nathan-albin/lean-modulus.git"
+rev = "main"
+
+[[lean_lib]]
+name = "LeanSpike"
