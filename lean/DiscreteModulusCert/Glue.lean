@@ -13,18 +13,20 @@ bases to whole pmfs: given an independent choice of block-tree (drawn from
 `μA`) and rest-of-graph-tree (drawn from `μRest`), their union is
 distributed as the product measure.
 
-**Why `μRest` is a single fixed pmf, not one per block-tree choice.** The
-gluing fact needs `J` to be a base of `M ／ I` for the *specific* `I`
-drawn from `μA` — a priori a different matroid for each `I`. But which
-spanning tree of the block was chosen never actually affects the "rest of
-the graph": contracting a block to a point is fundamentally about which
-*vertices* got merged, not which spanning tree justified the contraction,
-so `M ／ I` and `M ／ I'` have the same bases outside the block for any
-two bases `I`, `I'` of the block. Rather than proving that graph fact here
-(exactly the kind of graph-specific argument the matroid-abstraction
-approach exists to avoid), `hcompat` takes it as a hypothesis: the caller
-supplies one `μRest` and must show it is a valid base-pmf for the
-contraction by *every* tree in `μA`'s support, not just one.
+**Why `μRest` is a pmf on `G.graphicMatroid ／ A` (contraction by the whole
+block), not `G.graphicMatroid ／ I` for a specific tree `I`.** The gluing
+fact needs a base of `M ／ I` for the *specific* `I` drawn from `μA` — a
+priori a different matroid for each `I`. But contracting a block to a
+point is fundamentally about which *vertices* got merged, not which
+spanning tree justified the contraction, so bases of `M ／ I` disjoint
+from `A` are exactly bases of `M ／ A`, for *any* basis `I` of the block
+— `isBase_contract_iff_of_isBasis_restrict` below proves this directly
+from Mathlib's matroid contraction API
+(`IsBasis'.contract_eq_contract_delete`, plus the fact that `A \ I` are
+all loops of `M ／ I`), no graph-specific argument needed. So a single
+`μRest : Pmf (M ／ A)` is simultaneously valid against `M ／ I` for every
+`I` in `μA`'s support, and `Pmf.glue` never has to assume that as a
+hypothesis.
 -/
 
 namespace DiscreteModulusCert
@@ -36,9 +38,56 @@ variable {V E : Type*} [Fintype E] (G : Multigraph V E)
 
 section Glue
 
-variable {A : Set E} {N : Matroid E}
+variable {A : Set E}
 
-private theorem glue_injOn (μA : Pmf (G.graphicMatroid ↾ A)) (μRest : Pmf N)
+/-- The loops created by contracting a block by one of its own bases are
+exactly the rest of the block: an element of `A` not in the chosen basis
+`I` can never be independently added to `I`, by `I`'s maximality as a
+basis of `A`. -/
+private theorem isLoop_contract_of_mem_sdiff {I : Set E}
+    (hI : (G.graphicMatroid ↾ A).IsBase I) {a : E} (ha : a ∈ A \ I) :
+    (G.graphicMatroid ／ I).IsLoop a := by
+  have hIbasis : G.graphicMatroid.IsBasis' I A := Matroid.isBase_restrict_iff'.mp hI
+  have hIindep : G.graphicMatroid.Indep I := hIbasis.indep
+  have hg : a ∈ (G.graphicMatroid ／ I).E := by
+    rw [Matroid.contract_ground, Multigraph.graphicMatroid_E]
+    exact ⟨Set.mem_univ a, ha.2⟩
+  by_contra hnl
+  rw [Matroid.not_isLoop_iff hg, ← Matroid.indep_singleton, hIindep.contract_indep_iff] at hnl
+  obtain ⟨_, hind⟩ := hnl
+  have heq := hIbasis.eq_of_subset_indep hind Set.subset_union_right
+    (Set.union_subset (Set.singleton_subset_iff.mpr ha.1) hIbasis.subset)
+  exact ha.2 (heq ▸ Set.mem_union_left I rfl)
+
+/-- **Contraction by a block doesn't care which of the block's own trees
+justified it.** For `I` a basis (spanning tree) of the block `A`,
+contracting by `I` and contracting by the whole block `A` have the same
+bases outside `A` — a general matroid fact (via
+`IsBasis'.contract_eq_contract_delete`: contracting by `A` is the same as
+contracting by `I` and then deleting `A \ I`, and deleting the loops
+`A \ I` creates doesn't change which disjoint sets are bases). This is
+exactly the "shrinking a block to a point is about which vertices merge,
+not which spanning tree justified it" fact `Pmf.glue` relies on. -/
+theorem isBase_contract_iff_of_isBasis_restrict {I : Set E}
+    (hI : (G.graphicMatroid ↾ A).IsBase I) {T : Set E} (hT : Disjoint T A) :
+    (G.graphicMatroid ／ A).IsBase T ↔ (G.graphicMatroid ／ I).IsBase T := by
+  have hIbasis : G.graphicMatroid.IsBasis' I A := Matroid.isBase_restrict_iff'.mp hI
+  rw [hIbasis.contract_eq_contract_delete, Matroid.delete_isBase_iff]
+  constructor
+  · intro hbasis
+    refine hbasis.isBase_of_spanning ?_
+    rw [Matroid.spanning_iff_ground_subset_closure]
+    intro x hx
+    by_cases hxD : x ∈ A \ I
+    · exact (isLoop_contract_of_mem_sdiff G hI hxD).mem_closure _
+    · have hsub := (G.graphicMatroid ／ I).subset_closure ((G.graphicMatroid ／ I).E \ (A \ I))
+      exact hsub ⟨hx, hxD⟩
+  · intro hbase
+    have hTsub : T ⊆ (G.graphicMatroid ／ I).E \ (A \ I) :=
+      Set.subset_sdiff.mpr ⟨hbase.subset_ground, hT.mono_right Set.sdiff_subset⟩
+    exact hbase.isBasis_of_subset (hBX := hTsub)
+
+private theorem glue_injOn (μA : Pmf (G.graphicMatroid ↾ A)) (μRest : Pmf (G.graphicMatroid ／ A))
     (hdisj : ∀ J ∈ μRest.support, Disjoint J A) :
     Set.InjOn (fun p : Set E × Set E => p.2 ∪ p.1) (μA.support ×ˢ μRest.support : Finset (Set E × Set E)) := by
   rintro ⟨I₁, J₁⟩ h₁ ⟨I₂, J₂⟩ h₂ heq
@@ -76,12 +125,13 @@ private theorem glue_injOn (μA : Pmf (G.graphicMatroid ↾ A)) (μRest : Pmf N)
       · exact absurd h' (Set.disjoint_left.mp hJ₂I h)
   rw [hIeq, hJeq]
 
-/-- Glue a block's tree-pmf with a fixed rest-of-graph tree-pmf into a
-single pmf on the whole graph's spanning trees. `hcompat` says `μRest` is
-valid regardless of which tree of the block was drawn (see the module
-docstring); `hdisj` says `μRest`'s trees never touch the block at all. -/
-noncomputable def Pmf.glue (μA : Pmf (G.graphicMatroid ↾ A)) (μRest : Pmf N)
-    (hcompat : ∀ I ∈ μA.support, ∀ T, N.IsBase T ↔ (G.graphicMatroid ／ I).IsBase T)
+/-- Glue a block's tree-pmf with the (canonical, tree-independent) pmf on
+the rest of the graph after shrinking that block, into a single pmf on
+the whole graph's spanning trees. `hdisj` — `μRest`'s trees never touch
+the block at all — is the only hypothesis needed; compatibility with
+whichever tree of the block gets drawn is automatic
+(`isBase_contract_iff_of_isBasis_restrict`). -/
+noncomputable def Pmf.glue (μA : Pmf (G.graphicMatroid ↾ A)) (μRest : Pmf (G.graphicMatroid ／ A))
     (hdisj : ∀ J ∈ μRest.support, Disjoint J A) :
     Pmf G.graphicMatroid where
   support := (μA.support ×ˢ μRest.support).image (fun p => p.2 ∪ p.1)
@@ -92,7 +142,8 @@ noncomputable def Pmf.glue (μA : Pmf (G.graphicMatroid ↾ A)) (μRest : Pmf N)
     obtain ⟨⟨I, J⟩, hp, hTeq⟩ := Finset.mem_image.mp hT
     rw [Finset.mem_product] at hp
     have hI : (G.graphicMatroid ↾ A).IsBase I := μA.isBase I hp.1
-    have hJ : (G.graphicMatroid ／ I).IsBase J := (hcompat I hp.1 J).mp (μRest.isBase J hp.2)
+    have hJ : (G.graphicMatroid ／ I).IsBase J :=
+      (isBase_contract_iff_of_isBasis_restrict G hI (hdisj J hp.2)).mp (μRest.isBase J hp.2)
     simpa [← hTeq] using G.isBase_union_of_isBase_restrict_isBase_contract hI hJ
   nonneg := by
     intro T _

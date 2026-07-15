@@ -542,12 +542,15 @@ changes the §6 certificate-schema question**
       point proving it in the abstract before PR 5 needs the exact shape.
 - [x] **Gluing combinator done: `DiscreteModulusCert.Pmf.glue`
       (`lean/DiscreteModulusCert/Glue.lean`).** Composes a block's
-      tree-pmf (`μA : Pmf (M ↾ A)`) with a rest-of-graph tree-pmf
-      (`μRest : Pmf N`) into one pmf on `M`'s bases (product-measure
-      weights, `μA.weight I * μRest.weight J` on `J ∪ I`), via
-      `isBase_union_of_isBase_restrict_isBase_contract`. No `sorry`
-      (axiom-checked). This required a refactor first (see below), and
-      surfaced one genuine mathematical subtlety worth recording:
+      tree-pmf (`μA : Pmf (M ↾ A)`) with the canonical rest-of-graph
+      tree-pmf (`μRest : Pmf (M ／ A)`) into one pmf on `M`'s bases
+      (product-measure weights, `μA.weight I * μRest.weight J` on
+      `J ∪ I`), via `isBase_union_of_isBase_restrict_isBase_contract`. No
+      `sorry` (axiom-checked). This required a refactor first (see below),
+      and what was originally flagged as an unprovable-without-graph-theory
+      gap (`hcompat`) turned out to be a **provable Mathlib-level matroid
+      fact** — a real strengthening over the first version of this PR, see
+      below.
     - **Refactor: `Pmf`/`IsAdmissible`/`Adm` moved from `Multigraph`
       (`IsSpanningTree`-based) to `Matroid` (`IsBase`-based).** Necessary
       because the gluing fact is stated for `M ↾ A` and `M ／ I` — neither
@@ -564,34 +567,66 @@ changes the §6 certificate-schema question**
       (it's really a fact about any matroid's base polytope, not
       graph-specific — consistent with the plan's own earlier observation
       that this problem is a submodular-minimization special case, §5.1).
-    - **The subtlety `hcompat` papers over, left as an explicit hypothesis
-      rather than proved:** the gluing fact needs `J` to be a base of
-      `M ／ I` for the *specific* `I` drawn from `μA` — a priori a
-      different matroid per `I`. Mathematically, which spanning tree of
-      the block was chosen never affects the rest of the graph (shrinking
-      a block to a point is about which *vertices* merge, not which
-      spanning tree justified it, so `M ／ I` and `M ／ I'` have the same
-      bases outside the block for any two block-bases `I`, `I'`) — but
-      proving that graph fact is exactly the kind of graph-specific
-      argument the matroid-abstraction approach exists to avoid, so
-      `Pmf.glue` instead takes it as a hypothesis (`hcompat`): the caller
-      must show one fixed `μRest` is a valid base-pmf for the contraction
-      by *every* tree in `μA`'s support, not just one. True by
-      construction in the actual algorithm (Python's `core_deflation`
-      literally builds one shrunk multigraph per level, independent of any
-      particular spanning tree), so this isn't a blocker — flagged here so
-      it doesn't get mistaken for something already proved from first
-      principles. A second explicit hypothesis, `hdisj` (`μRest`'s trees
-      never touch the block's edges at all), is also required and is
-      similarly true by construction (blocks partition edges disjointly
-      in the laminar design, §5.1.5).
-    - **Not yet done:** actually *calling* `Pmf.glue` up the laminar
-      family (once per level, composing bottom-up) to produce the single
-      top-level `Pmf` `certificate_optimality` needs — this PR only
-      supplies the one-level combinator, not a driver over the whole
-      block tree. That driver's shape depends on the still-undesigned
-      `blocks`/`parent` certificate schema (§6), so it's blocked on that,
-      not on more Lean proof work.
+    - **`hcompat` upgraded from an assumed hypothesis to a proved theorem,
+      `isBase_contract_iff_of_isBasis_restrict` (`Glue.lean`).** The
+      gluing fact needs `J` to be a base of `M ／ I` for the *specific*
+      `I` drawn from `μA` — a priori a different matroid per `I`. The
+      first version of this PR took as a hypothesis the informal graph
+      fact "shrinking a block to a point is about which vertices merge,
+      not which spanning tree justified it, so `M ／ I` and `M ／ I'` have
+      the same bases outside the block for any two block-bases." It turns
+      out this **is** a general matroid fact, with no graph-specific
+      argument needed, provable directly from two pieces already in
+      Mathlib: `IsBasis'.contract_eq_contract_delete` (contracting by a
+      set equals contracting by one of its bases, then deleting the rest
+      of the set) plus the fact that the deleted elements are all loops of
+      the smaller contraction (so deleting them doesn't change which
+      *disjoint* sets are bases — `Matroid.IsBase.isBasis_of_subset` and
+      `Matroid.IsBasis.isBase_of_spanning` do the rest). **Consequence:**
+      `Pmf.glue` no longer takes `hcompat` as a parameter at all — `μRest`
+      is now typed directly as `Pmf (M ／ A)` (contraction by the whole
+      block, canonical, no tree-dependence), and compatibility with
+      whichever tree of the block gets drawn is derived automatically
+      inside `isBase`'s proof. This closes what would otherwise have been
+      a real, if narrow, soundness gap: an assumed (not verifier-checked)
+      hypothesis inside the trusted certificate-optimality machinery. The
+      one remaining hypothesis, `hdisj` (`μRest`'s trees never touch the
+      block's edges at all), is fully decidable/computable directly from
+      concrete certificate data (a finite disjointness check), so it's
+      genuinely verifier-checkable, unlike `hcompat` would have been (a
+      universally-quantified matroid statement, not brute-forceable at
+      realistic graph sizes).
+    - **What this means for gluing across the whole laminar family, not
+      just one restrict/contract split (investigated, not yet
+      implemented):** read `python/src/discrete_modulus/pmf_construction.py`
+      and `cpp/include/discrete_modulus/solver_trace.hpp` directly (rather
+      than re-deriving from this doc's prose) to check how `Pmf.glue`
+      composes over a *whole* laminar family, not just one split. Finding:
+      **both the within-round core-deflation nesting and the
+      across-round `crit_set` nesting reduce to the same flat, ordered
+      structure** — `build_factored_pmf`'s `pieces: list[LocalPiece]`
+      is built in strict discovery order, each piece's own edges disjoint
+      from all earlier ones (confirmed via its docstring: "the pieces
+      partition `G`'s edges"), and `SolverTrace.rounds` is likewise a flat
+      list of rounds each dispatching a `crit_set` disjoint from every
+      other round's. Working through the matroid restriction/contraction
+      composition confirms this isn't a coincidence: processing pieces in
+      discovery order, the ambient matroid at step `i` is
+      `M ↾ (A_1 ∪ ⋯ ∪ A_i)`, restriction composes
+      (`(M ↾ X) ↾ Y = M ↾ Y` for `Y ⊆ X`) so the "already-glued" pmf from
+      step `i-1` is exactly `Pmf (M ↾ (A_1∪⋯∪A_i) ↾ (A_1∪⋯∪A_{i-1}))`
+      — precisely `Pmf.glue`'s `μA` argument — and this holds regardless
+      of whether piece `i` came from deflation or from a later solver
+      round, since both are the same "restrict then contract" operation.
+      **Consequence for §6:** the whole multi-round, multi-core
+      certificate reduces to *one flat ordered list* of pieces (round 1's
+      pieces, then round 2's, …), verified by a single left-fold of
+      `Pmf.glue` — not a tree with parent pointers as originally sketched.
+      See §6's rewrite for the schema this implies.
+    - **Still not implemented:** the actual fold driver (calling
+      `Pmf.glue` once per piece in the flat list) and the certificate
+      parser that produces its inputs — this PR's finding fixes the
+      *shape*, but the driver itself is PR 5 work (§6, Phase C).
 
 ### Phase C — Verifier & integration
 
@@ -1161,72 +1196,112 @@ letting it sit quietly as an implementation detail. PR 6 is the tracked
 follow-up to prove Kruskal correct and remove the gap — scoped so it never
 blocks Phases A-C.
 
-## 6. Certificate format (sketch, v1 — STALE, see §5.1.5)
+## 6. Certificate format
 
-**This sketch predates the deflation-based design (§5.1.5) and doesn't fit
-it.** A flat `"trees": [...]` list means materializing the full Cartesian
-product across every deflation level — exactly what §5.1.5's factored
-representation exists to avoid (exponential in nesting depth). Kept below
-for historical reference, not as a current target.
+**History: two earlier sketches, both superseded, kept below only for the
+record.** v1 (a flat `"trees"` list) predates the deflation-based design
+(§5.1.5) and doesn't fit it — it would require materializing the full
+Cartesian product across every deflation level, exponential in nesting
+depth. v2 (a `"blocks"`/`"parent"` tree) was the right shape *category*
+(factored, laminar) but wrong in its specifics — it assumed the laminar
+family needed general tree/parent-pointer structure. §4's gluing work
+(`Pmf.glue`, `isBase_contract_iff_of_isBasis_restrict`) found that it
+doesn't: read against the actual builder (`pmf_construction.py`) and
+solver trace (`solver_trace.hpp`) rather than re-derived from prose, both
+the within-round core-deflation nesting and the across-round `crit_set`
+nesting reduce to *one flat, ordered list* — verified by a single
+left-fold of `Pmf.glue`, not a general tree walk. v3 below reflects that.
 
 ```jsonc
 {
-  "certificate_version": 1,
+  "certificate_version": 3,
   "graph": { "vertices": [...], "edges": [[u, v], ...] },
-  "pmf": {
-    // spanning trees as index lists into "edges", plus rational weights
-    "trees": [{ "edges": [0, 2, 5], "weight": [1, 4] }, ...]  // [num, den]
-  },
+  // A flat, ORDERED list of pieces -- one per within-round deflation core,
+  // or per solver round if it needed no further deflation. Order matters:
+  // it must match discovery order (round 1's pieces, in their own
+  // discovery order, then round 2's, ...), the same order
+  // `FactoredPmf.pieces`/`SolverTrace.rounds` already produce. The
+  // verifier processes this list via one left-fold of `Pmf.glue`: at step
+  // i, "everything folded in so far" (steps 1..i-1) plays `Pmf.glue`'s
+  // `μA` argument, and piece i's own `local_pmf` plays `μRest` --
+  // provable-compatible with whichever tree of the earlier pieces was
+  // drawn, automatically, no certificate-side bookkeeping needed for that
+  // part (§4's `isBase_contract_iff_of_isBasis_restrict`).
+  "pieces": [
+    {
+      // This piece's own edge scope, as indices into the TOP-LEVEL
+      // "edges" array above (never relabeled/local indices -- see the
+      // note below on why). Must be disjoint from every earlier piece's
+      // "edges", and the union of all pieces' "edges" must be the whole
+      // top-level "edges" list (checked by the verifier; see open items).
+      "edges": [0, 2, 5],
+      "local_pmf": {
+        // Spanning trees of this piece, as edge-index lists into THIS
+        // piece's own "edges" above (equivalently, into the top-level
+        // "edges" array, since piece edges are a subset) -- global
+        // indices throughout, per the note below.
+        "trees": [{ "edges": [0, 2], "weight": [1, 2] }, ...]  // [num, den]
+      }
+    },
+    ...
+  ],
   "eta": [{ "edge": 0, "value": [1, 3] }, ...],
   "rho": [{ "edge": 0, "value": [1, 3] }, ...]
 }
 ```
 
-**Current design intent (not yet turned into a real schema — see §5.1.5's
-open items):** a laminar family of vertex-subsets of the *original* graph
-(never a relabeled/contracted one), each carrying its own small local pmf
-over its own induced edges, e.g. something in the shape of:
+**Why tree edges are global (top-level) indices, not piece-local ones.**
+Python's own `LocalPiece.provenance` maps *local* edge indices (dense,
+`0..piece_size-1`, what `min_norm_point_wolfe`'s arrays actually use) back
+to the original graph — but that's an implementation detail of running
+Wolfe's algorithm efficiently, not something the certificate needs to
+inherit. Using global indices everywhere means the verifier never needs a
+local→global translation step at all: `Multigraph.IsForest`/`endpoints`
+apply directly to a piece's declared trees exactly as they would to the
+whole graph, matching §5.1.5's "never relabel vertices or edges"
+principle already adopted for the same reason. The certificate builder
+does the (cheap, untrusted) translation from Wolfe's local indices once,
+at emission time.
 
-```jsonc
-{
-  "certificate_version": 2,
-  "graph": { "vertices": [...], "edges": [[u, v], ...] },
-  // a forest of blocks; each block is a subset of "vertices" plus a local
-  // pmf over its own induced edges (original edge indices, not relabeled)
-  "blocks": [
-    {
-      "vertices": [...],           // subset of the original vertex list
-      "parent": null,               // or another block's index, for nesting
-      "local_pmf": {
-        "trees": [{ "edges": [0, 2], "weight": [1, 2] }, ...]
-      }
-    },
-    ...
-  ]
-}
-```
-- [ ] Nail down the exact schema before PR 5's parser is written — the sketch
-      above is a starting point, not a commitment; needs to match whatever
-      Lean-side vertex-block/`Quotient` representation gets designed (§5.1.5).
-- [x] **`local_pmf`'s shape confirmed, not just sketched, by PR 4 (§4).**
-      `DiscreteModulusCert.Pmf` (`lean/DiscreteModulusCert/Family.lean`) is
-      literally "a `Finset` of edge sets plus a rational weight each" —
-      the exact shape drawn above — so `local_pmf.trees` parses directly
-      into a `Pmf` with no intermediate representation needed. PR 4 also
-      settled a numeric-type question this sketch left implicit: weights
-      parse as plain `ℚ` (`[num, den]` → `Rat.mk'`-style construction),
-      *not* `ℝ≥0`/`NNReal` — `lean-modulus`'s own density vocabulary is
-      `ℝ≥0`-valued and turned out not to be reusable here at all (§4's PR 4
-      entry), so nothing in the trusted verifier ever needs an
-      `ℝ≥0`/`NNReal` coercion. **The one-level gluing combinator is now
-      also done** (`DiscreteModulusCert.Pmf.glue`, §4's PR 4 entry) —
-      composes a block's `Pmf` with a rest-of-graph `Pmf` into one `Pmf`
-      on the union, given two hypotheses true by construction in the
-      actual algorithm (see §4). Still open, unchanged by that: the
-      top-level `blocks`/`parent` nesting shape itself, and a driver that
-      calls `Pmf.glue` once per level up the whole block tree — its shape
-      depends on `blocks`/`parent` being designed first, so schema design
-      is now the *only* remaining blocker on that, not further proof work.
+**`local_pmf`'s shape was confirmed, not just sketched, by PR 4.**
+`DiscreteModulusCert.Pmf` is literally "a `Finset` of edge sets plus a
+rational weight each" — exactly the shape above — so `local_pmf.trees`
+parses directly into a `Pmf`, no intermediate representation needed.
+Weights parse as plain `ℚ` (`[num, den]`), never `ℝ≥0`/`NNReal` — see §4's
+PR 4 entry for why `lean-modulus`'s own `ℝ≥0`-valued density vocabulary
+turned out not to be reusable here at all.
+
+**Open items — what PR 5's parser/verifier still needs to nail down and
+check:**
+- [ ] **Partition-completeness check.** The verifier must confirm the
+      pieces' `edges` lists are pairwise disjoint and their union is the
+      full top-level `edges` list — cheap (Finset operations on concrete
+      index lists) but not yet specified as an explicit checklist step for
+      PR 5. Without it, the final fold only produces a `Pmf` on a *proper
+      restriction* of `G.graphicMatroid`, not `G.graphicMatroid` itself,
+      and `certificate_optimality` doesn't type-check against it.
+- [ ] **Per-piece `IsBase` checking.** Each declared tree in a piece's
+      `local_pmf` needs actually verifying as a genuine base of that
+      piece's matroid (`M ↾ A_1` for the first piece, `M ／ (A_1∪⋯∪A_{i-1})`
+      restricted appropriately for later ones) — concretely, a forest
+      check (`Multigraph.IsForest`: no loops, injective endpoints,
+      acyclic) plus a cardinality/spanning check against that piece's own
+      rank. Standard, decidable, but not yet implemented or even sketched
+      as Lean code — this is real PR 5 scope, not just parsing.
+      `hdisj` (`Pmf.glue`'s one remaining hypothesis — a piece's trees
+      never touch an earlier piece's edges) is a special case of this and
+      is directly, cheaply decidable from the concrete edge-index lists.
+- [ ] **`vertices` is informational only, not load-bearing for
+      verification** — every check above runs purely on edge sets
+      (`Pmf.glue`, `IsForest`, etc. never mention vertices). Worth keeping
+      in the schema for traceability back to `solver_trace.hpp`'s own
+      per-round `vertices` field and for human debugging, but the
+      verifier's correctness doesn't depend on it. Flagging explicitly so
+      a future contributor doesn't assume it needs cross-checking against
+      anything.
+- [ ] Fold driver itself (repeatedly calling `Pmf.glue` down the `pieces`
+      list) isn't implemented — this section fixes the *shape* it needs to
+      consume; the driver is PR 5 work (§4's PR 4 entry, last bullet).
 - [ ] Keep `certificate_version` independent from the PR 1 solver-trace
       version — they change on different schedules.
 
@@ -1256,8 +1331,13 @@ over its own induced edges, e.g. something in the shape of:
   discover wrong after PR 5 is built. Partially covered for
   `IsSpanningTree` by the spike's `isSpanningTree_iff_isBase` (§4 Phase B,
   §5.1.5) but not `Density`/`Adm`.
-- **New, from §5.1.5:** the exact certificate schema for the laminar-family
-  representation (§6) — genuinely undesigned, not just unpolished.
+- **Resolved (was: "New, from §5.1.5"), see §6:** the certificate schema is
+  now designed (v3, a flat ordered `pieces` list) and grounded in both the
+  actual Python builder's data shapes and a Lean-side proof of why the
+  flat-list structure suffices (§4's PR 4 entry). Not fully closed though
+  — §6 itself lists three concrete remaining open items (partition-
+  completeness checking, per-piece `IsBase` checking, the fold driver)
+  that are real PR 5 implementation work, not design gaps.
 - **New, from §5.1.5:** whether `core_deflation`'s cubic-in-adversarial-cases
   performance is actually fine on real solver-dispatched graphs, or whether
   it needs the "principal partition of a matroid" style single-shot
@@ -1265,10 +1345,13 @@ over its own induced edges, e.g. something in the shape of:
   not implemented (only validated against synthetic worst-case towers, which
   real shrunk multigraphs are not expected to resemble — but this is an
   assumption, not yet checked against real data).
-- **New, from §5.1.5:** gluing pmfs *across* solver rounds (not just within
-  one round's own deflation) hasn't been implemented — needs the same
-  laminar-nesting treatment applied one level up, using the solver trace's
-  own round structure.
+- **Resolved (was: "New, from §5.1.5"):** gluing pmfs *across* solver
+  rounds, not just within one round's own deflation, turned out to need
+  *no* additional treatment beyond within-round gluing — investigating
+  `solver_trace.hpp` (§4's PR 4 entry) found rounds and deflation cores are
+  structurally identical from the gluing machinery's point of view (both
+  are just "some disjoint edge set with its own local pmf"), so the same
+  flat-list fold (§6) covers both uniformly.
 
 ### Resolved since first written (kept for the record, not because they're
 still open)
