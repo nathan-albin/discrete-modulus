@@ -469,40 +469,91 @@ pinned Lake dependency, rather than adding it as a new entry inside
       own `elan`/`lake` in-job, independent of whatever the interactive
       devcontainer looks like. **Implemented**: `lean/setup.sh`.
 
-**PR 4: Bridge definitions + the certificate-optimality lemma**
-- [ ] Define spanning trees as a `FamilyOfObjects` (§ above): the usage
-      vector of a spanning tree `T` (an `IsSpanningTree`-satisfying edge set,
-      from `Multigraph.lean`) is its `{0,1}`-indicator over `E`. This is the
-      main new bridging definition Phase B needs — everything else on the
-      graph/matroid side already exists.
-- [ ] Define $\mathcal P(\Gamma)$ (pmfs over the spanning-tree family, i.e.
-      finitely-supported probability distributions valued in ℚ over
-      `IsSpanningTree`-satisfying edge sets) and $\mathcal N^T\mu$ (the
-      expected usage vector).
-- [ ] Prove the **certificate-optimality lemma**, as its own small,
-      self-contained result rather than a corollary of `Duality.lean`'s
-      `one_le_length` (see §2's reuse table for why): given
-      $\rho\in\text{Adm}(\Gamma)$, $\mu\in\mathcal P(\Gamma)$,
-      $\eta=\mathcal N^T\mu$, and $\rho=\eta/\|\eta\|^2$, conclude $\rho$ and
-      $\mu$ are simultaneously optimal. This is exactly
-      `Certification_Thoughts.md`'s Cauchy-Schwarz argument — a direct proof
-      over `ℚ` should be on the order of a page, using
-      `Density`/`FamilyOfObjects.Adm` from `lean-modulus` for vocabulary only.
-- [ ] **Decision point, flag for review:** don't reach for Mathlib's
-      `InnerProductSpace`/Cauchy-Schwarz machinery for the above — that's
-      built for `RCLike` fields (ℝ/ℂ), and ℚ isn't an instance. Prove the
-      finite-sum Cauchy-Schwarz directly over `ℚ` (short, standard
-      discriminant-of-a-quadratic argument over `Finset.sum`); search Mathlib
-      first for an existing ordered-field version (there are a few
-      `Finset.sum_mul_sq_le_sq_mul_sq`-family lemmas, naming subject to
-      Mathlib churn — confirm what's current before committing to one).
-- [ ] Prove the **admissibility definitional lemma**:
-      $\rho\in\text{Adm}(\Gamma)$ iff every spanning tree $T$ has
-      $\sum_{e\in T}\rho_e \ge 1$, iff the *minimum* spanning-tree weight
-      under $\rho$ is $\ge 1$. Unwinding definitions, not a hard theorem —
-      but it's the hinge that makes the Kruskal-oracle shortcut in §5.2
-      meaningful rather than ad hoc: it turns "check admissibility" into
-      "check a well-known optimization problem's value," precisely.
+**PR 4: Bridge definitions + the certificate-optimality lemma — done,
+merged to `main`; one scope finding changes the §6 certificate-schema
+question**
+- [x] **Finding that reshapes this PR: `lean-modulus`'s own
+      `Density`/`FamilyOfObjects`/`Adm` (`ℝ≥0`-valued) turned out not to be
+      reusable for the optimality lemma at all, not just "vocabulary only"
+      as originally scoped.** `ℝ≥0` has no subtraction, and Mathlib's
+      finite Cauchy-Schwarz inequality (`Finset.sum_mul_sq_le_sq_mul_sq`,
+      confirmed to exist essentially as anticipated below) needs a genuine
+      ordered *ring*, so it doesn't apply to `ℝ≥0` directly —
+      `lean-modulus`'s own `Common/Duality.lean` works around exactly this
+      by detouring through `ℝ` via `Density.toReal` plus real-analysis
+      machinery (compactness, extreme points) that this certificate has no
+      other use for. Since certificate values are exact rationals
+      throughout anyway, the fix was to define a small self-contained
+      `ℚ`-native vocabulary from scratch (`CertDensity := E → ℚ`,
+      `pairing`, `sqNorm`, `IsAdmissible`/`Adm`, a `Pmf` structure) in the
+      new file `lean/DiscreteModulusCert/Family.lean`, reusing only the
+      graph/matroid layer (`Multigraph`, `IsSpanningTree`) from
+      `lean-modulus`, which doesn't mention densities at all and so isn't
+      affected by the `ℝ≥0`-vs-`ℚ` mismatch.
+- [x] Defined spanning trees' usage vectors directly (`spanningTreeUsage`,
+      the `{0,1}`-indicator of a `Set E` satisfying `IsSpanningTree`) rather
+      than through `lean-modulus`'s `FamilyOfObjects` type, per the finding
+      above — same mathematical content, just not literally that type.
+- [x] Defined `𝒫(Γ)` as `DiscreteModulusCert.Pmf`: a `Finset (Set E)`
+      support plus a `Set E → ℚ` weight function, with the three expected
+      properties (support elements are genuine spanning trees, weights
+      nonnegative, weights sum to `1`). **This is directly relevant to the
+      open §6 schema question**: `Pmf`'s shape — a finite list of edge sets
+      plus a rational weight each — *is* the shape of a certificate's
+      leaf-level local pmf block, and confirms the numeric-type half of §6
+      is settled: certificate weights parse straight into `ℚ` literals,
+      with no `ℝ≥0`/`NNReal` coercion anywhere in the trusted verifier.
+      `𝒩ᵀμ` is `Pmf.marginal`.
+- [x] Proved the **certificate-optimality lemma**
+      (`DiscreteModulusCert.certificate_optimality`,
+      `lean/DiscreteModulusCert/Optimality.lean`), self-contained as
+      planned. Went slightly further than the original scope: proves both
+      halves of "simultaneously optimal" as two symmetric Cauchy-Schwarz
+      corollaries sharing one lemma
+      (`Pmf.one_le_pairing_marginal_of_admissible`) — (a) `ρ` minimizes
+      `sqNorm` over *every* admissible density (`ρ` solves the modulus
+      problem), and (b) `η` minimizes `sqNorm` over the marginals of
+      *every* pmf on `G`'s spanning trees (the dual min-norm-point
+      problem — literally the quantity Wolfe's algorithm, §5.1, computes).
+      The original plan only asked for the informal "both optimal"
+      conclusion; formalizing it as two explicit minimality statements
+      makes precise what PR 5's verifier is actually allowed to conclude.
+      Axiom-checked (`#print axioms`): depends only on `propext`,
+      `Classical.choice`, `Quot.sound` — no `sorry`.
+- [x] **Decision point, resolved as anticipated:** did not reach for
+      Mathlib's `InnerProductSpace` machinery. `Finset.sum_mul_sq_le_sq_mul_sq`
+      exists close to the anticipated name/shape
+      (`Mathlib.Algebra.Order.BigOperators.Ring.Finset`), stated for any
+      `[CommSemiring R] [LinearOrder R] [IsStrictOrderedRing R]
+      [ExistsAddOfLE R]` — `ℚ` satisfies all four
+      (`Mathlib.Algebra.Order.Ring.Rat`'s `instIsStrictOrderedRing`), so it
+      applies directly with no need to hand-roll the discriminant argument.
+      Everything is stated in *squared* form (`pairing f g ^ 2 ≤ sqNorm f *
+      sqNorm g`) specifically to avoid `Real.sqrt`/`NNReal.sqrt` anywhere —
+      the whole proof stays in `ℚ`, never touches `ℝ`.
+- [x] Proved the **admissibility definitional lemma**
+      (`isAdmissible_iff_one_le_pairing_spanningTreeUsage`) — genuinely
+      `Iff.rfl` as anticipated, kept as a named, discoverable lemma. **Not
+      done**, deferred to PR 5: the further equivalence to "the *minimum*
+      spanning-tree weight is `≥ 1`" (the form that literally matches a
+      Kruskal computation's output) needs the minimum to be attained,
+      which needs a Kruskal implementation to exist first (§5.2) — no
+      point proving it in the abstract before PR 5 needs the exact shape.
+- [ ] **New open item, surfaced by this PR, not previously in §5.1.5's
+      list:** composing per-block `Pmf`s (one per laminar-family block,
+      §5.1.5) into a single top-level `Pmf` on the *original* graph's
+      spanning trees — the Lean-side counterpart of "gluing pmfs across
+      rounds/cores" — doesn't have a proved combinator yet. The
+      ingredients exist (`isBase_union_of_isBase_restrict_isBase_contract`
+      for gluing the underlying trees, `isSpanningTree_iff_isBase` to move
+      between `IsSpanningTree` and `IsBase`), but turning "two independent
+      local `Pmf`s, one per side of a restrict/contract split" into "one
+      `Pmf` on the union, with the product-of-independent-choices weights"
+      hasn't been formalized. This is the same gap §5.1.5 already flagged
+      on the Python/certificate-schema side ("gluing across rounds"); now
+      there's a concrete Lean target for it (something like
+      `Pmf.glue : Pmf (G.graphicMatroid ↾ A) → Pmf (G.graphicMatroid ／ ·)
+      → Pmf G`, shape not yet finalized) rather than an abstract TODO.
 
 ### Phase C — Verifier & integration
 
@@ -1119,6 +1170,21 @@ over its own induced edges, e.g. something in the shape of:
 - [ ] Nail down the exact schema before PR 5's parser is written — the sketch
       above is a starting point, not a commitment; needs to match whatever
       Lean-side vertex-block/`Quotient` representation gets designed (§5.1.5).
+- [x] **`local_pmf`'s shape confirmed, not just sketched, by PR 4 (§4).**
+      `DiscreteModulusCert.Pmf` (`lean/DiscreteModulusCert/Family.lean`) is
+      literally "a `Finset` of edge sets plus a rational weight each" —
+      the exact shape drawn above — so `local_pmf.trees` parses directly
+      into a `Pmf` with no intermediate representation needed. PR 4 also
+      settled a numeric-type question this sketch left implicit: weights
+      parse as plain `ℚ` (`[num, den]` → `Rat.mk'`-style construction),
+      *not* `ℝ≥0`/`NNReal` — `lean-modulus`'s own density vocabulary is
+      `ℝ≥0`-valued and turned out not to be reusable here at all (§4's PR 4
+      entry), so nothing in the trusted verifier ever needs an
+      `ℝ≥0`/`NNReal` coercion. Still open, unchanged by PR 4: the top-level
+      `blocks`/`parent` nesting shape itself, and — newly concrete — a
+      Lean combinator to glue two blocks' `Pmf`s into one (§4's PR 4 entry,
+      last bullet), which the certificate's `parent`-linked block list
+      needs to mirror structurally once designed.
 - [ ] Keep `certificate_version` independent from the PR 1 solver-trace
       version — they change on different schedules.
 
