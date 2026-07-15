@@ -623,10 +623,12 @@ changes the §6 certificate-schema question**
       pieces, then round 2's, …), verified by a single left-fold of
       `Pmf.glue` — not a tree with parent pointers as originally sketched.
       See §6's rewrite for the schema this implies.
-    - **Still not implemented:** the actual fold driver (calling
-      `Pmf.glue` once per piece in the flat list) and the certificate
-      parser that produces its inputs — this PR's finding fixes the
-      *shape*, but the driver itself is PR 5 work (§6, Phase C).
+    - **Fold driver: now done** (`PieceList`/`PieceList.glueAll`,
+      `Glue.lean` — see §6's rewrite for the details and what's still
+      open). **Still not implemented:** the certificate *parser* that
+      produces a `PieceList`'s inputs from raw JSON — per-piece `IsBase`
+      proofs in particular, §6's main remaining item, real PR 5/Phase C
+      work.
 
 ### Phase C — Verifier & integration
 
@@ -1273,24 +1275,36 @@ turned out not to be reusable here at all.
 
 **Open items — what PR 5's parser/verifier still needs to nail down and
 check:**
-- [ ] **Partition-completeness check.** The verifier must confirm the
-      pieces' `edges` lists are pairwise disjoint and their union is the
-      full top-level `edges` list — cheap (Finset operations on concrete
-      index lists) but not yet specified as an explicit checklist step for
-      PR 5. Without it, the final fold only produces a `Pmf` on a *proper
-      restriction* of `G.graphicMatroid`, not `G.graphicMatroid` itself,
-      and `certificate_optimality` doesn't type-check against it.
-- [ ] **Per-piece `IsBase` checking.** Each declared tree in a piece's
-      `local_pmf` needs actually verifying as a genuine base of that
-      piece's matroid (`M ↾ A_1` for the first piece, `M ／ (A_1∪⋯∪A_{i-1})`
-      restricted appropriately for later ones) — concretely, a forest
-      check (`Multigraph.IsForest`: no loops, injective endpoints,
-      acyclic) plus a cardinality/spanning check against that piece's own
-      rank. Standard, decidable, but not yet implemented or even sketched
-      as Lean code — this is real PR 5 scope, not just parsing.
-      `hdisj` (`Pmf.glue`'s one remaining hypothesis — a piece's trees
-      never touch an earlier piece's edges) is a special case of this and
-      is directly, cheaply decidable from the concrete edge-index lists.
+- [x] **Fold driver — done.** `DiscreteModulusCert.PieceList`/
+      `PieceList.glueAll` (`lean/DiscreteModulusCert/Glue.lean`) is exactly
+      this section's `pieces` array, formalized: an inductive flat list
+      where each block's pmf is typed relative to everything before it
+      already contracted away, folded via a generalized `Pmf.glue`
+      (generalized from a single fixed ambient `G.graphicMatroid` to an
+      arbitrary ambient matroid — necessary because folding a *list* glues
+      against growing intermediate restrictions `G.graphicMatroid ↾ X`,
+      not just the top-level matroid). No `sorry` (axiom-checked).
+- [x] **Partition-completeness check — resolved, at the type level rather
+      than as a runtime check.** `PieceList.glueAllGraph` only accepts a
+      `PieceList N Set.univ` (blocks' edges summing to literally
+      `Set.univ`, matched by the *type* `PieceList N U`'s own index `U`)
+      and produces `Pmf N` directly, ready for `certificate_optimality`.
+      A verifier can only construct a `PieceList N Set.univ` if the
+      certificate's pieces really do union to everything — the type system
+      enforces the check rather than needing a separate runtime assertion.
+- [ ] **Per-piece `IsBase` checking — still open, the main remaining PR 5
+      gap.** `PieceList`/`Pmf.glue` assume each block's `Pmf` already has
+      a proof `isBase : ∀ T ∈ support, M.IsBase T` — turning a
+      certificate's raw `{edges: [...], weight: [...]}` JSON into that
+      proof (a forest check — `Multigraph.IsForest`: no loops, injective
+      endpoints, acyclic — plus a cardinality/spanning check against that
+      block's own rank) isn't implemented or even sketched as Lean code.
+      This is the one piece standing between "the fold driver exists" and
+      "a real certificate can be parsed and checked" — genuinely the next
+      thing to build. `hdisj` (`Pmf.glue`'s one remaining *pmf-level*
+      hypothesis — a piece's trees never touch an earlier piece's edges)
+      is a special case and is directly, cheaply decidable from the
+      concrete edge-index lists once trees are constructed.
 - [ ] **`vertices` is informational only, not load-bearing for
       verification** — every check above runs purely on edge sets
       (`Pmf.glue`, `IsForest`, etc. never mention vertices). Worth keeping
@@ -1299,9 +1313,6 @@ check:**
       verifier's correctness doesn't depend on it. Flagging explicitly so
       a future contributor doesn't assume it needs cross-checking against
       anything.
-- [ ] Fold driver itself (repeatedly calling `Pmf.glue` down the `pieces`
-      list) isn't implemented — this section fixes the *shape* it needs to
-      consume; the driver is PR 5 work (§4's PR 4 entry, last bullet).
 - [ ] Keep `certificate_version` independent from the PR 1 solver-trace
       version — they change on different schedules.
 
