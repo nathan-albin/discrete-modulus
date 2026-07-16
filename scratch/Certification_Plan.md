@@ -86,9 +86,10 @@ locked in during planning (so we don't re-litigate them mid-implementation):
   (tree, weight) pairs," predating the deflation-based design, would have
   required an explicit Cartesian product across every deflation level,
   exponential in nesting depth) are superseded — see §5.1.5 and §6 for the
-  full history and the settled design's own two remaining prerequisites
-  (a `Pmf.glue` marginal lemma; a `solver_trace.hpp` fidelity gap for
-  parallel edges).
+  full history. The design's one Lean-side prerequisite (a `Pmf.glue`
+  marginal-compositionality lemma) is now also done (`Glue.lean`); the
+  remaining item is a `solver_trace.hpp` fidelity gap for parallel edges,
+  outside Lean entirely (§6).
 
 ---
 
@@ -1420,20 +1421,29 @@ check:**
       version — they change on different schedules. (`certificate_version`
       is now at `4`, having incremented past the v3 sketch when `eta`/`rho`
       were dropped — see above.)
-- [ ] **New, found while settling the schema: `Pmf.glue`'s marginal needs
-      a compositional theorem before PR 5 can use `certificate_optimality`
-      on any real (multi-piece) certificate.** Per the "why no
-      `eta`/`rho`" callout above, the verifier must compute `η` from the
-      per-piece local pmfs directly, never from the fully-glued top-level
-      pmf. That requires a lemma not yet in `Glue.lean`: for
-      `μ = Pmf.glue hAE μA μRest hdisj`, `μ.marginal e = μA.marginal e`
-      for `e ∈ A` and `μ.marginal e = μRest.marginal e` otherwise. Expected
-      to be a modest, self-contained proof — the same `Finset.sum_product'`
-      / distributivity pattern `Pmf.glue`'s own `sum_one` field already
-      uses, just for `marginal` instead of the total-weight sum — not a new
-      mathematical idea, but real, not-yet-done work, and worth landing
-      before PR 5's verifier is written rather than discovering the gap
-      then. Natural home: `Glue.lean`, alongside `Pmf.glue` itself.
+- [x] **Resolved: `Pmf.glue`'s marginal-compositionality theorem, and its
+      extension to a whole `PieceList`, are both proved
+      (`lean/DiscreteModulusCert/Glue.lean`).** `Pmf.glue_marginal` turned
+      out cleaner than the case-split originally anticipated here (`e ∈ A`
+      vs. `e ∉ A`): for `μ = Pmf.glue hAE μA μRest hdisj`,
+      `μ.marginal e = μA.marginal e + μRest.marginal e` **unconditionally,
+      for every `e`** — no case split needed, because `usageVector (J ∪ I)
+      e = usageVector J e + usageVector I e` holds for *any* `e` once `J`,
+      `I` are disjoint (which they always are: `I ⊆ A` and `μRest`'s bases
+      are disjoint from `A` by `hdisj`), and one of the two summands is
+      simply `0` outside its own piece's edges (`I ⊆ A` forces
+      `usageVector I e = 0` for `e ∉ A`, and symmetrically for `μRest`).
+      Proved exactly the way anticipated — the same reindex-via-`glue_injOn`
+      / `Finset.sum_product'` / factor-via-`sum_one` pattern `Pmf.glue`'s
+      own `sum_one` field already uses, just carrying an extra
+      `usageVector · e` factor through. `PieceList.glueAll_marginal` folds
+      this down a whole `PieceList` against a new `PieceList.marginalSum`
+      (the sum of every piece's own local marginal — linear in
+      `pieces × edges`, never touching `glueAll`'s exponential support):
+      `l.glueAll.marginal e = l.marginalSum e`. No `sorry` (axiom-checked:
+      `propext`, `Classical.choice`, `Quot.sound`, the usual three). This is
+      the fact that makes a certificate's `η` computable at all — see the
+      "why no `eta`/`rho` fields" callout above.
 - [ ] **New, found while settling the schema: `solver_trace.hpp`'s
       `TraceRound.crit_set` records dispatched edges as vertex pairs
       (`std::vector<std::pair<Vertex, Vertex>>`), not genuine edge
@@ -1476,9 +1486,9 @@ check:**
   it must derive $\eta$ compositionally from the per-piece local pmfs
   regardless. Since the verifier ends up computing $\eta$ itself no matter
   what, there's nothing left for a certificate-supplied $\eta$ to add, so
-  v4 drops it from the schema entirely (§6). This *creates* a new,
+  v4 drops it from the schema entirely (§6). This *created* a new,
   precisely scoped prerequisite — a marginal-compositionality lemma for
-  `Pmf.glue`, not yet in `Glue.lean` — tracked in §6's open items.
+  `Pmf.glue` — which is now also done, see §6's (resolved) open item.
 - Definitional adequacy of the reused `lean-modulus` types (§2's reuse
   table, §3's TCB ledger): a short explicit sanity pass confirming
   `Multigraph`/`IsSpanningTree`/`Density`/`Adm` mean what this project needs
