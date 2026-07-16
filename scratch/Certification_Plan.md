@@ -647,18 +647,64 @@ changes the §6 certificate-schema question**
 ### Phase C — Verifier & integration
 
 **PR 5: Certificate ingestion + explicit verification**
-- [ ] Parser for the PR 2 certificate format into the PR 4 Lean types (all
-      rational arithmetic — no floating point anywhere in this repo's Lean
-      code).
-- [ ] Verify $\mu$ is a valid pmf on the spanning trees it claims to use
-      (nonneg weights summing to 1, each support element actually a spanning
-      tree of the input graph).
-- [ ] Reconstruct $\eta$ from $\mu$ inside Lean and check it matches the
-      certificate's claimed $\eta$ (or skip reconstruction and just trust the
-      builder's $\eta$/$\rho$, re-deriving $\eta$ from $\mu$ *only* — cheaper,
-      and still sound, since $\eta$ is fully determined by $\mu$; decide which
-      based on how expensive kernel-level rational arithmetic on the full
-      pmf turns out to be).
+- [x] **First concrete milestone done: `examples/house`'s real certificate
+      verified end-to-end, by hand-transcription
+      (`lean/DiscreteModulusCert/HouseCert.lean`).** Took the exact JSON
+      `certificate_builder.build_certificate` produces for `house` (5
+      vertices, 6 edges, 2 pieces of 3 edges/3 trees each) and checked it
+      entirely inside Lean using only already-proved machinery
+      (`isBase_contract_restrict_iff_isForest`, `instDecidableIsForestOfList`,
+      `PieceList`/`Pmf.glue`) — no hand-written proof terms for the
+      individual forest/maximality/weight facts, all discharged by
+      `decide`/`native_decide` against the certificate's own concrete data.
+      Result: `houseFullPmf : Pmf G.graphicMatroid`, a genuine, kernel-checked
+      pmf on all of `house`'s spanning trees, built by folding both pieces
+      via `PieceList.glueAllGraph`; `lake build` accepts the whole project.
+      Also spot-checked one piece's marginal against `house.eta`'s known
+      `2/3` (`piece1Pmf_marginal_0`), independently of the Python builder.
+      Real fiddly points worth recording for whoever builds the next piece
+      here: (1) instance search for `Decidable (G.IsForest _)` needs the
+      argument syntactically in the literal `{e | e ∈ l}` shape
+      `instDecidableIsForestOfList` is stated for — a `def` wrapper for that
+      shape has to be an `abbrev`, and any `Set.insert`/`Set.union` in the
+      way has to be rewritten back to that shape (`S_cons`/`S_append`-style
+      lemmas) *before* `decide`/`native_decide`, or instance search silently
+      falls back to `Classical.propDecidable` and `native_decide` fails
+      with "depends on 'propDecidable'"; (2) the same applies to `Set E`
+      equality/subset/diff (all classically decidable, none computably) —
+      routed everything through `List`-level decidable facts
+      (`S_ne_of_mem_not_mem`, `S_subset_of_forall_mem`,
+      `forall_diff_not_isForest_of_list_all`) instead; (3) plain `decide`
+      gets stuck reducing `ℚ` division/comparison in the kernel (a known
+      Rat-representation quirk) — `native_decide` is needed even for pure
+      rational arithmetic like `0 ≤ 1/3`, not just for the classical-Set
+      issues above.
+- [ ] **Open design choice, deliberately deferred**: how a real certificate
+      *file* gets into the shape `HouseCert.lean` hand-transcribed. Two
+      options, not yet decided between: (a) a genuine JSON parser in Lean
+      (`Lean.Data.Json` is available; more general, a true standalone
+      verifier binary reading an arbitrary certificate path, closer to
+      "PR 2 is untrusted, PR 5 independently checks whatever it produces");
+      (b) a Python-side codegen step emitting the repetitive per-piece Lean
+      source directly (much less Lean-side work, but coupages the verifier
+      to being regenerated per certificate). Doesn't affect trust either way
+      (codegen would only ever emit data + decidability-check invocations,
+      never hand-written proof terms) — picking between them is about
+      engineering cost and what "the verifier" should mean as an artifact,
+      not soundness.
+- [ ] Generalize the hand-transcription pattern above into something that
+      scales to `examples/nested`'s real certificate (3 rounds, up to 190
+      edges in the K20-shaped piece) without hand-writing per-tree proof
+      terms — likely a small generic "check one piece from raw list data"
+      helper (mirroring `forall_diff_not_isForest_of_list_all`'s shape) that
+      a parser/codegen step could call once per piece, rather than bespoke
+      theorems per tree the way `HouseCert.lean` currently has them.
+- [ ] Extend the marginal spot-check (`piece1Pmf_marginal_0`) to every edge
+      and to the fully-glued `houseFullPmf` (via `PieceList.glueAll_marginal`
+      + `Pmf.cast_marginal`), not just one piece's own local marginal.
+- [ ] Reconstruct $\eta$ from $\mu$ inside Lean (now: *always* — v4 dropped
+      the certificate's own $\eta$/$\rho$ fields, so there's no "or trust
+      the builder's" option left, see §6/§8).
 - [ ] Check $\rho = \eta/\|\eta\|^2$ exactly in ℚ.
 - [ ] Admissibility of $\rho$: run the (unproven) Kruskal implementation,
       check its output weight $\ge 1$. **Prominently log/print that this

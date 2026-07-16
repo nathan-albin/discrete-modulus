@@ -5,3 +5,4 @@ import DiscreteModulusCert.Glue
 import DiscreteModulusCert.IsBaseCheck
 import DiscreteModulusCert.ForestDecide
 import DiscreteModulusCert.ForestDecideTest
+import DiscreteModulusCert.HouseCert
