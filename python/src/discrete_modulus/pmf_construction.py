@@ -43,9 +43,9 @@ import networkx as nx
 import numpy as np
 
 from .core_deflation import find_core
-from .families.networkx_families import MinimumSpanningTree
-from .min_norm_point import MinNormPointResult, min_norm_point_wolfe
+from .min_norm_point import MinNormPointResult
 from .protocols import ExactArray
+from .tree_packing import build_tree_packing
 
 
 @dataclass(frozen=True)
@@ -189,8 +189,23 @@ def build_factored_pmf(G: nx.Graph, verbose: bool = False) -> FactoredPmf:
 
 
 def _solve_piece(piece_graph: nx.Graph) -> LocalPiece:
-    finder = MinimumSpanningTree(piece_graph)
+    # `piece_graph` is strictly homogeneous by construction (the caller
+    # only ever hands this a rigid base or a core -- see the module
+    # docstring), so its own min-norm point is known in closed form:
+    # theta = (n-1)/m, uniform on every edge. `build_tree_packing`
+    # constructs that exact pmf directly (see its own module docstring
+    # for why this replaced `min_norm_point_wolfe` here: every piece
+    # this function ever sees is exactly packing's use case, and
+    # packing's cost is bounded in a way Wolfe's active-set growth
+    # isn't).
+    n_piece = piece_graph.number_of_nodes()
     m_piece = piece_graph.number_of_edges()
-    result = min_norm_point_wolfe(m_piece, finder)
+    theta = Fraction(n_piece - 1, m_piece)
+    result = build_tree_packing(piece_graph, p=theta.numerator, q=theta.denominator)
+    if result is None:
+        raise RuntimeError(
+            f"tree packing did not converge on a piece with {n_piece} vertices, "
+            f"{m_piece} edges, theta={theta}"
+        )
     provenance = [data["orig"] for _, _, data in piece_graph.edges(data=True)]
     return LocalPiece(graph=piece_graph, provenance=provenance, result=result)

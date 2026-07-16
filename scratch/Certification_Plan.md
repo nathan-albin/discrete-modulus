@@ -7,12 +7,17 @@ locked in during planning (so we don't re-litigate them mid-implementation):
 > **Read this note before the rest of the doc if you're picking this up
 > fresh.** The "medium gap" story below (Wolfe's algorithm alone) turned out
 > to be *necessary but not sufficient* once tested against real multi-round
-> data — see the "Medium gap, revised" bullet immediately below and the new
-> §5.1.5 for the actual current architecture (deflation + Wolfe's algorithm
-> per piece). The rest of the document (Phase 0, PR 2's original checklist,
-> §5.1's Wolfe-vs-column-generation writeup) is kept as-is for the history —
-> don't delete it — but treat §5.1.5 and the "Medium gap, revised" bullet as
-> overriding wherever they conflict with older text.
+> data — see the "Medium gap, revised" bullet immediately below and §5.1.5
+> for the deflation architecture. **Wolfe's algorithm has since been dropped
+> from the per-piece solve entirely** — even on a strictly-homogeneous piece
+> (deflation's guarantee), it turned out to have a real, unpredictable-length
+> slow tail from pure vertex/edge-labeling sensitivity, not just the
+> forbidden-tree case §5.1.5 fixes. §5.1.6 is the current source of truth for
+> per-piece solving: constructive integer tree packing, no continuous
+> optimization at all. The rest of the document (Phase 0, PR 2's original
+> checklist, §5.1's Wolfe-vs-column-generation writeup, §5.1.5's Wolfe-based
+> architecture) is kept as-is for the history — don't delete it — but treat
+> §5.1.6 as overriding wherever it conflicts with older text.
 
 - **Start here (but it's not a single blocking gate):** Phase 0 (§4) —
   implementing the pmf-construction algorithm as its own standalone piece of
@@ -49,10 +54,15 @@ locked in during planning (so we don't re-litigate them mid-implementation):
   now never encounters a forbidden-tree marginal, so there's no need to
   detect or recover from the failure mode at all. Implemented and tested:
   `python/src/discrete_modulus/core_deflation.py` +
-  `python/src/discrete_modulus/pmf_construction.py`. Column generation
-  (§5.1) and a hand-rolled matroid-exchange integer packing (§5.1.5) were
-  both explored as alternative/fallback constructions and are **not** used
-  in the current design — see §5.1.5 for why.
+  `python/src/discrete_modulus/pmf_construction.py`. **Superseded again,
+  see §5.1.6**: deflation alone didn't fix Wolfe's algorithm's unpredictable
+  slow tail (a labeling-sensitivity issue, not the forbidden-tree one this
+  bullet fixes), so Wolfe's algorithm has been replaced outright by
+  constructive integer tree packing (`tree_packing.py`) for every piece.
+  Column generation (§5.1) was explored as an alternative and is still
+  **not** used; the matroid-exchange integer packing prototype mentioned
+  here previously is now the production implementation, not just a
+  fallback — see §5.1.6.
 - **Biggest gap** (admissibility of ρ): v1 accepts the Kruskal-as-untrusted-
   oracle shortcut, with the resulting soundness gap explicitly documented as
   part of the trusted computing base (§3), and a follow-up milestone to close
@@ -1184,6 +1194,105 @@ the Python builder — see the discussion that produced it:
   children, some vertices still-unmerged originals, others nested
   sub-blocks) — sketched as a `Quotient`/`Setoid` above, not designed in
   detail.
+
+### 5.1.6 Medium gap, current architecture — deflation, then constructive tree packing per piece
+
+**This section supersedes §5.1.5's "then run `min_norm_point_wolfe`
+independently on each resulting piece" claim.** §5.1.5's deflation fix is
+still correct and still needed (a piece handed to the per-piece solver must
+be strictly homogeneous, forbidden trees or not) — what changed is the
+per-piece solver itself, which is no longer Wolfe's algorithm at all.
+
+**What broke, and why deflation alone didn't fix it.** Even restricted to
+strictly-homogeneous pieces (§5.1.5's guarantee), Wolfe's algorithm still hit
+a real, unpredictable slow tail: cold on `examples/nested`'s round-2 piece
+(K20-shaped, now confirmed graph-isomorphic to $K_{20}$, so *not* a
+forbidden-tree case — §5.1.5's fix doesn't apply here at all), its active set
+grew past 100 elements over 200+ seconds with zero evictions and no sign of
+convergence. Ruled out as a MultiGraph bug or a mathematically-forbidden
+case (both directly checked); confirmed instead to be pure vertex/edge-
+labeling sensitivity in Wolfe's convergence behavior — the same graph,
+relabeled, converges fine. There is no cheap way to predict in advance which
+labelings/pieces will do this.
+
+**The fix: since every piece is strictly homogeneous with a single uniform
+theta by construction, skip continuous optimization entirely.** A strictly
+homogeneous piece's min-norm point is known in closed form: theta =
+(n-1)/m, uniform on every edge (n = piece vertices, m = piece edges,
+including each parallel copy separately). Writing theta = p/q in lowest
+terms, the exact uniform pmf is: build q spanning trees such that every edge
+is used in exactly p of them, each weighted 1/q — a direct constructive
+search, not a target to approach asymptotically. `tree_packing.py`
+implements this as a two-tier local search (ported from an earlier
+prototype, `scratch/matroid_union_packing.py`):
+1. **Away-step** (`_away_step_pass`): evict the heaviest tree (by total
+   coverage-weight of its own edges) and replace it with the tree that
+   *provably* minimizes the resulting energy $E(w) = \sum_e (w(e)-p)^2$ —
+   one MST call, using edge weights derived from the current coverage
+   deficiency (every spanning tree has the same edge count, so $\sum_e w(e)$
+   is invariant under any tree-for-tree replacement, reducing "minimize
+   $E(w)$" to "minimize $\sum_e w(e)^2$", which a single reweighted MST call
+   solves exactly for one tree's replacement). Guaranteed non-increasing;
+   ties broken (in exact integer arithmetic, scaling by $2q+1$) in favor of
+   the replacement least overlapping the evicted tree, since ties would
+   otherwise silently make zero progress.
+2. **BFS multi-hop augmenting search** (`_find_augmenting_chain`), the
+   fallback whenever (1) reaches a genuine local minimum: build the matroid
+   exchange graph on edges and BFS from all over-covered edges to any
+   under-covered edge, restricted to using each tree at most once per chain
+   (sufficient for correctness, not proved necessary — see below).
+
+**Not proven complete — retried with fresh random restarts instead.** On the
+tightest case found (a real piece from `examples/nested`'s round 0: 21
+vertices, 40 edges, theta = 1/2 — an *exact* 2-tree edge partition, no slack
+at all), the BFS chain search's per-attempt success rate is empirically only
+about 1 in 3; when it reports "stuck," that reflects the specific
+restricted search finding no chain, not a proof that none exists. Rather
+than build a fully complete matroid-union implementation, `build_tree_packing`
+retries with a fresh random initialization up to `max_restarts` (default 50,
+driving the overall failure probability well below $10^{-8}$ given the
+measured per-attempt rate). This trade — a small bounded number of cheap
+retries instead of a provably-complete algorithm — was an explicit judgment
+call: a certificate is built once and lasts forever, so reliability matters
+far more than per-attempt speed, and an occasional extra restart costs
+nothing a timeout-guarded fallback to Wolfe wouldn't also cost, without
+Wolfe's unbounded tail risk.
+
+**Validated on:** the real piece that motivated this (round 2 of
+`examples/nested`, K20-shaped) across 5 seeds, all converging in under 35ms
+with the hybrid; the real multigraph piece from the same trace's round 1
+(21 nodes, 80 edges, genuine parallel edges up to multiplicity 3); the real
+tight-partition piece from round 0 described above; two known-hard
+complete-graph sizes ($K_{40}$/$K_{50}$) that stalled single-hop swaps alone
+in the original prototype; and several genuinely sparse, non-complete
+homogeneous pieces obtained by peeling random sparse Erdős–Rényi graphs down
+to a rigid base via `core_deflation`. Full test suite
+(`python/tests/test_certificate_builder.py`, `test_pmf_construction.py`,
+etc., 127 tests total) passes with this as the only per-piece solver;
+`examples/nested`'s full certificate (previously blocked on Wolfe's slow
+tail) now builds in a few seconds.
+
+**Implementation:**
+- `python/src/discrete_modulus/tree_packing.py` — `build_tree_packing(G, p,
+  q, ...)`, operating on the same `ShortestObjectFinder`/`MinimumSpanningTree`
+  machinery `min_norm_point.py` uses (so multigraphs are handled the same
+  way, "for free"), returning the same `MinNormPointResult`/`SupportEntry`
+  shape Wolfe's algorithm did — a drop-in replacement, no changes needed
+  anywhere downstream (`FactoredPmf`, `certificate_builder.py`).
+- `python/src/discrete_modulus/pmf_construction.py`'s `_solve_piece` now
+  computes theta = (n-1)/m directly and calls `build_tree_packing` instead
+  of `min_norm_point_wolfe`.
+- `scratch/matroid_union_packing.py` — the original prototype this was
+  ported from (complete-graph-only, vertex-pair-keyed rather than
+  edge-index-keyed); kept for the record, not imported by anything.
+
+**Open items specific to this section:**
+- [ ] Not a provably complete algorithm (see above) — revisit if a real
+  piece is ever found where `max_restarts=50` isn't enough in practice.
+- [ ] `min_norm_point_wolfe`/`min_norm_point_afw` are no longer called from
+  the production pipeline at all; still exercised by their own test suite
+  and kept for the book chapter (Phase 0), but worth flagging if that stops
+  being true.
 
 ### 5.2 Biggest gap — admissibility of ρ
 

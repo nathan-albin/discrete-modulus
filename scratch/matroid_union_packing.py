@@ -244,6 +244,194 @@ def build_tree_packing(
     return None
 
 
+def _energy(edges: list[tuple], coverage: Counter, target: int) -> int:
+    return sum((coverage[_norm(e)] - target) ** 2 for e in edges)
+
+
+def _away_step_pass(
+    edges: list[tuple],
+    G: nx.Graph,
+    m: int,
+    target: int,
+    trees: list[nx.Graph],
+    tree_edge_sets: list[set],
+    coverage: Counter,
+) -> bool:
+    """
+    One away-step move: evict the heaviest tree (by total coverage-weight
+    of its own edges) and replace it with the tree that *provably*
+    minimizes the resulting energy E(w) = sum_e (w(e)-target)^2, among
+    ALL possible replacements. Returns True iff E strictly decreased.
+
+    Derivation (discussed in conversation): every spanning tree has the
+    same edge count (|V|-1), so sum_e w(e) is invariant under any
+    tree-for-tree replacement -- minimizing E(w) is therefore equivalent
+    to minimizing sum_e w(e)^2. Writing d(e) = w(e)-target and removing
+    the chosen tree T_h first, the coverage becomes w(e) - 1_{e in T_h},
+    and for any candidate replacement tree T:
+
+        E(w') = const(T_h-independent) + 2 * sum_{e in T} d'(e)
+
+    where d'(e) = d(e) - 1_{e in T_h}(e). So the T that minimizes E(w')
+    is exactly the MINIMUM d'-weight spanning tree -- one `MST` call.
+    Since T_h itself is a valid candidate, this move is guaranteed
+    non-increasing (T_h's own d'-weight upper-bounds the achieved
+    minimum).
+
+    Tie-break: if some other minimum-d'-weight tree ties with T_h's own
+    d'-weight, swapping to it doesn't decrease E at all -- a real stall
+    mode, not just literal re-selection of T_h. Break ties in exact
+    integer arithmetic by preferring, among d'-minimizing trees, the one
+    with the least overlap with T_h: scale d' up by `2m+1` (a safe bound
+    on |d'| given at most `m` trees) and add 1 for each edge in T_h, so
+    the combined weight's MST agrees with the pure-d' MST on every
+    non-tied comparison, but strictly prefers avoiding T_h's own edges
+    among ties.
+
+    NB (confirmed empirically): tie-breaking alone doesn't make this a
+    complete algorithm -- most random restarts hit a genuine local
+    minimum (T_h is the *unique* d'-minimizing tree, not merely tied)
+    well before E reaches 0, exactly the same stall signature
+    `_single_hop_pass` has. Meant to be combined with a fallback, see
+    `build_tree_packing_hybrid`.
+    """
+
+    scale = 2 * m + 1
+    E_before = _energy(edges, coverage, target)
+    if E_before == 0:
+        return False
+
+    h = max(range(m), key=lambda i: sum(coverage[e] for e in tree_edge_sets[i]))
+    h_eset = tree_edge_sets[h]
+
+    weights = {}
+    for e in edges:
+        en = _norm(e)
+        in_h = en in h_eset
+        dprime = coverage[en] - target - (1 if in_h else 0)
+        weights[e] = scale * dprime + (1 if in_h else 0)
+
+    H = nx.Graph()
+    H.add_nodes_from(G.nodes())
+    H.add_weighted_edges_from((u, v, weights[(u, v)]) for u, v in edges)
+    mst_edges = list(nx.minimum_spanning_edges(H, weight="weight", data=False))
+    new_eset = {_norm(e) for e in mst_edges}
+
+    for en in h_eset - new_eset:
+        coverage[en] -= 1
+    for en in new_eset - h_eset:
+        coverage[en] += 1
+
+    Tg = nx.Graph()
+    Tg.add_nodes_from(G.nodes())
+    Tg.add_edges_from(mst_edges)
+    trees[h] = Tg
+    tree_edge_sets[h] = new_eset
+
+    return _energy(edges, coverage, target) < E_before
+
+
+def build_tree_packing_away_step(
+    G: nx.Graph,
+    m: int,
+    target: int,
+    max_iters: int = 5000,
+    seed: int = 0,
+    verbose: bool = True,
+) -> list[nx.Graph] | None:
+    """Away-step moves alone, no fallback -- see `_away_step_pass`."""
+
+    edges = list(G.edges())
+    trees, tree_edge_sets = _init_trees(G, m, seed)
+
+    coverage: Counter = Counter()
+    for eset in tree_edge_sets:
+        for e in eset:
+            coverage[e] += 1
+    for e in edges:
+        coverage.setdefault(_norm(e), 0)
+
+    for it in range(max_iters):
+        if _energy(edges, coverage, target) == 0:
+            if verbose:
+                print(f"balanced by away-step after {it} iterations")
+            return trees
+        if not _away_step_pass(edges, G, m, target, trees, tree_edge_sets, coverage):
+            break
+        if verbose and it % 50 == 0:
+            imbalance = sum(abs(coverage[_norm(e)] - target) for e in edges)
+            print(f"iter {it}: E={_energy(edges, coverage, target)}, imbalance={imbalance}")
+
+    if verbose:
+        print(f"away-step stalled, final E={_energy(edges, coverage, target)}")
+    return None
+
+
+def build_tree_packing_hybrid(
+    G: nx.Graph,
+    m: int,
+    target: int,
+    max_away_iters: int = 2000,
+    max_augment_rounds: int = 2000,
+    seed: int = 0,
+    verbose: bool = True,
+) -> list[nx.Graph] | None:
+    """
+    `build_tree_packing_away_step`'s fast global moves as the primary
+    heuristic, falling back to `find_augmenting_chain`'s BFS multi-hop
+    search (the same fallback `build_tree_packing` uses for single-hop
+    swaps) whenever away-step hits a genuine local minimum.
+    """
+
+    edges = list(G.edges())
+    trees, tree_edge_sets = _init_trees(G, m, seed)
+
+    coverage: Counter = Counter()
+    for eset in tree_edge_sets:
+        for e in eset:
+            coverage[e] += 1
+    for e in edges:
+        coverage.setdefault(_norm(e), 0)
+
+    away_iters = 0
+    for it in range(max_away_iters):
+        away_iters = it
+        if _energy(edges, coverage, target) == 0:
+            if verbose:
+                print(f"balanced by away-step alone after {it} iterations")
+            return trees
+        if not _away_step_pass(edges, G, m, target, trees, tree_edge_sets, coverage):
+            break
+
+    imbalance = sum(abs(coverage[_norm(e)] - target) for e in edges)
+    if verbose:
+        print(f"away-step stalled after {away_iters} iterations, imbalance={imbalance}; "
+              f"switching to multi-hop augmenting search")
+
+    for augment_round in range(max_augment_rounds):
+        under = [e for e in edges if coverage[_norm(e)] < target]
+        if not under:
+            if verbose:
+                print(f"balanced after {augment_round} augmenting chains")
+            return trees
+
+        chain = find_augmenting_chain(edges, trees, tree_edge_sets, coverage, target)
+        if chain is None:
+            if verbose:
+                imbalance = sum(abs(coverage[_norm(e)] - target) for e in edges)
+                print(f"STUCK: no augmenting chain found after {augment_round} chains, "
+                      f"remaining imbalance={imbalance}")
+            return None
+        _apply_chain(chain, trees, tree_edge_sets, coverage)
+
+        if augment_round % 20 == 0:
+            _away_step_pass(edges, G, m, target, trees, tree_edge_sets, coverage)
+
+    if verbose:
+        print(f"did not converge within {max_augment_rounds} augmenting rounds")
+    return None
+
+
 def verify_packing(G: nx.Graph, trees: list[nx.Graph], target: int) -> bool:
     n = G.number_of_nodes()
     coverage: Counter = Counter()

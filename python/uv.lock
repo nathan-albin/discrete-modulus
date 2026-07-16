@@ -712,6 +712,7 @@ book = [
     { name = "pycddlib" },
 ]
 dev = [
+    { name = "jsonschema" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -741,6 +742,7 @@ book = [
     { name = "pycddlib", specifier = ">=2.1" },
 ]
 dev = [
+    { name = "jsonschema", specifier = ">=4.0" },
     { name = "mypy", specifier = ">=1.10" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
