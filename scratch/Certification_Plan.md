@@ -75,17 +75,20 @@ locked in during planning (so we don't re-litigate them mid-implementation):
   Usage paper or its matroid generalization** (confirmed: those are
   existence-only for the *fairest* pmf, a stronger/different question than
   ours). See §5.1 for what we actually rely on instead.
-- **Certificate format is not yet finalized, and the §6 sketch is known to be
-  wrong.** §6's flat "list of (tree, weight) pairs" sketch predates the
-  deflation-based design and doesn't fit it: materializing a flat list would
-  require an explicit Cartesian product across every deflation level,
-  exponential in nesting depth. The current design intent (not yet
-  implemented in a certificate format, only in the Python builder's
-  in-memory `FactoredPmf`) is a **factored representation that never
-  relabels vertices or edges** — a laminar family of vertex-subsets of the
-  *original* graph, each with its own small local pmf expressed in original
-  edge identities, glued by the matroid restriction/contraction fact above.
-  See §5.1.5 and §6 for details and the open schema question.
+- **Certificate format: settled (v4), formalized as
+  [`scratch/certificate_schema.json`](certificate_schema.json).** Not yet
+  wired to an actual emitter/parser (that's PR 2/PR 5 implementation work),
+  but the shape itself is fixed: a **factored representation that never
+  relabels vertices or edges** — a flat, ordered list of pieces, each a
+  block of the *original* graph's edges with its own small local pmf
+  expressed in original edge identities, glued by the matroid
+  restriction/contraction fact above. Earlier sketches (a flat "list of
+  (tree, weight) pairs," predating the deflation-based design, would have
+  required an explicit Cartesian product across every deflation level,
+  exponential in nesting depth) are superseded — see §5.1.5 and §6 for the
+  full history and the settled design's own two remaining prerequisites
+  (a `Pmf.glue` marginal lemma; a `solver_trace.hpp` fidelity gap for
+  parallel edges).
 
 ---
 
@@ -1200,24 +1203,45 @@ blocks Phases A-C.
 
 ## 6. Certificate format
 
-**History: two earlier sketches, both superseded, kept below only for the
-record.** v1 (a flat `"trees"` list) predates the deflation-based design
-(§5.1.5) and doesn't fit it — it would require materializing the full
-Cartesian product across every deflation level, exponential in nesting
-depth. v2 (a `"blocks"`/`"parent"` tree) was the right shape *category*
-(factored, laminar) but wrong in its specifics — it assumed the laminar
-family needed general tree/parent-pointer structure. §4's gluing work
-(`Pmf.glue`, `isBase_contract_iff_of_isBasis_restrict`) found that it
-doesn't: read against the actual builder (`pmf_construction.py`) and
-solver trace (`solver_trace.hpp`) rather than re-derived from prose, both
-the within-round core-deflation nesting and the across-round `crit_set`
-nesting reduce to *one flat, ordered list* — verified by a single
-left-fold of `Pmf.glue`, not a general tree walk. v3 below reflects that.
+**Settled: v4, formalized as a JSON Schema, not just prose.**
+[`scratch/certificate_schema.json`](certificate_schema.json) is the
+authoritative machine-checkable definition (Draft 2020-12; validated
+against a hand-built house-graph example plus negative tests — float
+weights, a zero denominator, and a stray `eta` field are all correctly
+rejected). What follows is a summary; the schema file's own
+`description`s carry the same content and shouldn't drift from it — treat
+the schema file as the source of truth if the two ever disagree.
+
+**History: three earlier sketches, all superseded, kept below only for
+the record.** v1 (a flat `"trees"` list) predates the deflation-based
+design (§5.1.5) and doesn't fit it — it would require materializing the
+full Cartesian product across every deflation level, exponential in
+nesting depth. v2 (a `"blocks"`/`"parent"` tree) was the right shape
+*category* (factored, laminar) but wrong in its specifics — it assumed
+the laminar family needed general tree/parent-pointer structure. §4's
+gluing work (`Pmf.glue`, `isBase_contract_iff_of_isBasis_restrict`) found
+that it doesn't: read against the actual builder (`pmf_construction.py`)
+and solver trace (`solver_trace.hpp`) rather than re-derived from prose,
+both the within-round core-deflation nesting and the across-round
+`crit_set` nesting reduce to *one flat, ordered list* — verified by a
+single left-fold of `Pmf.glue`, not a general tree walk. v3 got the flat
+list right but still carried top-level `"eta"`/`"rho"` fields; v4 (below)
+drops them, for a reason precise enough to be worth recording rather than
+just a preference — see the callout right after the sketch.
 
 ```jsonc
 {
-  "certificate_version": 3,
-  "graph": { "vertices": [...], "edges": [[u, v], ...] },
+  "certificate_version": 4,
+  "graph": {
+    // Vertices are the integers 0..num_vertices-1 (no separate label
+    // list; matches Boost's vecS vertex_descriptor). edges[i] gives
+    // global edge i's two endpoints -- array position IS the edge's
+    // stable global index, referenced by every "edges" list below.
+    // Parallel edges (repeated [u, v] pairs) are legal, distinct
+    // identities.
+    "num_vertices": 5,
+    "edges": [[0, 1], [1, 2], [2, 3], [3, 0], [0, 2], [2, 4]]
+  },
   // A flat, ORDERED list of pieces -- one per within-round deflation core,
   // or per solver round if it needed no further deflation. Order matters:
   // it must match discovery order (round 1's pieces, in their own
@@ -1236,21 +1260,50 @@ left-fold of `Pmf.glue`, not a general tree walk. v3 below reflects that.
       // note below on why). Must be disjoint from every earlier piece's
       // "edges", and the union of all pieces' "edges" must be the whole
       // top-level "edges" list (checked by the verifier; see open items).
-      "edges": [0, 2, 5],
+      "edges": [0, 1, 2, 3, 4, 5],
+      // INFORMATIONAL ONLY (see the open item below) -- original
+      // vertex indices and/or synthetic per-deflation-core labels
+      // (e.g. "__core_0__", matching `pmf_construction.py`'s own
+      // naming), never checked against anything.
+      "vertices": [0, 1, 2, 3, 4],
       "local_pmf": {
         // Spanning trees of this piece, as edge-index lists into THIS
         // piece's own "edges" above (equivalently, into the top-level
         // "edges" array, since piece edges are a subset) -- global
         // indices throughout, per the note below.
-        "trees": [{ "edges": [0, 2], "weight": [1, 2] }, ...]  // [num, den]
+        "trees": [
+          { "edges": [0, 1, 2, 3], "weight": [1, 3] },
+          { "edges": [0, 1, 3, 4], "weight": [1, 3] },
+          { "edges": [1, 2, 3, 4], "weight": [1, 3] }
+        ]
       }
-    },
-    ...
-  ],
-  "eta": [{ "edge": 0, "value": [1, 3] }, ...],
-  "rho": [{ "edge": 0, "value": [1, 3] }, ...]
+    }
+  ]
 }
 ```
+
+**Why no top-level `"eta"`/`"rho"` fields (resolved, not just a
+simplicity preference).** The natural question — should the certificate
+carry $\eta$/$\rho$ so the verifier can just check them, or should the
+verifier derive them itself from `pieces` — turned out to have a forcing
+answer, found by reading `Pmf.glue`'s actual definition
+(`lean/DiscreteModulusCert/Glue.lean`) rather than assuming: its combined
+pmf's `support` is a literal `Finset` **Cartesian product** of the two
+input pmfs' supports (`(μA.support ×ˢ μRest.support).image ...`). Folding
+that once per piece over a whole `PieceList` makes the final glued pmf's
+support size the *product of every piece's own local support size* —
+genuinely exponential in the piece count, the exact blowup the factored
+Python design (§5.1.5) exists to avoid, resurfacing at the Lean layer if
+the verifier ever asked Lean to reduce `(PieceList.glueAllGraph
+...).marginal e` directly (`Pmf.marginal` is defined as a sum over
+exactly that support, `Family.lean`). So the certificate has nothing
+useful to assert about $\eta$/$\rho$ as trusted fields: the verifier must
+recompute both from the per-piece local pmfs compositionally regardless
+(cheap — linear in pieces × edges, never touching the product), which
+means a certificate-supplied $\eta$/$\rho$ would only ever be a value
+nobody checks. Simpler to not ship it. **This closes §8's "trust vs
+reconstruct $\eta$" open question**, but opens a new, precisely scoped
+one — see the open items below.
 
 **Why tree edges are global (top-level) indices, not piece-local ones.**
 Python's own `LocalPiece.provenance` maps *local* edge indices (dense,
@@ -1272,6 +1325,17 @@ parses directly into a `Pmf`, no intermediate representation needed.
 Weights parse as plain `ℚ` (`[num, den]`), never `ℝ≥0`/`NNReal` — see §4's
 PR 4 entry for why `lean-modulus`'s own `ℝ≥0`-valued density vocabulary
 turned out not to be reusable here at all.
+
+**A subtlety worth recording: which tree "continues the fold" is never
+ambiguous, so the schema doesn't need to say.** Building the running
+`prev`/`I₀` witness that the next piece's `IsBaseCheck` needs
+(`lean/DiscreteModulusCert/IsBaseCheck.lean`) requires picking *one*
+concrete tree out of each already-processed piece's `local_pmf.trees` —
+but it provably doesn't matter which one: `isBase_contract_iff_of_isBasis_restrict`
+(`Glue.lean`) shows contracting by a block never cares which of the
+block's own bases justified it. The verifier is free to pick, say, the
+first declared tree of each piece to extend `prev`; nothing in the schema
+needs to record a choice.
 
 **Open items — what PR 5's parser/verifier still needs to nail down and
 check:**
@@ -1345,16 +1409,49 @@ check:**
       *pmf-level* hypothesis — a piece's trees never touch an earlier
       piece's edges) was and remains directly, cheaply decidable from
       concrete edge-index lists regardless, unaffected by any of this.
-- [ ] **`vertices` is informational only, not load-bearing for
-      verification** — every check above runs purely on edge sets
-      (`Pmf.glue`, `IsForest`, etc. never mention vertices). Worth keeping
-      in the schema for traceability back to `solver_trace.hpp`'s own
-      per-round `vertices` field and for human debugging, but the
-      verifier's correctness doesn't depend on it. Flagging explicitly so
-      a future contributor doesn't assume it needs cross-checking against
-      anything.
-- [ ] Keep `certificate_version` independent from the PR 1 solver-trace
-      version — they change on different schedules.
+- [x] **`vertices` is informational only, not load-bearing for
+      verification — now explicit in the schema itself.**
+      `certificate_schema.json`'s per-piece `vertices` field is typed but
+      documented as never cross-checked: every verifier check runs purely
+      on edge sets (`Pmf.glue`, `IsForest`, etc. never mention vertices).
+      Kept for traceability back to `solver_trace.hpp`'s own per-round
+      `vertices` field and for human debugging only.
+- [x] Keep `certificate_version` independent from the PR 1 solver-trace
+      version — they change on different schedules. (`certificate_version`
+      is now at `4`, having incremented past the v3 sketch when `eta`/`rho`
+      were dropped — see above.)
+- [ ] **New, found while settling the schema: `Pmf.glue`'s marginal needs
+      a compositional theorem before PR 5 can use `certificate_optimality`
+      on any real (multi-piece) certificate.** Per the "why no
+      `eta`/`rho`" callout above, the verifier must compute `η` from the
+      per-piece local pmfs directly, never from the fully-glued top-level
+      pmf. That requires a lemma not yet in `Glue.lean`: for
+      `μ = Pmf.glue hAE μA μRest hdisj`, `μ.marginal e = μA.marginal e`
+      for `e ∈ A` and `μ.marginal e = μRest.marginal e` otherwise. Expected
+      to be a modest, self-contained proof — the same `Finset.sum_product'`
+      / distributivity pattern `Pmf.glue`'s own `sum_one` field already
+      uses, just for `marginal` instead of the total-weight sum — not a new
+      mathematical idea, but real, not-yet-done work, and worth landing
+      before PR 5's verifier is written rather than discovering the gap
+      then. Natural home: `Glue.lean`, alongside `Pmf.glue` itself.
+- [ ] **New, found while settling the schema: `solver_trace.hpp`'s
+      `TraceRound.crit_set` records dispatched edges as vertex pairs
+      (`std::vector<std::pair<Vertex, Vertex>>`), not genuine edge
+      identities** (`cunningham.hpp`'s own `crit_set` is a `std::set<Edge>`
+      of real Boost edge descriptors, each with a stable `edge_index`, but
+      `write_trace_json`'s conversion to `TraceRound` discards that and
+      keeps only the two endpoint vertices, `cunningham.hpp:408-413`). This
+      is fine for any graph without true parallel edges (`examples/house`,
+      `examples/nested` included) but is a latent fidelity gap for the
+      general multigraph case §2 already advertises as supported: two
+      parallel edges between the same pair can't be told apart from
+      `crit_set` alone. Not a schema problem — the certificate's own
+      top-level `graph.edges` correctly preserves distinct parallel edges
+      by array position — but a prerequisite fix inside `solver_trace.hpp`
+      (store `get(edge_index, g, e)` alongside, or instead of, the vertex
+      pair) before PR 2's still-unwritten "standalone tool" tries to
+      translate a trace's `crit_set` into genuine top-level edge indices
+      for a graph that actually has parallel edges.
 
 ## 7. Definition of done / success criteria
 
@@ -1371,10 +1468,17 @@ check:**
   "how big can we certify" — worth picking one (e.g. `examples/nested`, or
   a small synthetic case) as the explicit target for v1 rather than
   discovering the practical ceiling during PR 5.
-- Whether to check $\eta$-reconstruction fully in-kernel or trust the
-  builder's $\eta$ and only re-derive it from $\mu$ (PR 5 checklist) —
-  affects Lean proof/runtime cost; decide once PR 2's real output sizes are
-  known.
+- **Resolved, see §6:** whether to check $\eta$-reconstruction fully
+  in-kernel or trust the builder's $\eta$. Answer: there's no third option
+  worth taking — `Pmf.glue`'s combined support is a literal Cartesian
+  product (exponential in piece count), so the verifier can *never*
+  afford to compute $\eta$ from the fully-glued top-level pmf either way;
+  it must derive $\eta$ compositionally from the per-piece local pmfs
+  regardless. Since the verifier ends up computing $\eta$ itself no matter
+  what, there's nothing left for a certificate-supplied $\eta$ to add, so
+  v4 drops it from the schema entirely (§6). This *creates* a new,
+  precisely scoped prerequisite — a marginal-compositionality lemma for
+  `Pmf.glue`, not yet in `Glue.lean` — tracked in §6's open items.
 - Definitional adequacy of the reused `lean-modulus` types (§2's reuse
   table, §3's TCB ledger): a short explicit sanity pass confirming
   `Multigraph`/`IsSpanningTree`/`Density`/`Adm` mean what this project needs
@@ -1383,12 +1487,17 @@ check:**
   `IsSpanningTree` by the spike's `isSpanningTree_iff_isBase` (§4 Phase B,
   §5.1.5) but not `Density`/`Adm`.
 - **Resolved (was: "New, from §5.1.5"), see §6:** the certificate schema is
-  now designed (v3, a flat ordered `pieces` list) and grounded in both the
-  actual Python builder's data shapes and a Lean-side proof of why the
-  flat-list structure suffices (§4's PR 4 entry). Not fully closed though
-  — §6 itself lists three concrete remaining open items (partition-
-  completeness checking, per-piece `IsBase` checking, the fold driver)
-  that are real PR 5 implementation work, not design gaps.
+  now settled (v4, a flat ordered `pieces` list, formalized as
+  `scratch/certificate_schema.json`) and grounded in both the actual
+  Python builder's data shapes and a Lean-side proof of why the flat-list
+  structure suffices (§4's PR 4 entry). The fold driver, the
+  partition-completeness check, and the matroid-to-graph reduction for
+  per-piece `IsBase` checking are all done (§6). Two concrete items
+  remain, both found while settling the schema rather than previously
+  known: the `Pmf.glue` marginal-compositionality lemma, and
+  `solver_trace.hpp`'s parallel-edge fidelity gap in `crit_set` (§6's open
+  items) — real, precisely scoped PR 4/PR 5 work, not open design
+  questions.
 - **New, from §5.1.5:** whether `core_deflation`'s cubic-in-adversarial-cases
   performance is actually fine on real solver-dispatched graphs, or whether
   it needs the "principal partition of a matroid" style single-shot
