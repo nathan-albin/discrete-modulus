@@ -1307,25 +1307,44 @@ check:**
       quantify over all subsets). No `sorry` (axiom-checked). This turns
       "check a matroid base" into "check a plain graph is a forest" —
       exactly the reduction PR 5 needs.
-    - **What's still open, deliberately not attempted in the same pass:**
-      `Multigraph.IsForest` itself isn't yet `Decidable`/computably
-      checkable. Its two easy conjuncts (no loops, injective endpoints)
-      are immediate finite checks; the hard one
-      (`(G.toSimpleGraph F).IsAcyclic`) is **not** decidable "for free" —
-      checked directly: `Decidable G.IsAcyclic` fails to synthesize even
-      via the natural route (`isAcyclic_iff_forall_isBridge` +
-      `Reachable`'s existing `Fintype`-vertex decidability), because
-      `IsBridge`'s own decidability and a `Finset`/`Fintype` handle on
-      `edgeSet` aren't wired up in Mathlib either — confirmed via a
-      129-second failed instance search, not a quick gap. Building a
-      genuine decision procedure (most likely a verified union-find over
-      the finitely many vertices a candidate tree touches, reusing
-      `IsForest.ncard_add_numComponents` from `GraphicMatroid.lean` where
-      useful) is real, self-contained follow-up work, not a quick addition
-      to `IsBaseCheck.lean`. `hdisj` (`Pmf.glue`'s one remaining
+    - **Resolved: `Multigraph.IsForest` is now genuinely `Decidable`.**
+      (`lean/DiscreteModulusCert/ForestDecide.lean`.) The natural Mathlib
+      route (`isAcyclic_iff_forall_isBridge` + `Reachable`'s `Fintype`-vertex
+      decidability) still doesn't synthesize, for the reason already
+      identified here (`IsBridge`'s own decidability and a `Finset`/`Fintype`
+      handle on `edgeSet` aren't wired up in Mathlib). Instead of a
+      hand-rolled union-find, the decision procedure is structural recursion
+      on a candidate tree's edge-index **list** (matching a certificate's own
+      `"edges": [...]` shape), inserting one edge at a time and deciding
+      acyclicity via Mathlib's `isAcyclic_sup_fromEdgeSet_iff` (an honest
+      iff, both directions — `isForest_insert_iff` in the same file
+      transports it through `Multigraph.toSimpleGraph`; the "keeps it a
+      forest" direction is exactly `IsForest.insert_of_not_reachable`,
+      already proved upstream). **A subtlety the first attempt missed, worth
+      recording:** naming a new edge's two endpoints via `Sym2.exists` before
+      deciding which `Decidable` branch to build doesn't work — that's an
+      `Exists`-elimination into a non-`Prop` target, rejected by the kernel
+      even though it's completely fine *inside* a proof. The fix is
+      `sym2Reachable`, which lifts `Reachable` through `Sym2.lift` (valid
+      since reachability is symmetric) so the "already connected" check is
+      decidable *at the abstract `Sym2 V` value itself*, via
+      `Quot.recOnSubsingleton` — endpoints only ever get named inside the
+      resulting proof terms, never to pick the branch. No `sorry`
+      (axiom-checked: `propext`, `Classical.choice`, `Quot.sound`, the same
+      three as everywhere else in this project). **One remaining caveat,
+      also recorded so it isn't rediscovered by surprise:** plain `decide`
+      still gets stuck on this instance — not from anything in this file,
+      but because Mathlib's own `Reachable` decidability instance
+      (`SimpleGraph.instDecidableRelReachable`) is built via
+      `decidable_of_iff'` from a `propext`-cast proof, which the kernel's
+      `decide` evaluator can't unfold. `native_decide` (compiles to native
+      code, sidesteps kernel reduction, at the standard cost of trusting the
+      compiler via `Lean.ofReduceBool`) works fine and is exercised in
+      `ForestDecideTest.lean` on a 3-cycle (forest/non-forest/single-edge/
+      duplicate-edge-index/loop cases). `hdisj` (`Pmf.glue`'s one remaining
       *pmf-level* hypothesis — a piece's trees never touch an earlier
-      piece's edges) is unaffected by this gap and is directly, cheaply
-      decidable from concrete edge-index lists regardless.
+      piece's edges) was and remains directly, cheaply decidable from
+      concrete edge-index lists regardless, unaffected by any of this.
 - [ ] **`vertices` is informational only, not load-bearing for
       verification** — every check above runs purely on edge sets
       (`Pmf.glue`, `IsForest`, etc. never mention vertices). Worth keeping

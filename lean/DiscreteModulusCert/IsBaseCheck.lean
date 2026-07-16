@@ -14,19 +14,20 @@ the *original* graph `G` (`Multigraph.IsForest`, no contraction/relabeling
 in sight) — given one already-verified spanning tree `I₀` of everything
 processed so far (`prev`).
 
-**What's still open, deliberately not attempted here.** `Multigraph.IsForest`
-itself isn't yet known to be `Decidable`/computably checkable in this
-project. Its two easy conjuncts (no loops, injective endpoints) are
-immediate finite checks; the hard one, `(G.toSimpleGraph F).IsAcyclic`,
-is *not* decidable "for free" via existing Mathlib instances — confirmed
-directly: `#synth`-style attempts at `Decidable G.IsAcyclic` via
-`isAcyclic_iff_forall_isBridge` (the natural route, since `Reachable` is
-decidable for `Fintype` vertex types) still fail to synthesize, because
-`IsBridge`'s own decidability and a `Fintype`/`Finset` handle on `edgeSet`
-aren't wired up either. Building a genuine decision procedure (e.g. a
-verified union-find over the finitely many vertices a candidate tree
-touches) is real, scoped follow-up work — a self-contained sub-project,
-not a quick addition to this file. -/
+**Resolved in `ForestDecide.lean`.** `Multigraph.IsForest` wasn't known to be
+`Decidable`/computably checkable when this file was written. Its two easy
+conjuncts (no loops, injective endpoints) are immediate finite checks; the
+hard one, `(G.toSimpleGraph F).IsAcyclic`, is *not* decidable "for free" via
+existing Mathlib instances — confirmed directly: `#synth`-style attempts at
+`Decidable G.IsAcyclic` via `isAcyclic_iff_forall_isBridge` (the natural
+route, since `Reachable` is decidable for `Fintype` vertex types) still fail
+to synthesize, because `IsBridge`'s own decidability and a `Fintype`/`Finset`
+handle on `edgeSet` aren't wired up either. `ForestDecide.lean` builds a
+genuine decision procedure instead — structural recursion on a candidate
+tree's edge-index list, deciding each insertion via Mathlib's
+`isAcyclic_sup_fromEdgeSet_iff` — giving a real, `sorry`-free
+`Decidable (G.IsForest {e | e ∈ l})` instance for any `l : List E`, which is
+exactly the shape a certificate's declared tree already comes in. -/
 
 namespace DiscreteModulusCert
 
