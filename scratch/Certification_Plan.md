@@ -1292,19 +1292,40 @@ check:**
       A verifier can only construct a `PieceList N Set.univ` if the
       certificate's pieces really do union to everything — the type system
       enforces the check rather than needing a separate runtime assertion.
-- [ ] **Per-piece `IsBase` checking — still open, the main remaining PR 5
-      gap.** `PieceList`/`Pmf.glue` assume each block's `Pmf` already has
-      a proof `isBase : ∀ T ∈ support, M.IsBase T` — turning a
-      certificate's raw `{edges: [...], weight: [...]}` JSON into that
-      proof (a forest check — `Multigraph.IsForest`: no loops, injective
-      endpoints, acyclic — plus a cardinality/spanning check against that
-      block's own rank) isn't implemented or even sketched as Lean code.
-      This is the one piece standing between "the fold driver exists" and
-      "a real certificate can be parsed and checked" — genuinely the next
-      thing to build. `hdisj` (`Pmf.glue`'s one remaining *pmf-level*
-      hypothesis — a piece's trees never touch an earlier piece's edges)
-      is a special case and is directly, cheaply decidable from the
-      concrete edge-index lists once trees are constructed.
+- [x] **Per-piece `IsBase` checking — the matroid-to-graph reduction is
+      done; a genuine sub-gap remains, now precisely scoped.**
+      `isBase_contract_restrict_iff_isForest`
+      (`lean/DiscreteModulusCert/IsBaseCheck.lean`) proves: given `I₀`, an
+      already-verified spanning tree of everything processed so far
+      (`prev`), a candidate tree `T` for the next piece is a genuine base
+      of that piece's matroid iff (a) `I₀ ∪ T` is a forest of the
+      *original* graph (`Multigraph.IsForest` — no contraction/relabeling
+      needed, `I₀`'s concrete data stands in for "`prev` contracted away")
+      and (b) no other edge of the piece can be added to `T` without
+      creating a cycle (a *finite*, single-insertion check — sufficient
+      for maximality by the matroid exchange property, so no need to
+      quantify over all subsets). No `sorry` (axiom-checked). This turns
+      "check a matroid base" into "check a plain graph is a forest" —
+      exactly the reduction PR 5 needs.
+    - **What's still open, deliberately not attempted in the same pass:**
+      `Multigraph.IsForest` itself isn't yet `Decidable`/computably
+      checkable. Its two easy conjuncts (no loops, injective endpoints)
+      are immediate finite checks; the hard one
+      (`(G.toSimpleGraph F).IsAcyclic`) is **not** decidable "for free" —
+      checked directly: `Decidable G.IsAcyclic` fails to synthesize even
+      via the natural route (`isAcyclic_iff_forall_isBridge` +
+      `Reachable`'s existing `Fintype`-vertex decidability), because
+      `IsBridge`'s own decidability and a `Finset`/`Fintype` handle on
+      `edgeSet` aren't wired up in Mathlib either — confirmed via a
+      129-second failed instance search, not a quick gap. Building a
+      genuine decision procedure (most likely a verified union-find over
+      the finitely many vertices a candidate tree touches, reusing
+      `IsForest.ncard_add_numComponents` from `GraphicMatroid.lean` where
+      useful) is real, self-contained follow-up work, not a quick addition
+      to `IsBaseCheck.lean`. `hdisj` (`Pmf.glue`'s one remaining
+      *pmf-level* hypothesis — a piece's trees never touch an earlier
+      piece's edges) is unaffected by this gap and is directly, cheaply
+      decidable from concrete edge-index lists regardless.
 - [ ] **`vertices` is informational only, not load-bearing for
       verification** — every check above runs purely on edge sets
       (`Pmf.glue`, `IsForest`, etc. never mention vertices). Worth keeping
