@@ -30,13 +30,20 @@ Pipeline, per round of the solver trace:
 3. Run `build_factored_pmf` on the shrunk multigraph (deflation + Wolfe's
    algorithm per strictly-homogeneous piece, already implemented/tested).
 4. Translate every piece's local edge indices into GLOBAL indices (into
-   the certificate's own top-level `graph.edges` array), and append them,
-   in order, to the certificate's flat `pieces` list.
+   the certificate's own top-level `graph.edges` array), and append them
+   to the certificate's flat `pieces` list -- **in reverse round order**
+   (round 0's pieces last, the final round's pieces first), not the
+   order rounds were recorded in. See `build_certificate`'s own docstring
+   for why: round 0's crit_set runs between components later rounds
+   themselves resolve, so round 0 depends on them, not the reverse of
+   dispatch order.
 
 Global edge indices are assigned round by round, in the order each
 round's `crit_set` is recorded -- so the top-level `graph.edges` array is
 built entirely from the trace itself, with no need to separately supply
-or cross-check the original edge list's own ordering.
+or cross-check the original edge list's own ordering. This indexing is
+independent of the `pieces` list's own (reversed) order -- edge index
+assignment and piece emission order serve different purposes.
 """
 
 from __future__ import annotations
@@ -150,10 +157,30 @@ def build_certificate(g: nx.Graph, trace: SolverTrace, verbose: bool = False) ->
     deflation/pmf-construction math itself (mirroring `cunningham.hpp`'s
     own internal `assert(theta == ...)`), distinct from
     `validate_certificate`'s purely certificate-level checks below.
+
+    **Round order in `pieces` is reversed relative to `trace.rounds`.**
+    The solver dispatches rounds outermost-first (round 0's crit_set is a
+    tight set of the *whole* graph; round 1, round 2, ... recurse into
+    whatever round 0's own crit_set-removal left as separate components),
+    but the certificate's laminar-family fold (`PieceList` in
+    `lean/DiscreteModulusCert/Glue.lean`) needs the opposite: a piece can
+    only be verified once every piece its own contraction *depends on* has
+    already been verified, and round 0's crit_set edges run *between*
+    round 0's own leftover components -- exactly the components round 1,
+    round 2, ... go on to resolve. So round 0 depends on round 1/round 2,
+    not the other way around, the reverse of dispatch order. Confirmed by
+    direct experiment against `examples/nested`'s real 3-round trace
+    (forward order fails the maximality check on round 0's own piece;
+    reversed order passes every piece). Within one round, core-before-
+    rigid-base order (already `build_factored_pmf`'s own discovery order)
+    is unaffected -- only the outer round-to-round grouping reverses,
+    since a round's own within-round deflation already discovers pieces
+    leaf-first (a core, self-contained, before the rigid base that
+    depends on it).
     """
 
     global_edges: list[tuple[int, int]] = []
-    pieces_json: list[dict[str, Any]] = []
+    round_pieces: list[list[dict[str, Any]]] = []
 
     for round_data in trace.rounds:
         shrunk, shrunk_index_to_origuv = _shrink_round(g, round_data.vertices, round_data.crit_set)
@@ -168,6 +195,7 @@ def build_certificate(g: nx.Graph, trace: SolverTrace, verbose: bool = False) ->
             f"round marginal {set(marginal)} isn't uniformly theta={round_data.theta}"
         )
 
+        this_round_pieces: list[dict[str, Any]] = []
         for piece in factored.pieces:
             piece_edges = sorted({base + j for j in piece.provenance})
 
@@ -179,13 +207,16 @@ def build_certificate(g: nx.Graph, trace: SolverTrace, verbose: bool = False) ->
                 w: Fraction = entry.weight
                 trees_json.append({"edges": tree_edges, "weight": [w.numerator, w.denominator]})
 
-            pieces_json.append(
+            this_round_pieces.append(
                 {
                     "edges": piece_edges,
                     "vertices": [str(v) for v in piece.graph.nodes],
                     "local_pmf": {"trees": trees_json},
                 }
             )
+        round_pieces.append(this_round_pieces)
+
+    pieces_json: list[dict[str, Any]] = [p for pieces in reversed(round_pieces) for p in pieces]
 
     return {
         "certificate_version": 4,

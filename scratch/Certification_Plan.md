@@ -679,26 +679,113 @@ changes the §6 certificate-schema question**
       Rat-representation quirk) — `native_decide` is needed even for pure
       rational arithmetic like `0 ≤ 1/3`, not just for the classical-Set
       issues above.
-- [ ] **Open design choice, deliberately deferred**: how a real certificate
-      *file* gets into the shape `HouseCert.lean` hand-transcribed. Two
-      options, not yet decided between: (a) a genuine JSON parser in Lean
-      (`Lean.Data.Json` is available; more general, a true standalone
-      verifier binary reading an arbitrary certificate path, closer to
-      "PR 2 is untrusted, PR 5 independently checks whatever it produces");
-      (b) a Python-side codegen step emitting the repetitive per-piece Lean
-      source directly (much less Lean-side work, but coupages the verifier
-      to being regenerated per certificate). Doesn't affect trust either way
-      (codegen would only ever emit data + decidability-check invocations,
-      never hand-written proof terms) — picking between them is about
-      engineering cost and what "the verifier" should mean as an artifact,
-      not soundness.
-- [ ] Generalize the hand-transcription pattern above into something that
-      scales to `examples/nested`'s real certificate (3 rounds, up to 190
-      edges in the K20-shaped piece) without hand-writing per-tree proof
-      terms — likely a small generic "check one piece from raw list data"
-      helper (mirroring `forall_diff_not_isForest_of_list_all`'s shape) that
-      a parser/codegen step could call once per piece, rather than bespoke
-      theorems per tree the way `HouseCert.lean` currently has them.
+- [x] **Resolved: Lean-native JSON parser, not Python codegen.** `Lean.Data.Json`
+      is core (no new dependency), `deriving FromJson` handles the
+      certificate schema's nested-array shape with almost no hand-written
+      decoder code (confirmed directly: a `RawCertificate`/`RawPiece`/
+      `RawTree` structure hierarchy with `deriving FromJson` round-trips
+      `certificate_builder`'s real JSON output correctly, ignoring the
+      informational-only `vertices` field automatically). Chosen over
+      codegen for the architectural reason already recorded above (a real
+      standalone verifier binary, no Python in the trust/verification
+      loop) — see `lean/DiscreteModulusCert/CertChecker.lean`.
+- [x] **Resolved: a runnable, generic checker exists**
+      (`CertChecker.checkCertificateJson`), replacing the
+      hand-transcription-per-certificate approach `HouseCert.lean` used.
+      Key realization that shaped its design: a certificate's actual
+      content is only known at *program runtime* (read from a file path),
+      so `decide`/`native_decide` (tactics that close a fixed goal at
+      elaboration time) don't apply at all here — the right tool is
+      ordinary executable code using the same computable `Decidable`
+      instances (`instDecidableIsForestOfList` is genuine structural
+      recursion, no `Classical.choice`, so `if G.IsForest (S l) then ...`
+      in a plain `def` compiles to real code that runs the actual
+      algorithm against parsed data). One real Lean quirk hit and fixed:
+      a `Bool → String → Except String Unit` helper had to return `PUnit`
+      instead of `Unit`, or discarding it inside a `do` block whose
+      overall type mentions a universe-polymorphic `E : Type*` hits a
+      universe-unification failure (confirmed by minimal repro). Checks
+      exactly what `validate_certificate` checks, independently and using
+      the real forest-decision algorithm rather than a syntactic proxy.
+      Does *not* yet produce a kernel-checked `Pmf`/`PieceList` term (a
+      separate, not-yet-attempted soundness theorem — "if this checker
+      returns `ok`, a genuine `PieceList` exists for the same data" — is
+      still needed to close that gap); see the two new open items below
+      for what actually blocks exercising it on real multi-round data.
+- [x] **A `lake exe verify_cert` target exists** (`lean/Main.lean`,
+      `lean/lakefile.toml`) — reads a certificate path from `argv`,
+      parses, checks, prints ACCEPTED/REJECTED. **Not yet build-verified
+      in this environment**: `lean_exe` targets require native-compiling
+      every transitively-imported module (unlike `lean_lib`, which only
+      produces `.olean`s), and `CertChecker.lean`'s import chain pulls in
+      Mathlib's Matroid/Combinatorics machinery transitively (via
+      `ForestDecide → IsBaseCheck → Glue → Family`) even though the
+      checker itself only uses `Multigraph.IsForest`'s decidability —
+      triggering a full from-scratch native compile of Mathlib that didn't
+      finish in a bounded session. Slimming `CertChecker.lean`'s import to
+      just what `Multigraph.IsForest` decidability needs (bypassing the
+      Matroid-heavy chain) would likely make this tractable; not yet
+      attempted.
+- [x] **Real, previously-undetected bug found and fixed: `pieces` ordering
+      across rounds.** `certificate_builder.py` emitted `pieces` in
+      *dispatch* order (round 0, the outermost tight set Cunningham's
+      algorithm finds first, then round 1, round 2, ... recursing into
+      whatever round 0's own crit_set-removal left as separate
+      components) — but `PieceList`'s fold needs the reverse: a piece can
+      only be verified once every piece its own contraction depends on is
+      already verified, and round 0's crit_set edges run *between*
+      round 0's own leftover components, which round 1/round 2 are
+      precisely what resolve. So round 0 depends on them, not the other
+      way around — backwards from dispatch order. This was invisible in
+      `house` (single round; within-round core-before-rigid-base order,
+      `build_factored_pmf`'s own discovery order, already happens to be
+      leaf-first) and was only caught by running `CertChecker` against
+      `examples/nested`'s real 3-round certificate, where round 0's own
+      piece failed the maximality check. **Fix**: `build_certificate` now
+      groups pieces by round, then concatenates `reversed(round_pieces)`
+      -- within-round order is untouched. **General justification, not
+      just this example**: the solver's dispatch order is a DFS
+      pre-order traversal of the piece-dependency tree (a stack-based
+      LIFO in `cunningham.hpp`, confirmed: each popped round pushes *all*
+      resulting components back), and reversing any pre-order traversal
+      always yields a valid "dependencies before dependents" order,
+      regardless of branching shape — not a fact special to linear
+      chains. Confirmed directly on a new example built for exactly this
+      (see next item): forward order fails, reversed order passes every
+      piece.
+- [x] **New fixture: `examples/branch_test`, a genuinely branching (not
+      linear-chain) trace**, built because `examples/nested`'s 3 rounds
+      happen to form a linear tower (round 0 → one leftover component →
+      round 1 → one leftover component → round 2), which doesn't exercise
+      a round splitting into *multiple* independent subsequent rounds.
+      Two disjoint $K_{10}$ "lobes" joined by a 3-edge sparse bridge:
+      round 0 dispatches the bridge (crit\_set size 3, theta 1/3),
+      leaving the two $K_{10}$s as separate components; round 1 and
+      round 2 are true siblings (neither depends on the other), the
+      first real test of the reversal fix on non-linear structure.
+      `cpp/examples/branch_test.{edges,eta,trace.json,certificate.json}`.
+- [ ] **Blocking, found while testing the above: `ForestDecide.lean`'s
+      `instDecidableIsForestOfList` has a real performance problem, not
+      just at the `#eval`-vs-`native_decide` boundary.** `examples/nested`'s
+      190-edge/20-vertex K20 piece — a shape `HouseCert.lean` handles
+      instantly at 6 edges — doesn't finish within several minutes, and
+      this was directly confirmed to *not* be an interpreter-speed
+      artifact: the identical 190-edge check was tested standalone with
+      `native_decide` (the same compiled-code mechanism `HouseCert.lean`
+      already uses successfully), and it also hangs. Almost certainly
+      Mathlib's generic `SimpleGraph.Reachable` decidability instance
+      (already flagged in `ForestDecide.lean`'s own docstring as needing
+      `native_decide` just to reduce at all under `decide`) isn't an
+      efficient algorithm at real sizes — recomputed once per candidate
+      edge insertion in the recursive forest-check, it's plausibly
+      superlinear or worse per call. **Blocks exercising `CertChecker` on
+      anything beyond `house`'s toy size** — `nested`/`branch_test`'s own
+      `#eval`s are commented out in `CertCheckerTest.lean` pending this.
+      Needs its own investigation: likely replacing the reachability-based
+      check with a genuinely efficient algorithm (e.g. union-find,
+      $O(\alpha(n))$ amortized) underneath `Multigraph.IsForest`'s
+      decision procedure, keeping the same external `Decidable` interface
+      `IsBaseCheck.lean`/`CertChecker.lean` already build on.
 - [ ] Extend the marginal spot-check (`piece1Pmf_marginal_0`) to every edge
       and to the fully-glued `houseFullPmf` (via `PieceList.glueAll_marginal`
       + `Pmf.cast_marginal`), not just one piece's own local marginal.

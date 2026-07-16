@@ -8,3 +8,7 @@ rev = "1c91aa7412e0421dc8992c15f0932dda9f8756b2"
 
 [[lean_lib]]
 name = "DiscreteModulusCert"
+
+[[lean_exe]]
+name = "verify_cert"
+root = "Main"
