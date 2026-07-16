@@ -144,6 +144,45 @@ inline std::vector<Graph> induced_components(Graph& g, const std::set<Edge>& A) 
     return connected_component_graphs(fg);
 }
 
+/**
+ * @brief Checks whether @p g is a simple graph: no self-loops, no parallel
+ * edges between the same pair of vertices.
+ *
+ * @ref spanning_tree_modulus assumes this. It's not just a matter of
+ * degree: `eta_star`'s own construction looks up `edge(u, v, g)`, which
+ * identifies an edge by its endpoint pair alone -- unambiguous only when
+ * @p g is simple. Fed a genuine multigraph, that lookup would silently
+ * return an arbitrary one of several parallel edges and mis-assign its
+ * `eta*`, not fail loudly. (The spanning-tree-modulus solver was never
+ * designed to handle multigraph inputs -- the *shrunk* multigraphs that
+ * show up in deflation/certification, e.g. `Multigraph` in the Lean
+ * verifier or the `networkx` multigraphs `pmf_construction.py` builds,
+ * are a separate, purely conceptual construction the certificate builder
+ * reasons about after the fact; the solver itself only ever recurses on
+ * genuine vertex-induced subgraphs of the original input, so it never
+ * needs to represent one internally.)
+ */
+template <typename G>
+bool is_simple_graph(const G& g) {
+    std::set<std::pair<typename graph_traits<G>::vertex_descriptor, typename graph_traits<G>::vertex_descriptor>>
+        seen;
+    typename graph_traits<G>::edge_iterator ei, ei_end;
+    for (boost::tie(ei, ei_end) = edges(g); ei != ei_end; ++ei) {
+        auto u = source(*ei, g);
+        auto v = target(*ei, g);
+        if (u == v) {
+            return false;
+        }
+        if (v < u) {
+            std::swap(u, v);
+        }
+        if (!seen.insert({u, v}).second) {
+            return false;
+        }
+    }
+    return true;
+}
+
 //----------------------------------------------------------------
 // Demo graphs
 //----------------------------------------------------------------
