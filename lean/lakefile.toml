@@ -1,5 +1,5 @@
 name = "discrete_modulus_cert"
-defaultTargets = ["DiscreteModulusCert"]
+defaultTargets = ["DiscreteModulusCert", "verify_cert"]
 
 [[require]]
 name = "LeanModulus"

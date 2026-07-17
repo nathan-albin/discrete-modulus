@@ -864,10 +864,46 @@ changes the §6 certificate-schema question**
       `certificate_optimality` — that gap is `CertChecker.lean`'s own
       documented next step (a soundness theorem: "checker accepts →
       genuine `PieceList` exists"), tracked below, not closed by this.
-- [ ] Admissibility of $\rho$: run the (unproven) Kruskal implementation,
-      check its output weight $\ge 1$. **Prominently log/print that this
-      step relies on an unverified component** — this should be visible in
-      the verifier's own final output, not just in this planning doc.
+- [x] **Admissibility of $\rho$: done, as a runtime check (not yet a proof
+      term — same scope boundary as the eta/rho work above).** New file
+      `lean/DiscreteModulusCert/Kruskal.lean`: a plain, `partial def`
+      union-find (`find`/`union` over `Array Nat`) plus `Kruskal.run`,
+      the standard greedy MST algorithm (sort edges ascending by weight,
+      keep each that joins two still-separate components). Deliberately
+      *not* proven correct — that's PR 6's job (below); using `partial def`
+      for `find` rather than proving termination is itself a small
+      admission of the same fact, since there's no proof benefit to
+      making this file "look" verified when its output isn't.
+      `CertChecker.checkCertificate` (`CertChecker.lean`) runs it against
+      the certificate's own graph and freshly-recomputed `rho`, sums the
+      resulting tree's weight, and **rejects the certificate if that
+      weight is `< 1`** — admissibility (every spanning tree `≥ 1`) holds
+      iff the *minimum*-weight tree does, which is exactly what Kruskal
+      computes; only the algorithm's correctness, not whether the check
+      runs, is unverified. New `KruskalTest.lean` (mirroring
+      `ForestDecideTest.lean`'s smoke-test convention) confirms directly
+      on a hand-checked triangle that the algorithm picks the two
+      cheapest edges (not vacuously all/none of them), and that an
+      all-zero-weight case is correctly flagged as inadmissible.
+      **Prominently logged**: `lake exe verify_cert` now prints a fixed
+      caveat line alongside every `ACCEPTED` result (`Main.lean`'s
+      `kruskalCaveat`), not just in this planning doc; `CertCheckerTest.lean`'s
+      `#eval`s note the same. All three example certificates still
+      `ACCEPT` with this check live (house's MST weight comes out to
+      exactly `1`, tight, as expected given its uniform `rho = 1/4`).
+      **Real, unrelated bug found and fixed while wiring this in**: the
+      umbrella `lean/DiscreteModulusCert.lean` (what a bare `lake build` —
+      and hence `lean-test.yml`'s CI job, which runs exactly that — actually
+      compiles) never imported `CertChecker`/`CertCheckerTest`, and
+      `verify_cert` was never in `lakefile.toml`'s `defaultTargets`. Lake's
+      `lean_lib` target builds exactly its root module's import closure,
+      not a directory glob, so bare `lake build` was silently *never*
+      building or checking `CertChecker.lean`, `CertCheckerTest.lean`, or
+      the `verify_cert` executable at all, since the "Add a runnable Lean
+      JSON certificate checker" commit introduced them — confirmed
+      directly (job count 1294 → 2534 once fixed). Fixed: the umbrella
+      file now imports `Kruskal`/`KruskalTest`/`CertChecker`/`CertCheckerTest`,
+      and `defaultTargets` now includes `verify_cert`.
 - [ ] Wire PR 4's certificate-optimality lemma to these facts to conclude
       optimality; the verifier's final output is a Lean term whose
       type-checking is the whole point.

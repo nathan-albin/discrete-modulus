@@ -31,7 +31,7 @@ open DiscreteModulusCert.CertChecker
 #eval do
   let s ← IO.FS.readFile "../cpp/examples/house.certificate.json"
   match checkCertificateJson s with
-  | .ok () => IO.println "house: ACCEPTED"
+  | .ok () => IO.println "house: ACCEPTED (rho-admissibility relies on unverified Kruskal, see Main.lean)"
   | .error e => IO.println s!"house: REJECTED: {e}"
 
 -- Deliberately left as a `#eval` (not re-enabled) even though `nested`'s
@@ -45,5 +45,5 @@ open DiscreteModulusCert.CertChecker
 #eval do
   let s ← IO.FS.readFile "../cpp/examples/branch_test.certificate.json"
   match checkCertificateJson s with
-  | .ok () => IO.println "branch_test: ACCEPTED"
+  | .ok () => IO.println "branch_test: ACCEPTED (rho-admissibility relies on unverified Kruskal, see Main.lean)"
   | .error e => IO.println s!"branch_test: REJECTED: {e}"

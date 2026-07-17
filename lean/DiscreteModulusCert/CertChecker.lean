@@ -1,4 +1,5 @@
 import DiscreteModulusCert.ForestDecide
+import DiscreteModulusCert.Kruskal
 import Lean.Data.Json
 
 /-!
@@ -22,6 +23,16 @@ values don't match. Nothing is trusted that wasn't already being derived;
 the certificate's own `eta`/`rho` are just now legible without running
 this checker at all, and diffable directly against the C++ solver's own
 `*.eta` output.
+
+**Admissibility of `rho`, via the accepted Kruskal-oracle gap
+(`Kruskal.lean`, `Certification_Plan.md` §3/§5.2).** `rho` is admissible
+iff *every* spanning tree has `rho`-weight `≥ 1`, which holds iff the
+*minimum*-weight spanning tree does. `Kruskal.run` computes that minimum
+greedily; its correctness (that the greedy algorithm's output really is a
+minimum spanning tree) is v1's one deliberately unverified step -- the
+result is trusted, not proven. This checker still genuinely rejects a
+certificate whose Kruskal-computed minimum weight is `< 1`; only the
+*algorithm's own correctness*, not whether the check runs, is unverified.
 
 **Why this is a plain executable, not `decide`/`native_decide` on a proof
 term.** `HouseCert.lean` proved facts about *specific, hand-transcribed
@@ -280,6 +291,10 @@ def checkCertificate (raw : RawCertificate) : Except String Unit := do
   let computedRho := computedEta.map (· / normSq)
   let declaredRho ← parseRationalArray m raw.rho "rho"
   let _ ← checkQArrayEq "rho" computedRho declaredRho
+  let mstEdges := Kruskal.run cg.n raw.graph.edges.toArray computedRho
+  let mstWeight : ℚ := mstEdges.foldl (fun acc i => acc + computedRho.getD i 0) 0
+  let _ ← check (!decide (mstWeight < 1))
+    s!"admissibility check failed: Kruskal's minimum spanning tree has rho-weight {mstWeight} < 1 (UNVERIFIED: relies on an unproven Kruskal implementation, Certification_Plan.md §3/§5.2)"
 
 def checkCertificateJson (s : String) : Except String Unit := do
   let j ← Json.parse s
