@@ -5,12 +5,23 @@ import Lean.Data.Json
 # A runnable JSON certificate checker
 
 PR 5's first genuinely standalone verifier: reads a certificate JSON file
-(`scratch/certificate_schema.json`, v4) at *program runtime* and checks
+(`scratch/certificate_schema.json`, v5) at *program runtime* and checks
 every invariant `validate_certificate` (the untrusted Python-side sanity
 check) checks, but this time using the same computable decidability
 instance `ForestDecide.lean` built (`instDecidableIsForestOfList`) --
 genuinely running Cunningham/forest-decision code against the parsed data,
 not just a syntactic sanity check.
+
+**v5 adds checked (not trusted) `eta`/`rho` fields.** The certificate
+declares the optimal pmf's marginal (`eta`) and admissible density (`rho`)
+per edge; this checker recomputes both independently from `pieces` (the
+same composition `Pmf.glue_marginal`/`PieceList.glueAll_marginal`,
+`Glue.lean`, prove sound -- linear in pieces x edges, never the glued
+pmf's exponential support) and rejects the certificate if the declared
+values don't match. Nothing is trusted that wasn't already being derived;
+the certificate's own `eta`/`rho` are just now legible without running
+this checker at all, and diffable directly against the C++ solver's own
+`*.eta` output.
 
 **Why this is a plain executable, not `decide`/`native_decide` on a proof
 term.** `HouseCert.lean` proved facts about *specific, hand-transcribed
@@ -78,6 +89,8 @@ structure RawCertificate where
   certificate_version : Nat
   graph : RawGraph
   pieces : List RawPiece
+  eta : List (Int × Nat)
+  rho : List (Int × Nat)
 deriving FromJson
 
 /-- A certificate's graph, with vertex/edge bounds already checked: `E` is
@@ -192,14 +205,65 @@ def checkPieces (G : Multigraph V E) (toE : Nat → Except String E) :
     | .error e => Except.error s!"piece {i}: {e}"
     | .ok (A, I₀acc') => checkPieces G toE rest (Uacc ++ A) I₀acc' (i + 1)
 
+/-- Recomputes the optimal pmf's marginal at every edge (global index),
+directly from a certificate's own raw `pieces` -- summing each declared
+tree's weight into every edge it uses. Mirrors `compute_eta_from_pieces`
+on the Python side (`certificate_builder.py`), but works entirely over
+`Nat`/`Fin m` rather than through `checkPiece`/`checkPieces`'s generic
+`{V E : Type*} [Fintype E]` abstraction: that abstraction has no
+computable `E → Fin m` projection available generically
+(`Fintype.equivFin` is `noncomputable` -- the same obstacle
+`scratch/residual_performance_mystery.md` already hit, for a different
+reason). Working directly from the raw `Nat`-indexed JSON data, where `m`
+is already concrete, sidesteps this entirely. -/
+def sumTreeContributions (m : Nat) (toE : Nat → Except String (Fin m))
+    (pieces : List RawPiece) : Except String (Array ℚ) :=
+  pieces.foldlM
+    (fun acc piece =>
+      piece.local_pmf.trees.foldlM
+        (fun acc t => do
+          let _ ← check (!decide (t.weight.2 = 0)) "weight has a zero denominator"
+          let w : ℚ := (t.weight.1 : ℚ) / (t.weight.2 : ℚ)
+          t.edges.foldlM
+            (fun acc eNat => do
+              let e ← toE eNat
+              pure (acc.set! e.val (acc.getD e.val 0 + w)))
+            acc)
+        acc)
+    (Array.replicate m (0 : ℚ))
+
+/-- Parses a certificate's declared `eta`/`rho` field (a `List (Int ×
+Nat)`, one `[numerator, denominator]` pair per edge) into an `Array ℚ`,
+checking its length matches the graph's edge count and every denominator
+is nonzero. -/
+def parseRationalArray (m : Nat) (raw : List (Int × Nat)) (label : String) :
+    Except String (Array ℚ) := do
+  let _ ← check (decide (raw.length = m)) s!"{label} has {raw.length} entries, expected {m}"
+  raw.toArray.mapM fun (num, den) => do
+    let _ ← check (!decide (den = 0)) s!"{label} has a zero denominator"
+    pure ((num : ℚ) / (den : ℚ))
+
+/-- Checks two same-length `ℚ` arrays are equal, reporting the first
+mismatching index (and both values) if not -- used for both the `eta` and
+`rho` checks below. -/
+def checkQArrayEq (label : String) (computed declared : Array ℚ) : Except String PUnit := do
+  let _ ← check (decide (computed.size = declared.size))
+    s!"{label}: computed {computed.size} values but certificate declares {declared.size}"
+  match (List.range computed.size).find? (fun i => !decide (computed.getD i 0 = declared.getD i 0)) with
+  | some i =>
+    Except.error s!"{label} mismatch at edge {i}: computed {computed.getD i 0}, declared {declared.getD i 0}"
+  | none => pure ()
+
 /-- Checks a whole parsed certificate: builds the graph, folds
-`checkPieces` over every piece, and confirms the result is a genuine
+`checkPieces` over every piece, confirms the result is a genuine
 partition of the graph's own edges (every edge covered, exactly once --
 `Nodup` plus matching length is enough, since every edge in the
 accumulated list is already known, by `checkPieces`'s own disjointness
-check, to be distinct from every other piece's). -/
+check, to be distinct from every other piece's), and finally recomputes
+`eta`/`rho` from `pieces` and checks them against the certificate's own
+declared fields (checked, not trusted -- see the module docstring). -/
 def checkCertificate (raw : RawCertificate) : Except String Unit := do
-  if raw.certificate_version = 4 then pure ()
+  if raw.certificate_version = 5 then pure ()
   else Except.error s!"unsupported certificate_version {raw.certificate_version}"
   let cg ← buildGraph raw.graph
   let G := cg.toMultigraph
@@ -208,6 +272,14 @@ def checkCertificate (raw : RawCertificate) : Except String Unit := do
   let Uacc ← checkPieces G toE raw.pieces [] [] 0
   if Uacc.length = m then pure ()
   else Except.error s!"pieces cover {Uacc.length} of {m} edges -- not a partition"
+  let computedEta ← sumTreeContributions m toE raw.pieces
+  let declaredEta ← parseRationalArray m raw.eta "eta"
+  let _ ← checkQArrayEq "eta" computedEta declaredEta
+  let normSq : ℚ := (List.range m).foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
+  let _ ← check (!decide (normSq = 0)) "sum of squared etas is zero; rho is undefined"
+  let computedRho := computedEta.map (· / normSq)
+  let declaredRho ← parseRationalArray m raw.rho "rho"
+  let _ ← checkQArrayEq "rho" computedRho declaredRho
 
 def checkCertificateJson (s : String) : Except String Unit := do
   let j ← Json.parse s

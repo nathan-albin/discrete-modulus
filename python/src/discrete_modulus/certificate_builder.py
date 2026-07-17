@@ -48,6 +48,8 @@ assignment and piece emission order serve different purposes.
 
 from __future__ import annotations
 
+import json
+import sys
 from dataclasses import dataclass
 from fractions import Fraction
 from typing import Any
@@ -218,14 +220,55 @@ def build_certificate(g: nx.Graph, trace: SolverTrace, verbose: bool = False) ->
 
     pieces_json: list[dict[str, Any]] = [p for pieces in reversed(round_pieces) for p in pieces]
 
+    eta = compute_eta_from_pieces(pieces_json, len(global_edges))
+    rho = compute_rho(eta)
+
     return {
-        "certificate_version": 4,
+        "certificate_version": 5,
         "graph": {
             "num_vertices": g.number_of_nodes(),
             "edges": [list(e) for e in global_edges],
         },
         "pieces": pieces_json,
+        "eta": [[f.numerator, f.denominator] for f in eta],
+        "rho": [[f.numerator, f.denominator] for f in rho],
     }
+
+
+def compute_eta_from_pieces(pieces: list[dict[str, Any]], m: int) -> list[Fraction]:
+    """
+    The optimal pmf's marginal at every edge (global index), computed
+    directly from a certificate's own `pieces` -- summing each declared
+    tree's weight into every edge it uses. This is the same per-piece
+    composition `Pmf.glue_marginal`/`PieceList.glueAll_marginal`
+    (`lean/DiscreteModulusCert/Glue.lean`) prove sound on the Lean side:
+    linear in pieces x edges, never touching the glued pmf's own
+    (exponential) support.
+    """
+
+    eta = [Fraction(0)] * m
+    for piece in pieces:
+        for t in piece["local_pmf"]["trees"]:
+            w = Fraction(*t["weight"])
+            for e in t["edges"]:
+                eta[e] += w
+    return eta
+
+
+def compute_eta(cert: dict[str, Any]) -> list[Fraction]:
+    """`compute_eta_from_pieces` against an already-built certificate dict."""
+
+    return compute_eta_from_pieces(cert["pieces"], len(cert["graph"]["edges"]))
+
+
+def compute_rho(eta: list[Fraction]) -> list[Fraction]:
+    """rho = eta / ||eta||^2, the admissible density Cauchy-Schwarz duality
+    (`Certification_Plan.md` §1) makes simultaneously optimal with eta."""
+
+    norm_sq = sum((e * e for e in eta), Fraction(0))
+    if norm_sq == 0:
+        raise ValueError("sum of squared etas is zero; rho is undefined")
+    return [e / norm_sq for e in eta]
 
 
 def validate_certificate(cert: dict[str, Any]) -> None:
@@ -261,3 +304,85 @@ def validate_certificate(cert: dict[str, Any]) -> None:
         assert total == 1, f"piece {i}: tree weights sum to {total}, not 1"
 
     assert covered == set(range(m)), "pieces' edges don't partition the top-level edge list"
+
+    eta_check = compute_eta(cert)
+    declared_eta = [Fraction(num, den) for num, den in cert["eta"]]
+    assert len(declared_eta) == m, f"eta has {len(declared_eta)} entries, expected {m}"
+    assert eta_check == declared_eta, "declared eta doesn't match pieces' own composed marginals"
+
+    rho_check = compute_rho(eta_check)
+    declared_rho = [Fraction(num, den) for num, den in cert["rho"]]
+    assert len(declared_rho) == m, f"rho has {len(declared_rho)} entries, expected {m}"
+    assert rho_check == declared_rho, "declared rho doesn't match eta / ||eta||^2"
+
+
+def _dumps_compact(obj: Any, indent: int = 2) -> str:
+    """
+    Like `json.dumps(obj, indent=indent)`, except any list whose elements
+    are all JSON primitives (int/float/str/bool/None) -- edge pairs, tree
+    edge-index lists, `[num, den]` rationals -- is written inline via plain
+    `json.dumps` instead of one element per line. Plain `indent=2` recurses
+    into every nested list regardless of size, which turns something like
+    `[20, 40]` into 4 lines; this keeps the certificate human-readable
+    without losing the top-level object/array structure's indentation.
+    """
+
+    def is_leaf_list(x: Any) -> bool:
+        return isinstance(x, list) and all(
+            v is None or isinstance(v, (bool, int, float, str)) for v in x
+        )
+
+    def fmt(x: Any, level: int) -> str:
+        pad = " " * (indent * level)
+        pad_in = " " * (indent * (level + 1))
+        if isinstance(x, dict):
+            if not x:
+                return "{}"
+            items = [f"{pad_in}{json.dumps(k)}: {fmt(v, level + 1)}" for k, v in x.items()]
+            return "{\n" + ",\n".join(items) + "\n" + pad + "}"
+        if isinstance(x, list):
+            if not x:
+                return "[]"
+            if is_leaf_list(x):
+                return json.dumps(x)
+            items = [f"{pad_in}{fmt(v, level + 1)}" for v in x]
+            return "[\n" + ",\n".join(items) + "\n" + pad + "]"
+        return json.dumps(x)
+
+    return fmt(obj, 0)
+
+
+def build_certificate_from_files(prefix: str) -> dict[str, Any]:
+    """`build_certificate` from a `<prefix>.edges`/`<prefix>.trace.json`
+    pair on disk -- the same pairing `spt_mod <prefix> --trace` produces."""
+
+    g = load_edge_list(f"{prefix}.edges")
+    with open(f"{prefix}.trace.json") as f:
+        trace = parse_solver_trace(json.load(f))
+    return build_certificate(g, trace)
+
+
+def main(argv: list[str] | None = None) -> None:
+    """
+    `python -m discrete_modulus.certificate_builder <prefix>`: builds,
+    validates, and writes `<prefix>.certificate.json` -- the standalone
+    tool `Certification_Plan.md`'s PR 2 calls for, matching `spt_mod`'s own
+    `<prefix>` convention. Previously every checked-in
+    `cpp/examples/*.certificate.json` was produced by an untracked, one-off
+    command; this makes regenerating any of them a single, repeatable step.
+    """
+
+    argv = sys.argv[1:] if argv is None else argv
+    if len(argv) != 1:
+        print("usage: python -m discrete_modulus.certificate_builder <prefix>", file=sys.stderr)
+        raise SystemExit(2)
+
+    cert = build_certificate_from_files(argv[0])
+    validate_certificate(cert)
+    with open(f"{argv[0]}.certificate.json", "w") as f:
+        f.write(_dumps_compact(cert))
+        f.write("\n")
+
+
+if __name__ == "__main__":
+    main()

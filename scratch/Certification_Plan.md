@@ -85,21 +85,27 @@ locked in during planning (so we don't re-litigate them mid-implementation):
   Usage paper or its matroid generalization** (confirmed: those are
   existence-only for the *fairest* pmf, a stronger/different question than
   ours). See §5.1 for what we actually rely on instead.
-- **Certificate format: settled (v4), formalized as
-  [`scratch/certificate_schema.json`](certificate_schema.json).** Not yet
-  wired to an actual emitter/parser (that's PR 2/PR 5 implementation work),
-  but the shape itself is fixed: a **factored representation that never
-  relabels vertices or edges** — a flat, ordered list of pieces, each a
-  block of the *original* graph's edges with its own small local pmf
-  expressed in original edge identities, glued by the matroid
+- **Certificate format: settled (v5), formalized as
+  [`scratch/certificate_schema.json`](certificate_schema.json), and now
+  actually wired end to end.** The shape: a **factored representation
+  that never relabels vertices or edges** — a flat, ordered list of
+  pieces, each a block of the *original* graph's edges with its own small
+  local pmf expressed in original edge identities, glued by the matroid
   restriction/contraction fact above. Earlier sketches (a flat "list of
   (tree, weight) pairs," predating the deflation-based design, would have
   required an explicit Cartesian product across every deflation level,
   exponential in nesting depth) are superseded — see §5.1.5 and §6 for the
   full history. The design's one Lean-side prerequisite (a `Pmf.glue`
-  marginal-compositionality lemma) is now also done (`Glue.lean`); the
-  remaining item is a `solver_trace.hpp` fidelity gap for parallel edges,
-  outside Lean entirely (§6).
+  marginal-compositionality lemma) is done (`Glue.lean`); the
+  `solver_trace.hpp` fidelity gap for parallel edges remains, outside Lean
+  entirely (§6). **v5 (revised from v4): `eta`/`rho` fields are back**,
+  this time as *checked*, not trusted, data — see §6's rewrite. Also now
+  wired to an actual emitter/parser end to end: `certificate_builder.py`
+  is a real `python -m discrete_modulus.certificate_builder <prefix>` CLI
+  (previously every checked-in `cpp/examples/*.certificate.json` was a
+  one-off, untracked hand-run command — not reproducible from anything
+  committed), and `CertChecker.lean` parses and checks the real v5 shape
+  end to end via `lake exe verify_cert`.
 
 ---
 
@@ -343,12 +349,17 @@ generation or Wolfe's algorithm inline.
 
 **PR 2: Certificate builder — architecture revised, see §5.1.5; partially
 implemented**
-- [ ] New standalone tool (suggest Python, matching the "simple, untrusted
+- [x] New standalone tool (suggest Python, matching the "simple, untrusted
       code" framing and easy interop with the existing `python/` package for
-      cross-checking) that consumes a v1 solver trace. **Not started** — the
-      pieces below exist as tested library functions
-      (`python/src/discrete_modulus/`), not yet wired to actually read a
-      solver-trace JSON file end to end.
+      cross-checking) that consumes a v1 solver trace. **Done**:
+      `python -m discrete_modulus.certificate_builder <prefix>`
+      (`certificate_builder.py`'s `main`/`build_certificate_from_files`) reads
+      `<prefix>.edges`/`<prefix>.trace.json`, builds, validates, and writes
+      `<prefix>.certificate.json` — the same `<prefix>` convention
+      `spt_mod --trace` uses. Previously every checked-in
+      `cpp/examples/*.certificate.json` was produced by an untracked,
+      one-off command; this makes regenerating any of them (now needed for
+      the v5 schema bump below) a single repeatable step.
 - [x] Per-round pmf construction on each shrunk multigraph. **Revised from
       the original plan** (see §5.1.5): deflate first
       (`core_deflation.find_core`/`deflation_sequence`), then run
@@ -363,22 +374,33 @@ implemented**
       graph (exact marginals, validated); gluing *across* rounds (using the
       solver trace's own vertex-identification structure, which is the same
       kind of laminar nesting — see §5.1.5) is not yet implemented.
-- [ ] Compute and emit derived quantities: $\eta=\mathcal N^T\mu$ and
-      $\rho=\eta/\|\eta\|^2$ (cheap, and removes an entire reconstruction step
-      from the trusted Lean side — see §5.1's closing note on this tradeoff).
-      `FactoredPmf.marginal()` computes $\eta$ exactly for a single round's
-      factored pmf already; not yet extended across rounds or to $\rho$.
-- [ ] Define the versioned **certificate** format (separate version number
-      from the solver-trace format — they'll evolve independently). **§6's
-      sketch is stale** (predates the factored/laminar design) — needs a
-      real redesign, see §5.1.5 and §6.
-- [ ] Validation harness (independent of Lean): check in the builder's own
+- [x] Compute and emit derived quantities: $\eta=\mathcal N^T\mu$ and
+      $\rho=\eta/\|\eta\|^2$. **Done, on different footing than originally
+      scoped here — see §6's v5 revision.** Not "removes an entire
+      reconstruction step from the trusted Lean side" (Lean still
+      reconstructs both, cheaply, from `pieces` — that reconstruction can
+      never be skipped without becoming unsound, per §6's original
+      reasoning). Instead: `build_certificate` now emits `eta`/`rho` as
+      top-level fields (`compute_eta_from_pieces`/`compute_rho`,
+      `certificate_builder.py`), *checked* against the Lean/Python
+      recomputation rather than trusted, so the certificate is a
+      self-contained artifact directly diffable against the C++ solver's
+      `*.eta` output.
+- [x] Define the versioned **certificate** format (separate version number
+      from the solver-trace format — they'll evolve independently). **Done**:
+      settled as the factored/laminar v4 design, now revised to v5 (adds
+      checked `eta`/`rho` fields) — see §6, both formalized in
+      `scratch/certificate_schema.json`.
+- [x] Validation harness (independent of Lean): check in the builder's own
       untrusted code that emitted $\mu$'s marginals equal the recorded $\eta$,
       that $\|\rho\|^2\|\eta\|^2=1$, etc. This isn't a substitute for the Lean
       proof but catches builder bugs cheaply, long before a Lean run.
-      Partial version exists as test assertions
-      (`python/tests/test_pmf_construction.py`), not yet a standalone
-      certificate-level check.
+      **Done, as a standalone certificate-level check**:
+      `validate_certificate` (`certificate_builder.py`) recomputes $\eta$/$\rho$
+      from `pieces` and asserts they equal the certificate's own declared
+      `eta`/`rho` fields (§6's v5 revision) — a real check, not just the
+      `test_pmf_construction.py`-level assertions this bullet originally
+      pointed to.
 - [ ] End-to-end smoke test on `examples/house` and `examples/nested` (small
       enough to eyeball the resulting pmf by hand). Not yet run against a
       real solver trace end to end — `pmf_construction.py` is validated on
@@ -792,13 +814,56 @@ changes the §6 certificate-schema question**
       constant-factor overhead pushes it well past a smoke-test budget,
       unrelated to the algorithmic fix). `branch_test`'s `#eval` is
       re-enabled and finishes in a couple of seconds.
-- [ ] Extend the marginal spot-check (`piece1Pmf_marginal_0`) to every edge
-      and to the fully-glued `houseFullPmf` (via `PieceList.glueAll_marginal`
-      + `Pmf.cast_marginal`), not just one piece's own local marginal.
-- [ ] Reconstruct $\eta$ from $\mu$ inside Lean (now: *always* — v4 dropped
-      the certificate's own $\eta$/$\rho$ fields, so there's no "or trust
-      the builder's" option left, see §6/§8).
-- [ ] Check $\rho = \eta/\|\eta\|^2$ exactly in ℚ.
+- [x] **Extended the marginal spot-check (`piece1Pmf_marginal_0`) to every
+      edge and to the fully-glued `houseFullPmf`.** `HouseCert.lean` gained a
+      generic "triangle pmf" marginal theory (`trianglePmf_marginal_fst`/
+      `_mid`/`_snd`/`_zero`, proved once over an arbitrary ambient matroid
+      and arbitrary edges `a, b, c`, since both of `house`'s pieces share
+      the same three-tree/three-edge shape) and instantiated it for all six
+      edges against both `piece1Pmf` and `piece2Pmf` (three "= 2/3" facts
+      per piece for its own edges, three "= 0" facts per piece for the
+      other piece's edges). One real snag: `piece2Pmf`'s support is
+      literally `{S[3,5], S[3,4], S[4,5]}` (the order the builder happened
+      to emit trees in), which doesn't match the generic lemma's canonical
+      `{S[a,b], S[a,c], S[b,c]}` shape without reordering one pair (`S[4,5]`
+      vs. `S[5,4]`, equal as sets, different edge-index lists) — fixed with
+      a small `S_comm` lemma. Propagated to `houseFullPmf` itself via a new
+      `PieceList.marginalSum_cast` transport lemma (`Glue.lean`, alongside
+      `PieceList.glueAll_marginal`/`Pmf.cast_marginal`) plus refactoring
+      `piece1`/`piece2`'s `pmf` fields to use `Pmf.cast` explicitly instead
+      of an opaque `rw [...]; exact ...` tactic proof, so `Pmf.cast_marginal`
+      applies directly rather than needing to reason about what a tactic
+      block's underlying term actually reduces to. Result:
+      `houseFullPmf_marginal_0` through `_5`, all `= 2/3`, matching
+      `cpp/examples/house.eta` exactly, checked against the real
+      kernel-built glued pmf, not just one piece's local pmf. `lake build`
+      (the whole project, not just `HouseCert`) and `lake exe verify_cert`
+      against all three example certificates both still pass, no
+      regressions.
+- [x] **Reconstruct $\eta$ from $\mu$ inside Lean, and check $\rho =
+      \eta/\|\eta\|^2$ exactly in ℚ — done in `CertChecker.lean`, on
+      revised footing (v5 brought `eta`/`rho` fields back, checked not
+      trusted — see §6's v5 revision, which supersedes this bullet's own
+      "always, since v4 dropped the fields" framing).**
+      `CertChecker.checkCertificate` recomputes $\eta$ from `pieces` via
+      `sumTreeContributions` (the same per-piece composition
+      `Pmf.glue_marginal`/`PieceList.glueAll_marginal` prove sound, but
+      written directly over the raw `Nat`-indexed JSON data rather than
+      through `checkPiece`/`checkPieces`'s generic `{V E} [Fintype E]`
+      abstraction — that abstraction has no computable `E → Fin m`
+      projection available generically, `Fintype.equivFin` being
+      `noncomputable`, the same obstacle
+      `scratch/residual_performance_mystery.md` hit for a different
+      reason), computes $\rho$ in ℚ, and **rejects the certificate if
+      either doesn't match the declared `eta`/`rho` fields.** `houseFullPmf_marginal_0`
+      through `_5` (`HouseCert.lean`, prior session) are the from-first-
+      principles version of the same fact against the real kernel-checked
+      `Pmf`, not just the runtime checker. **Not yet done**: this is still
+      the *runtime checker*'s recomputation (`Except String Unit`, no
+      proof term), not wired into a genuine `Pmf`/`PieceList` term fed to
+      `certificate_optimality` — that gap is `CertChecker.lean`'s own
+      documented next step (a soundness theorem: "checker accepts →
+      genuine `PieceList` exists"), tracked below, not closed by this.
 - [ ] Admissibility of $\rho$: run the (unproven) Kruskal implementation,
       check its output weight $\ge 1$. **Prominently log/print that this
       step relies on an unverified component** — this should be visible in
@@ -1452,14 +1517,16 @@ blocks Phases A-C.
 
 ## 6. Certificate format
 
-**Settled: v4, formalized as a JSON Schema, not just prose.**
+**Settled: v5, formalized as a JSON Schema, not just prose.**
 [`scratch/certificate_schema.json`](certificate_schema.json) is the
 authoritative machine-checkable definition (Draft 2020-12; validated
-against a hand-built house-graph example plus negative tests — float
-weights, a zero denominator, and a stray `eta` field are all correctly
-rejected). What follows is a summary; the schema file's own
-`description`s carry the same content and shouldn't drift from it — treat
-the schema file as the source of truth if the two ever disagree.
+against a hand-built house-graph example plus negative tests). What
+follows is a summary; the schema file's own `description`s carry the same
+content and shouldn't drift from it — treat the schema file as the source
+of truth if the two ever disagree. **v4→v5: `eta`/`rho` fields are back**
+(v3 had them, v4 dropped them, v5 re-adds them on different, stronger
+footing) — see the "Why no top-level eta/rho fields" callout below for
+the full history and its supersession.
 
 **History: three earlier sketches, all superseded, kept below only for
 the record.** v1 (a flat `"trees"` list) predates the deflation-based
@@ -1480,7 +1547,7 @@ just a preference — see the callout right after the sketch.
 
 ```jsonc
 {
-  "certificate_version": 4,
+  "certificate_version": 5,
   "graph": {
     // Vertices are the integers 0..num_vertices-1 (no separate label
     // list; matches Boost's vecS vertex_descriptor). edges[i] gives
@@ -1527,11 +1594,21 @@ just a preference — see the callout right after the sketch.
         ]
       }
     }
-  ]
+  ],
+  // Added in v5 -- see the callout right after this sketch. One entry
+  // per top-level graph edge, checked (not trusted) against a fresh
+  // recomputation from "pieces" by both the Python builder's own
+  // validate_certificate and the Lean verifier.
+  "eta": [[2, 3], [2, 3], [2, 3], [1, 3], [2, 3], [1, 3]],
+  "rho": [[1, 4], [1, 4], [1, 4], [1, 8], [1, 4], [1, 8]]
 }
 ```
 
-**Why no top-level `"eta"`/`"rho"` fields (resolved, not just a
+**Why no top-level `"eta"`/`"rho"` fields (superseded by v5 — kept for
+the record, see the follow-up note right after this callout).** This was
+v4's reasoning at the time, and it's still correct as far as it goes; v5
+didn't find a flaw in it, just a design it didn't consider. Original text,
+unmodified:
 simplicity preference).** The natural question — should the certificate
 carry $\eta$/$\rho$ so the verifier can just check them, or should the
 verifier derive them itself from `pieces` — turned out to have a forcing
@@ -1553,6 +1630,32 @@ means a certificate-supplied $\eta$/$\rho$ would only ever be a value
 nobody checks. Simpler to not ship it. **This closes §8's "trust vs
 reconstruct $\eta$" open question**, but opens a new, precisely scoped
 one — see the open items below.
+
+**v5 revision: the above only weighed two designs, and there's a third.**
+Re-examined after noticing the certificate, as v4 left it, had no bridge
+back to the C++ solver's own `*.eta` output — checking a solver run's
+`eta` file against a verified certificate required re-deriving $\eta$ by
+hand (or writing a one-off script to walk `pieces` again), since nothing
+in the certificate said what $\eta$/$\rho$ *were*. The v4 reasoning above
+correctly rejects design (a) "ship $\eta$/$\rho$, verifier trusts them"
+(unsound — unchecked) in favor of (b) "omit them, verifier always
+derives them" (what v4 shipped) — but never considered (c): **ship them,
+and have the verifier derive them anyway (as it must regardless) *and*
+check the shipped values match, rejecting otherwise.** (c) costs nothing
+over (b) — same recomputation, same trusted core, no new soundness gap —
+but the certificate becomes a self-contained, human/tool-readable
+artifact: `eta`/`rho` are directly legible from the JSON file, and
+directly diffable against `*.eta` without running the verifier at all.
+`CertChecker.checkCertificate` (`lean/DiscreteModulusCert/CertChecker.lean`)
+now does exactly this: recomputes `eta` from `pieces` via the same
+per-piece composition `Pmf.glue_marginal`/`PieceList.glueAll_marginal`
+already prove sound (linear in pieces × edges, never the glued pmf's
+exponential support — the same fact this callout already relies on),
+computes `rho = eta / ‖eta‖²` in ℚ, and **rejects the certificate if
+either doesn't match the declared field.** `certificate_builder.py`'s
+`validate_certificate` does the identical check on the untrusted Python
+side too. Certificate version bumped 4→5 for this (a real, breaking
+schema change — `eta`/`rho` are now required fields).
 
 **Why tree edges are global (top-level) indices, not piece-local ones.**
 Python's own `LocalPiece.provenance` maps *local* edge indices (dense,
@@ -1667,8 +1770,9 @@ check:**
       `vertices` field and for human debugging only.
 - [x] Keep `certificate_version` independent from the PR 1 solver-trace
       version — they change on different schedules. (`certificate_version`
-      is now at `4`, having incremented past the v3 sketch when `eta`/`rho`
-      were dropped — see above.)
+      is now at `5`, having incremented past v3 when `eta`/`rho` were
+      dropped, then past v4 when they came back, checked not trusted —
+      see above.)
 - [x] **Resolved: `Pmf.glue`'s marginal-compositionality theorem, and its
       extension to a whole `PieceList`, are both proved
       (`lean/DiscreteModulusCert/Glue.lean`).** `Pmf.glue_marginal` turned
@@ -1726,17 +1830,23 @@ check:**
   "how big can we certify" — worth picking one (e.g. `examples/nested`, or
   a small synthetic case) as the explicit target for v1 rather than
   discovering the practical ceiling during PR 5.
-- **Resolved, see §6:** whether to check $\eta$-reconstruction fully
-  in-kernel or trust the builder's $\eta$. Answer: there's no third option
-  worth taking — `Pmf.glue`'s combined support is a literal Cartesian
-  product (exponential in piece count), so the verifier can *never*
-  afford to compute $\eta$ from the fully-glued top-level pmf either way;
-  it must derive $\eta$ compositionally from the per-piece local pmfs
-  regardless. Since the verifier ends up computing $\eta$ itself no matter
-  what, there's nothing left for a certificate-supplied $\eta$ to add, so
-  v4 drops it from the schema entirely (§6). This *created* a new,
-  precisely scoped prerequisite — a marginal-compositionality lemma for
-  `Pmf.glue` — which is now also done, see §6's (resolved) open item.
+- **Resolved, see §6 — "no third option worth taking" text below is
+  superseded by §6's v5 revision, kept for the record.** Whether to check
+  $\eta$-reconstruction fully in-kernel or trust the builder's $\eta$.
+  Answer at the time: there's no third option worth taking — `Pmf.glue`'s
+  combined support is a literal Cartesian product (exponential in piece
+  count), so the verifier can *never* afford to compute $\eta$ from the
+  fully-glued top-level pmf either way; it must derive $\eta$
+  compositionally from the per-piece local pmfs regardless. Since the
+  verifier ends up computing $\eta$ itself no matter what, there's
+  nothing left for a certificate-supplied $\eta$ to add, so v4 drops it
+  from the schema entirely (§6). This *created* a new, precisely scoped
+  prerequisite — a marginal-compositionality lemma for `Pmf.glue` — which
+  is now also done, see §6's (resolved) open item. **The actual third
+  option** (there was one): ship $\eta$/$\rho$ anyway and check the
+  verifier's independent recomputation against them, rejecting on
+  mismatch — costs nothing over always-deriving, since the derivation
+  happens either way; v5 does this, see §6.
 - Definitional adequacy of the reused `lean-modulus` types (§2's reuse
   table, §3's TCB ledger): a short explicit sanity pass confirming
   `Multigraph`/`IsSpanningTree`/`Density`/`Adm` mean what this project needs

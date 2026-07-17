@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/nathan-albin/discrete-modulus/scratch/certificate_schema.json",
-  "title": "Spanning-tree-modulus certificate (v4)",
-  "description": "Certificate format for PR 2 (untrusted builder) / PR 5 (Lean verifier), per Certification_Plan.md §6. A flat, ORDERED list of 'pieces' -- one per within-round deflation core, or per solver round if it needed no further deflation -- glued by a single left-fold of Pmf.glue (lean/DiscreteModulusCert/Glue.lean). Order matters: it must match discovery order (round 1's pieces, in their own discovery order, then round 2's, ...), the same order FactoredPmf.pieces / SolverTrace.rounds already produce. Invariants this schema does NOT and cannot check (the verifier's actual job, not JSON-Schema's): every piece's 'edges' disjoint from every earlier piece's; the union of all pieces' 'edges' equals the whole top-level 'graph.edges' list; every declared tree is a genuine forest (Multigraph.IsForest, lean/DiscreteModulusCert/ForestDecide.lean) that is maximal within its piece; each piece's tree weights are non-negative and sum to exactly 1. No 'eta'/'rho' fields: the verifier always derives both from 'pieces' (compositionally, from each piece's own local marginal -- see the plan doc's note on why the glued top-level pmf's marginal must never be computed directly, since Pmf.glue's support is a literal Cartesian product and is exponential in the number of pieces). There is nothing for the certificate to assert about eta/rho that the verifier doesn't already have to (re)compute itself, so there is nothing to gain by shipping a value that would only ever be trusted, not checked. Rational numbers are always [numerator, denominator] pairs of JSON integers -- NEVER floating point, and NEVER assume 53-bit-safe integer range: numerators/denominators are arbitrary precision (they come from exact Fraction arithmetic on the Python side), so a JSON parser that silently coerces big integers to double-precision floats will silently corrupt a certificate. denominator is always a positive integer; fractions need not be in lowest terms.",
+  "title": "Spanning-tree-modulus certificate (v5)",
+  "description": "Certificate format for PR 2 (untrusted builder) / PR 5 (Lean verifier), per Certification_Plan.md §6. A flat, ORDERED list of 'pieces' -- one per within-round deflation core, or per solver round if it needed no further deflation -- glued by a single left-fold of Pmf.glue (lean/DiscreteModulusCert/Glue.lean). Order matters: it must match discovery order (round 1's pieces, in their own discovery order, then round 2's, ...), the same order FactoredPmf.pieces / SolverTrace.rounds already produce. Invariants this schema does NOT and cannot check (the verifier's actual job, not JSON-Schema's): every piece's 'edges' disjoint from every earlier piece's; the union of all pieces' 'edges' equals the whole top-level 'graph.edges' list; every declared tree is a genuine forest (Multigraph.IsForest, lean/DiscreteModulusCert/ForestDecide.lean) that is maximal within its piece; each piece's tree weights are non-negative and sum to exactly 1; 'eta'/'rho' have exactly one entry per top-level graph edge. 'eta'/'rho' fields, added in v5: the verifier always derives both from 'pieces' anyway (compositionally, from each piece's own local marginal -- Pmf.glue's support is a literal Cartesian product, exponential in the number of pieces, so the glued top-level pmf's marginal must never be computed directly -- but the per-piece composition is cheap, linear in pieces x edges), so these fields are CHECKED against that recomputation, never trusted as inputs -- a mismatch is rejected. v4 omitted them on the reasoning that an unchecked field is pointless; v5's refinement is that checking costs nothing beyond the recomputation the verifier already does, and shipping the checked values makes the certificate a self-contained, human/tool-readable artifact -- directly diffable against the C++ solver's own '*.eta' output without running the verifier at all. See the plan doc's §6 for the full superseded-but-kept history. Rational numbers are always [numerator, denominator] pairs of JSON integers -- NEVER floating point, and NEVER assume 53-bit-safe integer range: numerators/denominators are arbitrary precision (they come from exact Fraction arithmetic on the Python side), so a JSON parser that silently coerces big integers to double-precision floats will silently corrupt a certificate. denominator is always a positive integer; fractions need not be in lowest terms.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["certificate_version", "graph", "pieces"],
+  "required": ["certificate_version", "graph", "pieces", "eta", "rho"],
   "properties": {
     "certificate_version": {
-      "const": 4,
+      "const": 5,
       "description": "Independent from the PR 1 solver-trace's own \"version\" field -- they evolve on different schedules."
     },
     "graph": {
@@ -32,6 +32,16 @@
       "type": "array",
       "description": "One entry per block in the flat laminar-family fold (lean/DiscreteModulusCert/Glue.lean's PieceList), in discovery order.",
       "items": { "$ref": "#/$defs/piece" }
+    },
+    "eta": {
+      "type": "array",
+      "description": "The optimal pmf's marginal at every edge (global index, same order as graph.edges) -- eta[i] is edge i's usage probability. Checked (verifier-checked, not schema-checked) against 'pieces' own composed local marginals; must have exactly one entry per graph edge.",
+      "items": { "$ref": "#/$defs/rational" }
+    },
+    "rho": {
+      "type": "array",
+      "description": "The admissible density rho = eta / ||eta||^2, same indexing as 'eta'. Checked (verifier-checked, not schema-checked) against a fresh computation from 'eta'; must have exactly one entry per graph edge.",
+      "items": { "$ref": "#/$defs/rational" }
     }
   },
   "$defs": {

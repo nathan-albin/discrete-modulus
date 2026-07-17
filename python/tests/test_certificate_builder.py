@@ -26,9 +26,7 @@ import jsonschema
 import pytest
 
 from discrete_modulus.certificate_builder import (
-    build_certificate,
-    load_edge_list,
-    parse_solver_trace,
+    build_certificate_from_files,
     validate_certificate,
 )
 
@@ -38,10 +36,7 @@ SCHEMA_PATH = REPO_ROOT / "scratch" / "certificate_schema.json"
 
 
 def _build(name: str) -> dict:
-    g = load_edge_list(str(EXAMPLES / f"{name}.edges"))
-    with open(EXAMPLES / f"{name}.trace.json") as f:
-        trace = parse_solver_trace(json.load(f))
-    return build_certificate(g, trace)
+    return build_certificate_from_files(str(EXAMPLES / name))
 
 
 @pytest.fixture(scope="module")
@@ -84,27 +79,20 @@ def test_house_deflates_into_its_known_core_plus_remainder() -> None:
 
 def test_house_matches_the_recorded_eta() -> None:
     # cpp/examples/house.eta is spt_mod's own golden output: every edge
-    # gets eta* = 2/3. Cross-checking the certificate's own pieces against
-    # it (by recomputing each edge's marginal from the certificate alone,
-    # with no access to FactoredPmf) is an independent confirmation that
-    # nothing was lost/miscounted in the local-to-global index translation.
+    # gets eta* = 2/3. The certificate's own "eta" field (checked against
+    # its "pieces" by validate_certificate/test_certificate_passes_its_own_validation
+    # above) is the bridge back to that external file -- reading it
+    # directly here, rather than recomputing the marginal by hand from
+    # "pieces" again, is exactly the point of shipping the field at all.
     from fractions import Fraction
 
     cert = _build("house")
-    m = len(cert["graph"]["edges"])
-    marginal = [Fraction(0)] * m
-    for piece in cert["pieces"]:
-        for t in piece["local_pmf"]["trees"]:
-            w = Fraction(*t["weight"])
-            for e in t["edges"]:
-                marginal[e] += w
-
     edge_index = {frozenset(e): i for i, e in enumerate(cert["graph"]["edges"])}
     with open(EXAMPLES / "house.eta") as f:
         for line in f:
             a, b, p, q = line.split()
             i = edge_index[frozenset((int(a), int(b)))]
-            assert marginal[i] == Fraction(int(p), int(q))
+            assert Fraction(*cert["eta"][i]) == Fraction(int(p), int(q))
 
 
 def test_nested_has_three_rounds_worth_of_pieces() -> None:
