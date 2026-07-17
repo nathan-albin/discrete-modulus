@@ -904,11 +904,48 @@ changes the §6 certificate-schema question**
       directly (job count 1294 → 2534 once fixed). Fixed: the umbrella
       file now imports `Kruskal`/`KruskalTest`/`CertChecker`/`CertCheckerTest`,
       and `defaultTargets` now includes `verify_cert`.
-- [ ] Wire PR 4's certificate-optimality lemma to these facts to conclude
-      optimality; the verifier's final output is a Lean term whose
-      type-checking is the whole point.
+- [x] **Wire PR 4's certificate-optimality lemma — done for `house` alone,
+      as a deliberately scoped first instance, not yet the general case.**
+      `HouseCert.lean` gained `houseCertificateOptimal`, a genuine,
+      kernel-checked term of `certificate_optimality`'s conclusion (both
+      "ρ minimizes squared norm over admissible densities" and "η
+      minimizes squared norm over pmf marginals," simultaneously) for
+      `house`'s real data. **No Kruskal axiom needed for this specific
+      certificate**: house's `rho` happens to be *uniform* (`1/4` on every
+      edge, matching `house.certificate.json`), so admissibility follows
+      directly from a basic matroid fact — every base has the same
+      cardinality (`Matroid.IsBase.ncard_eq_ncard_of_isBase`) — rather
+      than from trusting an MST oracle. One reference base
+      (`houseKnownBase`, edges `{0,1,3,5}`) is exhibited fresh via
+      `Multigraph.isSpanningTree_iff_isBase` and `native_decide`,
+      independent of `Pmf.glue`'s own support/product machinery (touching
+      that directly would mean unfolding an exponential `Finset.image`,
+      exactly what the factored design exists to avoid). `#print axioms`
+      confirms only `propext`/`Classical.choice`/`Quot.sound` plus the
+      already-standard `native_decide`-per-callsite axioms this file
+      already carried — no new, surprising dependency, and critically no
+      Kruskal-trust axiom for `house`. **Does not yet generalize**: this
+      doesn't touch `nested`/`branch_test` (non-uniform `rho` genuinely
+      needs the Kruskal-trust argument — the natural next step is stating
+      that as an explicit Lean `axiom`, so it shows up by name in
+      `#print axioms` rather than silently), nor does it touch the
+      generic runtime-parsed-certificate case (`CertChecker.lean`'s own
+      documented soundness-theorem gap: "checker accepts → genuine
+      `PieceList` exists" — still the largest remaining piece of PR 5).
+- [ ] Generalize the above beyond `house`: state the Kruskal-admissibility
+      trust boundary as an explicit `axiom` (bridging "Kruskal's computed
+      weight ≥ 1" to `IsAdmissible`, so it's visible by name in
+      `#print axioms`, not just this doc), and separately, the generic
+      checker-to-proof-term soundness theorem
+      (`CertChecker.checkCertificate raw = ok → a genuine `PieceList`/`Pmf`
+      exists for the same data) needed to reach `nested`/`branch_test` and
+      arbitrary runtime-parsed certificates, not just hand-transcribed
+      ones.
 - [ ] End-to-end test: `house`/`nested` traces all the way through solver →
-      builder → Lean, `lake build`/kernel accepts.
+      builder → Lean, `lake build`/kernel accepts. (`house`'s own
+      `houseCertificateOptimal` above is the first real instance of this,
+      still hand-transcribed rather than parsed from the JSON file
+      end-to-end; `nested` needs the generalization above first.)
 
 **PR 6 (follow-up, not blocking PR 5): prove Kruskal correct, close the TCB gap**
 - [ ] Prove the greedy-exchange argument for Kruskal on the graphic matroid

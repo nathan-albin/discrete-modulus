@@ -1,7 +1,9 @@
 import DiscreteModulusCert.IsBaseCheck
 import DiscreteModulusCert.ForestDecide
 import DiscreteModulusCert.Glue
+import DiscreteModulusCert.Optimality
 import Mathlib.Tactic.NormNum.Basic
+import Mathlib.Combinatorics.SimpleGraph.Connectivity.Finite
 
 /-!
 # End-to-end verification of `examples/house`'s real certificate
@@ -583,6 +585,118 @@ theorem houseFullPmf_marginal_4 : houseFullPmf.marginal 4 = 2 / 3 :=
 
 theorem houseFullPmf_marginal_5 : houseFullPmf.marginal 5 = 2 / 3 :=
   houseFullPmf_marginal (by rw [piece1Pmf_marginal_5, piece2Pmf_marginal_5]; norm_num)
+
+/-! ## `certificate_optimality`, fully proved for house
+
+PR5's "wire PR4's certificate-optimality lemma" checklist item, scoped to
+`house` alone as the first concrete instance (see `Certification_Plan.md`'s
+PR5 checklist). House's own `rho` happens to be *uniform* (every edge
+gets `1/4`), so its admissibility follows directly from a basic matroid
+fact -- every base of a matroid has the same cardinality
+(`Matroid.IsBase.ncard_eq_ncard_of_isBase`) -- rather than from trusting
+an MST oracle: no Kruskal axiom is needed for *this* certificate. This
+does **not** generalize to `nested`/`branch_test` (non-uniform `rho`
+genuinely needs the Kruskal-trust argument) or to arbitrary
+runtime-parsed certificates (still needs the generic
+checker-to-proof-term reflection theorem `CertChecker.lean`'s docstring
+flags) -- both tracked as separate, larger follow-ups. -/
+
+/-- House's `eta`, defined as literally `houseFullPmf`'s own marginal (not
+a separate literal function), so feeding it to `certificate_optimality`
+below needs no separate `hη` rewriting -- `houseEta = houseFullPmf.marginal`
+is `rfl`. -/
+noncomputable def houseEta : E → ℚ := houseFullPmf.marginal
+
+theorem houseEta_eq (e : E) : houseEta e = 2 / 3 := by
+  fin_cases e
+  · exact houseFullPmf_marginal_0
+  · exact houseFullPmf_marginal_1
+  · exact houseFullPmf_marginal_2
+  · exact houseFullPmf_marginal_3
+  · exact houseFullPmf_marginal_4
+  · exact houseFullPmf_marginal_5
+
+theorem houseSqNorm_eta : sqNorm houseEta = 8 / 3 := by
+  simp only [sqNorm, houseEta_eq]
+  norm_num [Finset.sum_const, Finset.card_univ]
+
+theorem houseSqNorm_eta_ne_zero : sqNorm houseEta ≠ 0 := by
+  rw [houseSqNorm_eta]; norm_num
+
+/-- House's `rho`, defined exactly as `certificate_optimality`'s own
+`hρeq` hypothesis needs -- `houseRho = fun e => houseEta e / sqNorm houseEta`
+is `rfl`. -/
+noncomputable def houseRho : E → ℚ := fun e => houseEta e / sqNorm houseEta
+
+/-- Spot-check against the certificate's own declared field:
+`cpp/examples/house.certificate.json`'s `"rho"` is `1/4` on every edge. -/
+theorem houseRho_eq (e : E) : houseRho e = 1 / 4 := by
+  show houseEta e / sqNorm houseEta = 1 / 4
+  rw [houseEta_eq, houseSqNorm_eta]
+  norm_num
+
+/-- All 6 of house's own edges, as a `List`-shaped set equal to `Set.univ`
+-- routes `house_connected` below through the same computable adjacency
+decidability (`instDecidableRelAdjToSimpleGraphOfList`, `ForestDecide.lean`)
+every other `native_decide` in this file uses, rather than hitting
+`Set.univ`'s classical membership directly. -/
+theorem house_all_edges_eq_univ : (S [0, 1, 2, 3, 4, 5] : Set E) = Set.univ := by
+  ext x; simp only [S, Set.mem_setOf_eq, Set.mem_univ, iff_true]; revert x; decide
+
+/-- The whole graph is connected -- `Multigraph.isSpanningTree_iff_isBase`'s
+own hypothesis, needed to bridge `IsSpanningTree`/`IsBase` below. -/
+theorem house_connected : (G.toSimpleGraph (Set.univ : Set E)).Connected := by
+  rw [← house_all_edges_eq_univ]; native_decide
+
+/-- A concretely-known spanning tree of house: edges `0,1,3,5`
+(`(0,1),(0,4),(1,2),(3,4)`), touching every one of the 5 vertices.
+Checked directly against `G`, independent of `Pmf.glue`'s own
+piece-by-piece construction -- this is a fresh, from-scratch witness, not
+extracted from `houseFullPmf.support` (which would need unfolding
+`Pmf.glue`'s Cartesian-product `Finset.image` machinery, exactly what the
+whole factored-certificate design exists to avoid touching directly). -/
+theorem houseIsSpanningTree_0135 : G.IsSpanningTree (S [0, 1, 3, 5] : Set E) :=
+  ⟨by native_decide, by native_decide⟩
+
+theorem houseKnownBase : G.graphicMatroid.IsBase (S [0, 1, 3, 5] : Set E) :=
+  (Multigraph.isSpanningTree_iff_isBase G house_connected).mp houseIsSpanningTree_0135
+
+theorem houseKnownBase_ncard : (S [0, 1, 3, 5] : Set E).ncard = 4 := by
+  have : (S [0, 1, 3, 5] : Set E) = (↑(([0, 1, 3, 5] : List E).toFinset) : Set E) := by
+    ext x; simp [S]
+  rw [this, Set.ncard_coe_finset]
+  decide
+
+/-- **The general fact making admissibility of a uniform density provable
+without trusting any MST oracle**: pairing a constant density `c` against
+any base's usage vector is exactly `c` times that base's cardinality --
+since every base of a matroid has the same cardinality
+(`IsBase.ncard_eq_ncard_of_isBase`), fixing one known base's cardinality
+(`houseKnownBase_ncard`) pins down every other base's pairing value too. -/
+theorem pairing_const_usageVector_eq (c : ℚ) {T : Set E}
+    (_hT : G.graphicMatroid.IsBase T) : pairing (fun _ => c) (usageVector T) = c * T.ncard := by
+  show (∑ e : E, c * usageVector T e) = c * T.ncard
+  simp only [usageVector_apply]
+  rw [← Finset.mul_sum, Finset.sum_boole, Set.filter_mem_univ_eq_toFinset,
+    ← Set.ncard_eq_toFinset_card']
+
+theorem houseIsAdmissible : IsAdmissible G.graphicMatroid houseRho := by
+  intro T hT
+  have hcard : T.ncard = 4 := by
+    rw [hT.ncard_eq_ncard_of_isBase houseKnownBase]; exact houseKnownBase_ncard
+  rw [show houseRho = fun _ => (1 : ℚ) / 4 from funext houseRho_eq,
+    pairing_const_usageVector_eq (1 / 4) hT, hcard]
+  norm_num
+
+/-- **The main result**: house's certificate is fully, kernel-checked
+optimal — `ρ` (`houseRho`) minimizes squared norm over every admissible
+density, and `μ` (`houseFullPmf`)'s marginal `η` (`houseEta`) minimizes
+squared norm over every pmf's marginal, simultaneously. No `sorry`; see
+the axiom check right after for what this genuinely depends on. -/
+theorem houseCertificateOptimal :
+    (∀ ρ' : CertDensity E, IsAdmissible G.graphicMatroid ρ' → sqNorm houseRho ≤ sqNorm ρ') ∧
+      (∀ μ' : Pmf G.graphicMatroid, sqNorm houseEta ≤ sqNorm μ'.marginal) :=
+  certificate_optimality houseIsAdmissible rfl houseSqNorm_eta_ne_zero rfl
 
 end HouseCert
 end DiscreteModulusCert
