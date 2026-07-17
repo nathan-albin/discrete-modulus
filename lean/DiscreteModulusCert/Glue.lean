@@ -376,6 +376,17 @@ noncomputable def PieceList.marginalSum {N : Matroid E} : ∀ {U : Set E}, Piece
   | _, .cons tail p => fun e => tail.marginalSum e + p.pmf.marginal e
 
 omit [Fintype E] in
+/-- Transporting a `PieceList` along an equality of its edge-set index
+doesn't change its `marginalSum` — needed because a top-level certificate's
+`PieceList` (e.g. `houseCertPieces`) is typically built for the *union* of
+its own pieces' edges, then transported via `▸` to `Set.univ` (the
+"partition-completeness" proof, `PieceList.glueAllGraph`'s own argument)
+before folding. -/
+theorem PieceList.marginalSum_cast {N : Matroid E} {U U' : Set E} (h : U = U')
+    (l : PieceList N U) (e : E) : (h ▸ l).marginalSum e = l.marginalSum e := by
+  subst h; rfl
+
+omit [Fintype E] in
 /-- **The compositional marginal theorem.** Folds `Pmf.glue_marginal` down
 a whole `PieceList`: the fully-glued pmf's marginal at any edge equals the
 sum of every piece's own local marginal at that edge — never the
