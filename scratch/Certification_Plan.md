@@ -714,18 +714,15 @@ changes the §6 certificate-schema question**
       for what actually blocks exercising it on real multi-round data.
 - [x] **A `lake exe verify_cert` target exists** (`lean/Main.lean`,
       `lean/lakefile.toml`) — reads a certificate path from `argv`,
-      parses, checks, prints ACCEPTED/REJECTED. **Not yet build-verified
-      in this environment**: `lean_exe` targets require native-compiling
-      every transitively-imported module (unlike `lean_lib`, which only
-      produces `.olean`s), and `CertChecker.lean`'s import chain pulls in
-      Mathlib's Matroid/Combinatorics machinery transitively (via
-      `ForestDecide → IsBaseCheck → Glue → Family`) even though the
-      checker itself only uses `Multigraph.IsForest`'s decidability —
-      triggering a full from-scratch native compile of Mathlib that didn't
-      finish in a bounded session. Slimming `CertChecker.lean`'s import to
-      just what `Multigraph.IsForest` decidability needs (bypassing the
-      Matroid-heavy chain) would likely make this tractable; not yet
-      attempted.
+      parses, checks, prints ACCEPTED/REJECTED. **Now build-verified**:
+      the full native compile of Mathlib's transitively-imported
+      Matroid/Combinatorics machinery (via `ForestDecide → IsBaseCheck →
+      Glue → Family`) does complete — it's a one-time cost paid by the
+      first `lake build verify_cert` in an environment (tens of seconds
+      with a warm `.lake` cache), not an unbounded hang; subsequent
+      builds are incremental and fast. Confirmed directly: `verify_cert`
+      now runs against all three example certificates end-to-end (see
+      the `ForestDecide.lean` performance item below for the timings).
 - [x] **Real, previously-undetected bug found and fixed: `pieces` ordering
       across rounds.** `certificate_builder.py` emitted `pieces` in
       *dispatch* order (round 0, the outermost tight set Cunningham's
@@ -764,7 +761,7 @@ changes the §6 certificate-schema question**
       round 2 are true siblings (neither depends on the other), the
       first real test of the reversal fix on non-linear structure.
       `cpp/examples/branch_test.{edges,eta,trace.json,certificate.json}`.
-- [ ] **Blocking, found while testing the above: `ForestDecide.lean`'s
+- [x] **Blocking, found while testing the above: `ForestDecide.lean`'s
       `instDecidableIsForestOfList` has a real performance problem, not
       just at the `#eval`-vs-`native_decide` boundary.** `examples/nested`'s
       190-edge/20-vertex K20 piece — a shape `HouseCert.lean` handles
@@ -772,20 +769,29 @@ changes the §6 certificate-schema question**
       this was directly confirmed to *not* be an interpreter-speed
       artifact: the identical 190-edge check was tested standalone with
       `native_decide` (the same compiled-code mechanism `HouseCert.lean`
-      already uses successfully), and it also hangs. Almost certainly
-      Mathlib's generic `SimpleGraph.Reachable` decidability instance
-      (already flagged in `ForestDecide.lean`'s own docstring as needing
-      `native_decide` just to reduce at all under `decide`) isn't an
-      efficient algorithm at real sizes — recomputed once per candidate
-      edge insertion in the recursive forest-check, it's plausibly
-      superlinear or worse per call. **Blocks exercising `CertChecker` on
-      anything beyond `house`'s toy size** — `nested`/`branch_test`'s own
-      `#eval`s are commented out in `CertCheckerTest.lean` pending this.
-      Needs its own investigation: likely replacing the reachability-based
-      check with a genuinely efficient algorithm (e.g. union-find,
-      $O(\alpha(n))$ amortized) underneath `Multigraph.IsForest`'s
-      decision procedure, keeping the same external `Decidable` interface
-      `IsBaseCheck.lean`/`CertChecker.lean` already build on.
+      already uses successfully), and it also hangs. **Confirmed root
+      cause**: Mathlib's `DecidableRel Reachable` instance transports
+      decidability across `reachable_iff_exists_finsetWalkLength_nonempty`,
+      whose witness search enumerates *every walk* (no visited-set
+      pruning) — genuinely exponential in `Fintype.card V`, not merely
+      slow to reduce. **Fixed**: `ForestDecide.lean`'s `FastReachable`
+      section replaces it with a polynomial `Finset`-based BFS closure
+      (fixed-point-terminating, not a blind `Fintype.card V` rounds), and
+      its `Components` section adds a connected-components cache
+      (`forestComponents`) so a certificate's per-piece maximality check
+      (`CertChecker.lean`'s `checkTree`) builds the base forest's
+      components once and reuses them across all candidate insertions,
+      instead of a fresh reachability search per candidate. A genuine
+      array-backed union-find (e.g. `Batteries.UnionFind`) was considered
+      and rejected: it needs a computable `V ≃ Fin (card V)` embedding,
+      and `Fintype.equivFin` is `noncomputable` for a bare `[Fintype V]`.
+      `nested`/`branch_test` now both `ACCEPT` end-to-end via
+      `lake exe verify_cert` (`branch_test` in ~2s; `nested`, the more
+      extreme 190-edge case, in ~40s — compiled; its own `#eval` stays
+      commented out in `CertCheckerTest.lean` since Lean's interpreter's
+      constant-factor overhead pushes it well past a smoke-test budget,
+      unrelated to the algorithmic fix). `branch_test`'s `#eval` is
+      re-enabled and finishes in a couple of seconds.
 - [ ] Extend the marginal spot-check (`piece1Pmf_marginal_0`) to every edge
       and to the fully-glued `houseFullPmf` (via `PieceList.glueAll_marginal`
       + `Pmf.cast_marginal`), not just one piece's own local marginal.

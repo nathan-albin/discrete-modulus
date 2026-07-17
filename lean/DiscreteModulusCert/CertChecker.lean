@@ -128,15 +128,33 @@ def check (cond : Bool) (msg : String) : Except String PUnit :=
 already-accumulated representative base `I₀acc` of everything processed so
 far: `T ⊆ A`, `I₀acc ++ T` is a forest, and no edge of `A \ T` can be added
 without creating a cycle (`isBase_contract_restrict_iff_isForest`'s two
-halves, computed directly rather than proved about fixed literals). -/
+halves, computed directly rather than proved about fixed literals).
+
+The maximality half uses `decidableIsForestInsertOfComponents` against a
+components cache built *once* per tree (`forestComponents`) rather than a
+fresh `decide (G.IsForest (S (I₀acc ++ (e :: T))))` per candidate `e`. Two
+compounding redundancies made the naive version too slow on real
+certificate pieces (`nested.certificate.json`'s 190-edge/10-tree piece):
+`instDecidableIsForestOfList` recomputes one reachability check per
+recursion level (`O(|I₀acc ++ T|)` of them) for *every* candidate, and even
+after that was collapsed to a single check per candidate
+(`decidableIsForestInsertOfList`), each of those still reran a fresh
+`bfsClosure` against a base graph that never changes across the whole
+`A \ T` loop. Building the base graph's connected components once and
+reusing them for every candidate turns each check into a cheap `List`/
+`Finset` lookup instead. -/
 def checkTree (G : Multigraph V E) (I₀acc A T : List E) : Except String PUnit := do
   let _ ← check T.Nodup "tree has a duplicate edge index"
   let _ ← check (T.all (· ∈ A)) "tree uses an edge outside its own piece"
-  let _ ← check (decide (G.IsForest (S (I₀acc ++ T))))
-    "declared tree together with the prior representative base isn't a forest"
-  let extra := A.filter (· ∉ T)
-  check (extra.all (fun e => !decide (G.IsForest (S (I₀acc ++ (e :: T))))))
-    "declared tree isn't maximal in its piece"
+  match hd : decide (G.IsForest (S (I₀acc ++ T))) with
+  | false => Except.error "declared tree together with the prior representative base isn't a forest"
+  | true =>
+    have hTforest : G.IsForest (S (I₀acc ++ T)) := of_decide_eq_true hd
+    let extra := A.filter (· ∉ T)
+    let comps := forestComponents G (I₀acc ++ T)
+    check (extra.all (fun e => !(@Decidable.decide _
+      (decidableIsForestInsertOfComponents G (I₀acc ++ T) e hTforest comps rfl))))
+      "declared tree isn't maximal in its piece"
 
 /-- Checks one piece's whole local pmf: every declared tree passes
 `checkTree`, weights are nonnegative, and they sum to exactly `1`. Returns
