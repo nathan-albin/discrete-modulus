@@ -85,6 +85,23 @@ theorem S_subset_of_forall_mem {l₁ l₂ : List E} (h : ∀ x ∈ l₁, x ∈ l
 theorem S_append (l₁ l₂ : List E) : (S l₁ : Set E) ∪ S l₂ = S (l₁ ++ l₂) := by
   ext x; simp [S, List.mem_append]
 
+theorem S_nil : (S ([] : List E) : Set E) = ∅ := by ext x; simp [S]
+
+/-- A `Nodup` list whose length matches `Fintype.card E` must enumerate
+every element of `E` -- used to turn `checkCertificate`'s partition-
+completeness check (`Uacc.length = m`, together with `checkPieces`'s own
+disjointness invariant giving `Uacc.Nodup`) into the `S Uacc = Set.univ`
+fact `PieceList.glueAllGraph` needs to fold a certificate's pieces into a
+genuine top-level `Pmf`. -/
+theorem S_eq_univ_of_nodup_length {l : List E} (hnodup : l.Nodup)
+    (hlen : l.length = Fintype.card E) : (S l : Set E) = Set.univ := by
+  have hcard : l.toFinset.card = Fintype.card E := by
+    rw [List.toFinset_card_of_nodup hnodup, hlen]
+  have huniv : l.toFinset = (Finset.univ : Finset E) := Finset.eq_univ_of_card _ hcard
+  have hSeq : (S l : Set E) = (l.toFinset : Set E) := by
+    ext x; simp [S, List.mem_toFinset]
+  rw [hSeq, huniv, Finset.coe_univ]
+
 /-- The list-level version of `isBase_contract_restrict_iff_isForest`'s
 maximality conjunct, lifted to the `Set`-level statement that theorem
 actually needs. -/
@@ -458,6 +475,7 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
         split at hok
         next => exact absurd hok (by simp)
         next hEta =>
+          rename_i computedEta
           split at hok
           next => exact absurd hok (by simp)
           next hDeclEta =>
@@ -476,6 +494,48 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
                     split at hok
                     next => exact absurd hok (by simp)
                     next hMst =>
-                      done
+                      -- Build the genuine `Pmf` from `checkPieces`' own soundness proof.
+                      have hSnil : (S ([] : List (Fin cg.endpoints.size)) : Set (Fin cg.endpoints.size)) = ∅ :=
+                        S_nil
+                      have hI₀empty : (cg.toMultigraph.graphicMatroid ↾ (∅ : Set (Fin cg.endpoints.size))).IsBase
+                          (∅ : Set (Fin cg.endpoints.size)) := by
+                        rw [Matroid.isBase_restrict_iff (by simp)]
+                        exact cg.toMultigraph.graphicMatroid.empty_indep.isBasis_self
+                      have hI₀ : (cg.toMultigraph.graphicMatroid ↾
+                          S ([] : List (Fin cg.endpoints.size))).IsBase (S ([] : List (Fin cg.endpoints.size))) :=
+                        hSnil.symm ▸ hI₀empty
+                      have pl0 : PieceList cg.toMultigraph.graphicMatroid
+                          (S ([] : List (Fin cg.endpoints.size))) :=
+                        hSnil.symm ▸ PieceList.nil
+                      obtain ⟨pl, hNodupFinal⟩ := checkPieces_sound hI₀ pl0 List.nodup_nil hUacc
+                      have hSuniv : (S Uacc : Set (Fin cg.endpoints.size)) = Set.univ :=
+                        S_eq_univ_of_nodup_length hNodupFinal (by rw [Fintype.card_fin]; exact hlen)
+                      have plUniv : PieceList cg.toMultigraph.graphicMatroid Set.univ := hSuniv ▸ pl
+                      set μ := PieceList.glueAllGraph (N := cg.toMultigraph.graphicMatroid)
+                        (graphicMatroid_E cg.toMultigraph) plUniv with hμ
+                      -- Bridge `checkCertificate`'s `Kruskal.run` call (over the raw JSON edge
+                      -- list) to `Admissibility`'s axiom (stated over `cg.endpoints`).
+                      have hEdgesEq : cg.endpoints.map (fun p : Fin cg.n × Fin cg.n => (p.1.val, p.2.val))
+                          = raw.graph.edges.toArray := by
+                        apply Array.toList_inj.mp
+                        rw [Array.toList_map, buildGraph_edges_val hcg, List.toList_toArray]
+                      have hMstle : 1 ≤ (Kruskal.run cg.n raw.graph.edges.toArray
+                          (computedEta.map (fun x => x /
+                            List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
+                              (List.range cg.endpoints.size)))).foldl
+                          (fun acc i => acc + (computedEta.map (fun x => x /
+                            List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
+                              (List.range cg.endpoints.size))).getD i 0) 0 := by
+                        have h := check_eq_ok_iff.mp hMst
+                        simpa [not_lt] using h
+                      rw [← hEdgesEq] at hMstle
+                      have hAdm := Kruskal.run_isAdmissible_of_weight_ge_one
+                        cg.endpoints (computedEta.map (fun x => x /
+                          List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
+                            (List.range cg.endpoints.size))) hMstle
+                      refine ⟨cg.n, cg.endpoints.size, cg.toMultigraph,
+                        fun e => (computedEta.map (fun x => x /
+                          List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
+                            (List.range cg.endpoints.size))).getD e.val 0, μ, hAdm⟩
   · simp only [bind, Except.bind] at hok
     exact absurd hok (by simp)

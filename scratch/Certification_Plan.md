@@ -932,20 +932,54 @@ changes the §6 certificate-schema question**
       generic runtime-parsed-certificate case (`CertChecker.lean`'s own
       documented soundness-theorem gap: "checker accepts → genuine
       `PieceList` exists" — still the largest remaining piece of PR 5).
-- [ ] Generalize the above beyond `house`: state the Kruskal-admissibility
-      trust boundary as an explicit `axiom` (bridging "Kruskal's computed
-      weight ≥ 1" to `IsAdmissible`, so it's visible by name in
-      `#print axioms`, not just this doc), and separately, the generic
-      checker-to-proof-term soundness theorem
-      (`CertChecker.checkCertificate raw = ok → a genuine `PieceList`/`Pmf`
-      exists for the same data) needed to reach `nested`/`branch_test` and
-      arbitrary runtime-parsed certificates, not just hand-transcribed
-      ones.
+- [x] **Generalized beyond `house`: both halves done.** `Admissibility.lean`
+      states the Kruskal-admissibility trust boundary as an explicit named
+      `axiom` (`Kruskal.run_isAdmissible_of_weight_ge_one`, bridging
+      "Kruskal's computed weight ≥ 1" directly to `IsAdmissible`, no
+      connectedness hypothesis needed since Kruskal's greedy algorithm
+      produces a genuine minimum-weight base of the graphic matroid
+      regardless of connectivity). `Soundness.lean`'s
+      `CertChecker.checkCertificate_sound` is the generic
+      checker-to-proof-term theorem: `checkCertificate raw = Except.ok ()`
+      implies a genuine `Pmf G.graphicMatroid` exists (built from
+      `checkPieces_sound`'s folded `PieceList`, transported to `Set.univ`
+      via a new `S_eq_univ_of_nodup_length` lemma — a `Nodup` list whose
+      length matches `Fintype.card E` covers every edge) *and* the
+      certificate's own recomputed `rho` is admissible (via the axiom
+      above, bridged from `checkCertificate`'s raw-`Nat`-indexed
+      `Kruskal.run` call to the axiom's `Fin`-indexed one by a new
+      `buildGraph_edges_val` lemma). `#print axioms` confirms exactly
+      `propext`/`Classical.choice`/`Quot.sound` plus the one intended
+      `Kruskal.run_isAdmissible_of_weight_ge_one` axiom — no `sorry`, no
+      surprise dependency. Works for *any* accepted certificate
+      (`nested`/`branch_test` included), not just hand-transcribed `house`.
+      **Real, previously-undetected bug found and fixed while landing
+      this**: `Soundness.lean` was first committed without being imported
+      by the umbrella `DiscreteModulusCert.lean`, so bare `lake build` (and
+      hence CI) silently never compiled it — the same bug class as the
+      `CertChecker`/`verify_cert` omission caught earlier in PR 5. Fixed by
+      adding the import; `lake build`'s job count is now the authoritative
+      check that this file stays live.
+      **Scope, deliberately not closed by this**: `checkCertificate_sound`
+      does not (yet) prove the checked `rho` and the checked `mu` are the
+      *same* certificate's density/pmf in the sense `certificate_optimality`
+      needs (`rho = mu.marginal / sqNorm mu.marginal`) — that needs a
+      further correspondence between `sumTreeContributions`'s
+      `Array.set!`/`getD`-based computation and `PieceList.marginalSum`'s
+      clean recursive sum, real separate follow-up work, tracked below.
+- [ ] Close the remaining scope gap in `checkCertificate_sound` above: prove
+      the checked `rho`/`mu` pair actually satisfies
+      `certificate_optimality`'s hypotheses (not just that *some* admissible
+      `rho` and *some* pmf `mu` separately exist), by relating
+      `sumTreeContributions`'s imperative per-piece fold to
+      `PieceList.marginalSum`'s recursive sum.
 - [ ] End-to-end test: `house`/`nested` traces all the way through solver →
-      builder → Lean, `lake build`/kernel accepts. (`house`'s own
-      `houseCertificateOptimal` above is the first real instance of this,
-      still hand-transcribed rather than parsed from the JSON file
-      end-to-end; `nested` needs the generalization above first.)
+      builder → Lean, `lake build`/kernel accepts, feeding a *parsed*
+      certificate into `certificate_optimality` itself (not just
+      `checkCertificate_sound`'s existence conclusion). (`house`'s own
+      `houseCertificateOptimal` above is the first real instance of the
+      underlying optimality claim, still hand-transcribed rather than
+      parsed from the JSON file end-to-end; blocked on the scope gap above.)
 
 **PR 6 (follow-up, not blocking PR 5): prove Kruskal correct, close the TCB gap**
 - [ ] Prove the greedy-exchange argument for Kruskal on the graphic matroid

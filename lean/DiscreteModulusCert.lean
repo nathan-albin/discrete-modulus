@@ -11,3 +11,4 @@ import DiscreteModulusCert.KruskalTest
 import DiscreteModulusCert.Admissibility
 import DiscreteModulusCert.CertChecker
 import DiscreteModulusCert.CertCheckerTest
+import DiscreteModulusCert.Soundness
