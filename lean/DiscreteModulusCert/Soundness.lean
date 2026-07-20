@@ -68,6 +68,195 @@ theorem mapM_ok_forall₂ {α β : Type*} (f : α → Except String β) :
 
 end MonadHelpers
 
+section ArrayFoldMarginal
+
+/-! ## Bridging `sumTreeContributions`'s imperative `Array.set!`/`getD` fold to a
+declarative sum.
+
+`sumTreeContributions` (`CertChecker.lean`) computes a certificate's `η` by
+mutating an `Array ℚ` accumulator, one edge at a time, across three nested
+folds (pieces, then a piece's own trees, then a tree's own edges). The
+`Pmf`/`PieceList` side (`Family.lean`/`Glue.lean`) computes the "same"
+quantity as a plain recursive sum (`Pmf.marginal`, `PieceList.marginalSum`).
+This section proves the two agree, one generic lemma reused at all three
+fold levels: `foldlM_getD_eq_of_forall` says that *if* every individual step
+of a monadic `Array ℚ`-accumulating fold adds a known per-element
+`contrib`ution at a given index (and preserves the array's size), *then* the
+whole fold's final value at that index is the starting value plus the sum of
+every element's contribution — regardless of how many elements there are or
+what else the step does. Applied at the edge level, `contrib` is an
+indicator (`treesPmf_marginal`'s own shape); at the tree and piece levels,
+`contrib` is just "the next level's already-established total," so the same
+lemma reproduces `Pmf.marginal`'s and `PieceList.marginalSum`'s recursive
+sums exactly, without needing separate bespoke inductions at each level. -/
+
+theorem getD_set!_self {α : Type*} (xs : Array α) {i : Nat} (hi : i < xs.size) (x d : α) :
+    (xs.set! i x).getD i d = x := by
+  rw [Array.set!_eq_setIfInBounds, Array.getD_eq_getD_getElem?,
+    Array.getElem?_setIfInBounds_self_of_lt hi, Option.getD_some]
+
+theorem getD_set!_ne {α : Type*} (xs : Array α) {i j : Nat} (hij : i ≠ j) (x d : α) :
+    (xs.set! i x).getD j d = xs.getD j d := by
+  rw [Array.set!_eq_setIfInBounds, Array.getD_eq_getD_getElem?,
+    Array.getElem?_setIfInBounds_ne hij, ← Array.getD_eq_getD_getElem?]
+
+/-- **The generic fold-vs-sum bridge.** If every step of a monadic
+`Array ℚ`-accumulating fold, *for elements actually in the list being
+folded* (`hstep` is only required pointwise on `a ∈ l`, not for every `a` of
+the type -- some levels below need a per-element side-fact, e.g. "this
+tree's own edge list has no duplicates", that isn't derivable from the step
+function alone), preserves the array's size and adds exactly `contrib a i`
+at index `i` (for *every* `i`, not just one -- this is what lets the lemma
+apply uniformly regardless of whether `a`'s own contribution happens to be
+zero at `i`), then folding the whole list adds up every element's
+contribution, matching a plain `List.sum`. Proved by structural induction on
+the list, mirroring `List.foldlM`'s own recursion exactly (the same style
+`mapM_ok_forall₂` above already uses for `List.mapM`). -/
+theorem foldlM_getD_eq_of_forall {α : Type*} {bound : Nat}
+    (step : Array ℚ → α → Except String (Array ℚ)) (contrib : α → Fin bound → ℚ) :
+    ∀ (l : List α), (∀ a ∈ l, ∀ (acc acc' : Array ℚ), acc.size = bound →
+        step acc a = Except.ok acc' →
+        acc'.size = bound ∧ ∀ i : Fin bound, acc'.getD i.val 0 = acc.getD i.val 0 + contrib a i) →
+      ∀ (acc0 acc0' : Array ℚ), acc0.size = bound →
+      l.foldlM step acc0 = Except.ok acc0' →
+      ∀ i : Fin bound, acc0'.getD i.val 0 = acc0.getD i.val 0 + (l.map (fun a => contrib a i)).sum
+  | [], _, acc0, acc0', _, hok, i => by
+      rw [List.foldlM_nil] at hok
+      simp only [pure, Except.pure, Except.ok.injEq] at hok
+      subst hok
+      simp
+  | a :: as, hstep, acc0, acc0', hsz, hok, i => by
+      rw [List.foldlM_cons] at hok
+      cases hstepres : step acc0 a with
+      | error e => rw [hstepres] at hok; simp [bind, Except.bind] at hok
+      | ok acc1 =>
+        rw [hstepres] at hok
+        simp only [bind, Except.bind] at hok
+        obtain ⟨hsz1, hcontrib1⟩ := hstep a List.mem_cons_self acc0 acc1 hsz hstepres
+        have hstep' : ∀ a ∈ as, ∀ (acc acc' : Array ℚ), acc.size = bound →
+            step acc a = Except.ok acc' →
+            acc'.size = bound ∧ ∀ i : Fin bound, acc'.getD i.val 0 = acc.getD i.val 0 + contrib a i :=
+          fun a' ha' => hstep a' (List.mem_cons_of_mem a ha')
+        rw [foldlM_getD_eq_of_forall step contrib as hstep' acc1 acc0' hsz1 hok i, hcontrib1 i,
+          List.map_cons, List.sum_cons]
+        ring
+
+/-- **Size-preservation companion to `foldlM_getD_eq_of_forall`**, split out
+separately since not every call site needs the value-level conclusion (and
+carrying both in one statement would force every caller to thread a size
+proof through the `contrib` bookkeeping even when only size is needed). Same
+hypotheses shape, same proof strategy. -/
+theorem foldlM_size_eq_of_forall {α : Type*} {bound : Nat}
+    (step : Array ℚ → α → Except String (Array ℚ)) :
+    ∀ (l : List α), (∀ a ∈ l, ∀ (acc acc' : Array ℚ), acc.size = bound →
+        step acc a = Except.ok acc' → acc'.size = bound) →
+      ∀ (acc0 acc0' : Array ℚ), acc0.size = bound →
+      l.foldlM step acc0 = Except.ok acc0' → acc0'.size = bound
+  | [], _, acc0, acc0', hsz, hok => by
+      rw [List.foldlM_nil] at hok
+      simp only [pure, Except.pure, Except.ok.injEq] at hok
+      subst hok
+      exact hsz
+  | a :: as, hstep, acc0, acc0', hsz, hok => by
+      rw [List.foldlM_cons] at hok
+      cases hstepres : step acc0 a with
+      | error e => rw [hstepres] at hok; simp [bind, Except.bind] at hok
+      | ok acc1 =>
+        rw [hstepres] at hok
+        simp only [bind, Except.bind] at hok
+        exact foldlM_size_eq_of_forall step as
+          (fun a' ha' => hstep a' (List.mem_cons_of_mem a ha'))
+          acc1 acc0' (hstep a List.mem_cons_self acc0 acc1 hsz hstepres) hok
+
+/-- A `Nodup` list's indicator sum picks out membership: summing `w` at
+every occurrence of `a` in `l` gives `w` if `a ∈ l` and `0` otherwise,
+*because* `Nodup` rules out `a` occurring twice (without it, a repeated `a`
+would double-count). This is what lets `sumTreeContributions`'s per-edge
+array fold -- which really does add `w` once per *list* occurrence -- match
+`treesPmf_marginal`'s Set-indicator formula, which is blind to how many
+times an edge appears in a tree's own (checked-`Nodup`) edge list. -/
+theorem sum_map_ite_eq_of_nodup {α : Type*} [DecidableEq α] (w : ℚ) (a : α) :
+    ∀ {l : List α}, l.Nodup →
+      (l.map (fun x => if x = a then w else 0)).sum = if a ∈ l then w else 0
+  | [], _ => by simp
+  | b :: l, hnodup => by
+      rw [List.nodup_cons] at hnodup
+      obtain ⟨hbl, hl⟩ := hnodup
+      rw [List.map_cons, List.sum_cons, sum_map_ite_eq_of_nodup w a hl]
+      by_cases hba : b = a
+      · subst hba
+        simp [hbl]
+      · by_cases ha : a ∈ l
+        · simp [hba, ha, Ne.symm hba]
+        · simp [hba, ha, Ne.symm hba]
+
+/-- If two lists are pointwise related by "applying `f`/`g` respectively
+gives the same value", their `f`-mapped and `g`-mapped images (hence sums)
+agree -- used to transport a per-element correspondence (`toE eNat = Except.ok e`
+implies the raw and converted contributions agree) up to the whole list. -/
+theorem forall₂_map_eq {α β γ : Type*} {f : α → γ} {g : β → γ} :
+    ∀ {l1 : List α} {l2 : List β}, List.Forall₂ (fun a b => f a = g b) l1 l2 →
+      l1.map f = l2.map g
+  | _, _, List.Forall₂.nil => rfl
+  | _, _, List.Forall₂.cons h ht => by
+      rw [List.map_cons, List.map_cons, h, forall₂_map_eq ht]
+
+/-- **Level 1: the edge-within-a-tree fold matches `treesPmf_marginal`'s
+term.** `sumTreeContributions`'s innermost fold, over one tree's own raw
+edge-index list, converting each via `toE` and adding the tree's weight `w`
+at that edge -- given the converted list is `Nodup` (`checkTree_nodup`) and
+matches `T` (`hconv`, the same conversion `checkPiece`'s own parse already
+performs), the fold's net effect at any edge `i` is exactly the indicator
+`if i ∈ S T then w else 0`, matching `treesPmf_marginal`'s own per-tree
+term. -/
+theorem edgeFold_getD_eq {bound : Nat} (toE : Nat → Except String (Fin bound)) (w : ℚ)
+    (T_raw : List Nat) (T : List (Fin bound)) (hconv : T_raw.mapM toE = Except.ok T)
+    (hNodup : T.Nodup) (acc0 acc1 : Array ℚ) (hsz : acc0.size = bound)
+    (hfold : T_raw.foldlM
+        (fun acc eNat => do
+          let e ← toE eNat
+          pure (acc.set! e.val (acc.getD e.val 0 + w)))
+        acc0 = Except.ok acc1)
+    (i : Fin bound) :
+    acc1.size = bound ∧ acc1.getD i.val 0 = acc0.getD i.val 0 + (if i ∈ S T then w else 0) := by
+  set edgeContrib : Nat → Fin bound → ℚ :=
+    fun eNat j => match toE eNat with | Except.ok e => if e = j then w else 0 | Except.error _ => 0
+    with hedgeContrib
+  have hstep : ∀ eNat ∈ T_raw, ∀ (acc acc' : Array ℚ), acc.size = bound →
+      (do let e ← toE eNat; pure (acc.set! e.val (acc.getD e.val 0 + w)) : Except String (Array ℚ))
+        = Except.ok acc' →
+      acc'.size = bound ∧ ∀ j : Fin bound, acc'.getD j.val 0 = acc.getD j.val 0 + edgeContrib eNat j := by
+    intro eNat _ acc acc' hsz' hstepok
+    cases hte : toE eNat with
+    | error e => rw [hte] at hstepok; simp [bind, Except.bind] at hstepok
+    | ok e =>
+      rw [hte] at hstepok
+      simp only [bind, Except.bind, pure, Except.pure, Except.ok.injEq] at hstepok
+      subst hstepok
+      refine ⟨by rw [Array.size_set!]; exact hsz', fun j => ?_⟩
+      simp only [hedgeContrib, hte]
+      by_cases hej : e = j
+      · subst hej
+        rw [getD_set!_self acc (by rw [hsz']; exact e.isLt) _ 0, if_pos rfl]
+      · rw [getD_set!_ne acc (fun h => hej (Fin.ext h)) _ 0, if_neg hej, add_zero]
+  refine ⟨foldlM_size_eq_of_forall
+    (fun acc eNat => (do let e ← toE eNat; pure (acc.set! e.val (acc.getD e.val 0 + w)) :
+      Except String (Array ℚ)))
+    T_raw (fun eNat hm acc acc' hsz' h => (hstep eNat hm acc acc' hsz' h).1) acc0 acc1 hsz hfold, ?_⟩
+  have hres := foldlM_getD_eq_of_forall
+    (fun acc eNat => (do let e ← toE eNat; pure (acc.set! e.val (acc.getD e.val 0 + w)) :
+      Except String (Array ℚ)))
+    edgeContrib T_raw hstep acc0 acc1 hsz hfold i
+  rw [hres]
+  congr 1
+  have hforall2 := mapM_ok_forall₂ toE hconv
+  have hmapeq : T_raw.map (fun eNat => edgeContrib eNat i) = T.map (fun e => if e = i then w else 0) :=
+    forall₂_map_eq (hforall2.imp (fun eNat e he => by rw [hedgeContrib]; simp [he]))
+  rw [hmapeq, sum_map_ite_eq_of_nodup w i hNodup]
+  rfl
+
+end ArrayFoldMarginal
+
 variable {V E : Type*} [DecidableEq V] [Fintype V] [DecidableEq E] [Fintype E]
 
 /-! ## Generic `S`-manipulation lemmas
@@ -189,6 +378,21 @@ theorem treesPmf_marginal {M : Matroid E} {trees : List (List E × ℚ)}
         (trees.get i)) from funext (fun i => by simp [usageVector_apply, mul_comm])]
   exact sum_fin_length_eq_list_sum (fun t => if e ∈ S t.1 then t.2 else 0) trees
 
+omit [Fintype E] in
+/-- **`checkTree`'s first check, isolated.** A declared tree's own edge list
+has no duplicate edge index -- needed (alongside `checkTree_sound`'s `IsBase`
+conclusion) to know that `sumTreeContributions`'s per-edge array fold over
+this same list touches each of the tree's edges exactly once, matching
+`treesPmf_marginal`'s Set-indicator formula (which is blind to list
+duplicates) term for term. -/
+theorem checkTree_nodup {G : Multigraph V E} {I₀acc A T : List E}
+    (hok : checkTree G I₀acc A T = Except.ok PUnit.unit) : T.Nodup := by
+  unfold checkTree at hok
+  simp only [check] at hok
+  split_ifs at hok with h1 h2
+  · exact of_decide_eq_true h1
+  all_goals simp [bind, Except.bind] at hok
+
 /-- **Soundness of `checkTree`**: if it accepts, the declared tree really is
 a base of the piece's own (contract-then-restrict) matroid -- the executable
 mirror of `isBase_contract_restrict_iff_isForest`. -/
@@ -271,14 +475,50 @@ theorem forall₂_right_of_forall₂_const {α β : Type*} {P : β → Prop} :
       · exact h
       · exact forall₂_right_of_forall₂_const ht b hb'
 
+/-- The companion fact to `forall₂_right_of_forall₂_const`, for a relation
+that isn't const in its left argument: given `a` on the left, there's a
+*specific* related `b` on the right satisfying the full relation `R a b` --
+used to recover, for one specific declared tree `t`, the exact converted
+`(edges, weight)` pair and per-tree facts (`IsBase`, `Nodup`, the raw
+conversion) that `checkPiece`'s own parse already established for it. -/
+theorem forall₂_exists_of_mem_left {α β : Type*} {R : α → β → Prop} :
+    ∀ {l1 : List α} {l2 : List β}, List.Forall₂ R l1 l2 → ∀ a ∈ l1, ∃ b ∈ l2, R a b
+  | _, _, List.Forall₂.nil, a, ha => absurd ha List.not_mem_nil
+  | _, _, List.Forall₂.cons h ht, a, ha => by
+      rcases List.mem_cons.mp ha with rfl | ha'
+      · exact ⟨_, List.mem_cons_self, h⟩
+      · obtain ⟨b, hb, hrb⟩ := forall₂_exists_of_mem_left ht a ha'
+        exact ⟨b, List.mem_cons_of_mem _ hb, hrb⟩
+
 open Classical in
-noncomputable def checkPiece_sound {G : Multigraph V E} {Uacc I₀acc : List E} {raw : RawPiece}
-    {toE : Nat → Except String E} {A I₀acc' : List E}
+/-- **Specialized to `E := Fin m`** (rather than the file's usual abstract
+`E`), and extended with one more conjunct beyond the matroid/base facts: a
+correspondence between `sumTreeContributions`'s per-piece imperative fold
+(`CertChecker.lean`) and `p.pmf.marginal` (`treesPmf_marginal`/`Family.lean`).
+The specialization is forced by `sumTreeContributions` itself, which is
+`Fin m`-indexed for the same reason its own docstring gives: no computable
+`E → Fin m` projection exists generically. The only actual caller
+(`checkPieces_sound` below) is being extended the same way, so nothing else
+depends on this having stayed abstract. -/
+noncomputable def checkPiece_sound {m : Nat} {G : Multigraph V (Fin m)} {Uacc I₀acc : List (Fin m)}
+    {raw : RawPiece} {toE : Nat → Except String (Fin m)} {A I₀acc' : List (Fin m)}
     (hI₀ : (G.graphicMatroid ↾ (S Uacc)).IsBase (S I₀acc))
     (hok : checkPiece G Uacc I₀acc raw toE = Except.ok (A, I₀acc')) :
     Σ' (p : Piece G.graphicMatroid (S Uacc)),
       p.A = S A ∧ (G.graphicMatroid ↾ (S (Uacc ++ A))).IsBase (S I₀acc') ∧
-      A.Nodup ∧ ∀ e ∈ A, e ∉ Uacc := by
+      A.Nodup ∧ (∀ e ∈ A, e ∉ Uacc) ∧
+      (∀ (acc0 acc1 : Array ℚ), acc0.size = m →
+        raw.local_pmf.trees.foldlM
+          (fun acc t => do
+            let _ ← check (!decide (t.weight.2 = 0)) "weight has a zero denominator"
+            let w : ℚ := (t.weight.1 : ℚ) / (t.weight.2 : ℚ)
+            t.edges.foldlM
+              (fun acc eNat => do
+                let e ← toE eNat
+                pure (acc.set! e.val (acc.getD e.val 0 + w)))
+              acc)
+          acc0 = Except.ok acc1 →
+        acc1.size = m ∧ ∀ i : Fin m, acc1.getD i.val 0 = acc0.getD i.val 0 + p.pmf.marginal i) := by
   unfold checkPiece at hok
   simp only [check] at hok
   cases hA' : raw.edges.mapM toE with
@@ -323,8 +563,9 @@ noncomputable def checkPiece_sound {G : Multigraph V E} {Uacc I₀acc : List E} 
               have := List.all_eq_true.mp hnncond
               intro t ht; simpa using this t ht
             have hAE : S A' ⊆ (G.graphicMatroid ／ S Uacc).E := subset_contract_E_of_disjoint hA2
-            have hbase_forall2 : List.Forall₂ (fun (_ : RawTree) (pair : List E × ℚ) =>
-                ((G.graphicMatroid ／ S Uacc) ↾ S A').IsBase (S pair.1)) raw.local_pmf.trees trees := by
+            have hpiece_forall2 : List.Forall₂ (fun (rawT : RawTree) (pair : List (Fin m) × ℚ) =>
+                ((G.graphicMatroid ／ S Uacc) ↾ S A').IsBase (S pair.1) ∧ pair.1.Nodup ∧
+                rawT.edges.mapM toE = Except.ok pair.1) raw.local_pmf.trees trees := by
               refine (mapM_ok_forall₂ _ htrees).imp (fun rawT pair hpair => ?_)
               split at hpair
               next => exact absurd hpair (by simp)
@@ -337,11 +578,11 @@ noncomputable def checkPiece_sound {G : Multigraph V E} {Uacc I₀acc : List E} 
                   next hct =>
                     simp only [Except.ok.injEq] at hpair
                     subst hpair
-                    exact checkTree_sound hI₀ hAE hct
+                    exact ⟨checkTree_sound hI₀ hAE hct, checkTree_nodup hct, hmapedges⟩
             have hbase : ∀ t ∈ trees, ((G.graphicMatroid ／ S Uacc) ↾ S A').IsBase (S t.1) :=
-              forall₂_right_of_forall₂_const hbase_forall2
-            have pmf : Pmf ((G.graphicMatroid ／ S Uacc) ↾ S A') :=
-              treesPmf hbase hnonneg' hsumcond
+              forall₂_right_of_forall₂_const (hpiece_forall2.imp (fun _ _ h => h.1))
+            set pmf : Pmf ((G.graphicMatroid ／ S Uacc) ↾ S A') :=
+              treesPmf hbase hnonneg' hsumcond with hpmf
             have hT0mem : (T0, w0) ∈ trees := by
               cases hv : trees with
               | nil => rw [hv] at hhead; simp at hhead
@@ -351,7 +592,117 @@ noncomputable def checkPiece_sound {G : Multigraph V E} {Uacc I₀acc : List E} 
                 rw [← hhead]
                 exact List.mem_cons_self
             have hT0base : ((G.graphicMatroid ／ S Uacc) ↾ S A').IsBase (S T0) := hbase _ hT0mem
-            refine ⟨⟨S A', hAE, pmf⟩, congrArg S hAeq, ?_, hAeq ▸ hA1, hAeq ▸ hA2⟩
+            have hmarginal : ∀ (acc0 acc1 : Array ℚ), acc0.size = m →
+                raw.local_pmf.trees.foldlM
+                  (fun acc t => do
+                    let _ ← check (!decide (t.weight.2 = 0)) "weight has a zero denominator"
+                    let w : ℚ := (t.weight.1 : ℚ) / (t.weight.2 : ℚ)
+                    t.edges.foldlM
+                      (fun acc eNat => do
+                        let e ← toE eNat
+                        pure (acc.set! e.val (acc.getD e.val 0 + w)))
+                      acc)
+                  acc0 = Except.ok acc1 →
+                acc1.size = m ∧ ∀ i : Fin m, acc1.getD i.val 0 = acc0.getD i.val 0 + pmf.marginal i := by
+              set treeContrib : RawTree → Fin m → ℚ := fun t j =>
+                if t.weight.2 = 0 then 0 else
+                match t.edges.mapM toE with
+                | Except.ok T => if j ∈ S T then (t.weight.1 : ℚ) / (t.weight.2 : ℚ) else 0
+                | Except.error _ => 0
+                with htreeContrib
+              have hstep2 : ∀ t ∈ raw.local_pmf.trees, ∀ (acc acc' : Array ℚ), acc.size = m →
+                  (do
+                    let _ ← check (!decide (t.weight.2 = 0)) "weight has a zero denominator"
+                    let w : ℚ := (t.weight.1 : ℚ) / (t.weight.2 : ℚ)
+                    t.edges.foldlM
+                      (fun acc eNat => do
+                        let e ← toE eNat
+                        pure (acc.set! e.val (acc.getD e.val 0 + w)))
+                      acc : Except String (Array ℚ)) = Except.ok acc' →
+                  acc'.size = m ∧ ∀ j : Fin m, acc'.getD j.val 0 = acc.getD j.val 0 + treeContrib t j := by
+                intro t ht acc acc' hsz' hstepok
+                obtain ⟨pair, -, -, hnodupP, hmapP⟩ :=
+                  forall₂_exists_of_mem_left hpiece_forall2 t ht
+                simp only [check] at hstepok
+                by_cases hw0 : t.weight.2 = 0
+                · exfalso
+                  rw [if_neg (by simp [hw0])] at hstepok
+                  simp [bind, Except.bind] at hstepok
+                · have hstepok' : t.edges.foldlM
+                      (fun acc eNat => do
+                        let e ← toE eNat
+                        pure (acc.set! e.val (acc.getD e.val 0 + (t.weight.1 : ℚ) / (t.weight.2 : ℚ))))
+                      acc = Except.ok acc' := by
+                    rw [if_pos (by simp [hw0])] at hstepok
+                    simp only [bind, Except.bind, pure, Except.pure] at hstepok
+                    exact hstepok
+                  have hcontrib_eq : treeContrib t = fun j => if j ∈ S pair.1 then (t.weight.1 : ℚ) / (t.weight.2 : ℚ) else 0 := by
+                    funext j
+                    simp only [htreeContrib, hw0, hmapP, if_false]
+                  refine ⟨foldlM_size_eq_of_forall
+                    (fun acc eNat => (do
+                      let e ← toE eNat
+                      pure (acc.set! e.val (acc.getD e.val 0 + (t.weight.1 : ℚ) / (t.weight.2 : ℚ))) :
+                      Except String (Array ℚ)))
+                    t.edges
+                    (fun eNat _ acc₁ acc₁' hsz₁ hs => by
+                      cases hte : toE eNat with
+                      | error e => rw [hte] at hs; simp [bind, Except.bind] at hs
+                      | ok e =>
+                        rw [hte] at hs
+                        simp only [bind, Except.bind, pure, Except.pure, Except.ok.injEq] at hs
+                        subst hs
+                        rw [Array.size_set!]
+                        exact hsz₁)
+                    acc acc' hsz' hstepok', fun j => ?_⟩
+                  rw [hcontrib_eq]
+                  exact (edgeFold_getD_eq toE ((t.weight.1 : ℚ) / (t.weight.2 : ℚ)) t.edges pair.1
+                    hmapP hnodupP acc acc' hsz' hstepok' j).2
+              intro acc0 acc1 hsz hfold
+              refine ⟨foldlM_size_eq_of_forall
+                (fun acc t => (do
+                  let _ ← check (!decide (t.weight.2 = 0)) "weight has a zero denominator"
+                  let w : ℚ := (t.weight.1 : ℚ) / (t.weight.2 : ℚ)
+                  t.edges.foldlM
+                    (fun acc eNat => do
+                      let e ← toE eNat
+                      pure (acc.set! e.val (acc.getD e.val 0 + w)))
+                    acc : Except String (Array ℚ)))
+                raw.local_pmf.trees (fun t ht acc acc' hsz' hs => (hstep2 t ht acc acc' hsz' hs).1)
+                acc0 acc1 hsz hfold, fun i => ?_⟩
+              have hres := foldlM_getD_eq_of_forall
+                (fun acc t => (do
+                  let _ ← check (!decide (t.weight.2 = 0)) "weight has a zero denominator"
+                  let w : ℚ := (t.weight.1 : ℚ) / (t.weight.2 : ℚ)
+                  t.edges.foldlM
+                    (fun acc eNat => do
+                      let e ← toE eNat
+                      pure (acc.set! e.val (acc.getD e.val 0 + w)))
+                    acc : Except String (Array ℚ)))
+                treeContrib raw.local_pmf.trees hstep2 acc0 acc1 hsz hfold i
+              rw [hres]
+              congr 1
+              have hforall2 := mapM_ok_forall₂ _ htrees
+              have hmapeq : raw.local_pmf.trees.map (fun t => treeContrib t i)
+                  = trees.map (fun t => if i ∈ S t.1 then t.2 else 0) := by
+                refine forall₂_map_eq (hforall2.imp (fun rawT pair hpair => ?_))
+                split at hpair
+                next => exact absurd hpair (by simp)
+                next hmapedges =>
+                  split at hpair
+                  next => exact absurd hpair (by simp)
+                  next hwcheck =>
+                    split at hpair
+                    next => exact absurd hpair (by simp)
+                    next hct =>
+                      simp only [Except.ok.injEq] at hpair
+                      subst hpair
+                      have hwne : rawT.weight.2 ≠ 0 := by
+                        by_contra hc
+                        simp [hc] at hwcheck
+                      simp only [htreeContrib, hwne, hmapedges, if_false]
+              rw [hmapeq, ← treesPmf_marginal hbase hnonneg' hsumcond i, hpmf]
+            refine ⟨⟨S A', hAE, pmf⟩, congrArg S hAeq, ?_, hAeq ▸ hA1, hAeq ▸ hA2, hmarginal⟩
             have hkey := isBase_restrict_union hAE hI₀ hT0base
             rw [S_append, S_append] at hkey
             rw [← hAeq, ← hI'eq]
@@ -360,30 +711,83 @@ noncomputable def checkPiece_sound {G : Multigraph V E} {Uacc I₀acc : List E} 
 /-- **Soundness of `checkPieces`**: folds `checkPiece_sound` over the whole
 raw pieces list, extending a starting `PieceList` (matching the starting
 `Uacc`/`I₀acc` invariant) into one covering the final `Uacc'`. Structural
-recursion on `raws`, mirroring `checkPieces`'s own recursion exactly. -/
-noncomputable def checkPieces_sound {G : Multigraph V E} {toE : Nat → Except String E} :
-    ∀ {raws : List RawPiece} {Uacc I₀acc Uacc' : List E} {i : Nat},
+recursion on `raws`, mirroring `checkPieces`'s own recursion exactly.
+**Specialized to `E := Fin m`, and extended** with the same kind of
+marginal-fold conjunct `checkPiece_sound` gained: given the accumulator
+already matches the *starting* `PieceList`'s `marginalSum` and
+`sumTreeContributions`'s outer per-piece fold over the same `raws` succeeds,
+the result matches the *extended* `PieceList`'s `marginalSum`. No
+cross-piece disjointness bookkeeping is needed here beyond what
+`checkPiece_sound` already supplies -- each piece's own contribution is
+just added on both sides (`PieceList.marginalSum`'s own `cons` case,
+matching one step of `sumTreeContributions`'s outer fold exactly). -/
+noncomputable def checkPieces_sound {m : Nat} {G : Multigraph V (Fin m)}
+    {toE : Nat → Except String (Fin m)} :
+    ∀ {raws : List RawPiece} {Uacc I₀acc Uacc' : List (Fin m)} {i : Nat},
       (G.graphicMatroid ↾ (S Uacc)).IsBase (S I₀acc) →
-      PieceList G.graphicMatroid (S Uacc) → Uacc.Nodup →
+      (pl : PieceList G.graphicMatroid (S Uacc)) → Uacc.Nodup →
       checkPieces G toE raws Uacc I₀acc i = Except.ok Uacc' →
-      PSigma (fun _ : PieceList G.graphicMatroid (S Uacc') => Uacc'.Nodup)
+      Σ' (pl' : PieceList G.graphicMatroid (S Uacc')), Uacc'.Nodup ∧
+        (∀ (acc0 accf : Array ℚ), acc0.size = m →
+          (∀ e : Fin m, acc0.getD e.val 0 = pl.marginalSum e) →
+          raws.foldlM
+            (fun acc piece =>
+              piece.local_pmf.trees.foldlM
+                (fun acc t => do
+                  let _ ← check (!decide (t.weight.2 = 0)) "weight has a zero denominator"
+                  let w : ℚ := (t.weight.1 : ℚ) / (t.weight.2 : ℚ)
+                  t.edges.foldlM
+                    (fun acc eNat => do
+                      let e ← toE eNat
+                      pure (acc.set! e.val (acc.getD e.val 0 + w)))
+                    acc)
+                acc)
+            acc0 = Except.ok accf →
+          ∀ e : Fin m, accf.getD e.val 0 = pl'.marginalSum e)
   | [], Uacc, I₀acc, Uacc', i, _, pl, hNodup, hok => by
       unfold checkPieces at hok
       simp only [pure, Except.pure, Except.ok.injEq] at hok
-      exact ⟨(congrArg S hok) ▸ pl, hok ▸ hNodup⟩
+      refine ⟨(congrArg S hok) ▸ pl, hok ▸ hNodup, ?_⟩
+      intro acc0 accf hsz hmarg0 hfold e
+      rw [List.foldlM_nil] at hfold
+      simp only [pure, Except.pure, Except.ok.injEq] at hfold
+      rw [← hfold, hmarg0 e, PieceList.marginalSum_cast]
   | raw :: rest, Uacc, I₀acc, Uacc', i, hI₀, pl, hNodup, hok => by
       unfold checkPieces at hok
       split at hok
       next => exact absurd hok (by simp)
       next hpieceok =>
         rename_i pA pI0
-        obtain ⟨p, hpA, hI₀', hpNodup, hpDisj⟩ := checkPiece_sound hI₀ hpieceok
-        have hUeq : (S Uacc ∪ p.A : Set E) = S (Uacc ++ pA) := by rw [hpA, S_append]
-        have pl' : PieceList G.graphicMatroid (S (Uacc ++ pA)) := hUeq ▸ PieceList.cons pl p
+        obtain ⟨p, hpA, hI₀', hpNodup, hpDisj, hpMarg⟩ := checkPiece_sound hI₀ hpieceok
+        have hUeq : (S Uacc ∪ p.A : Set (Fin m)) = S (Uacc ++ pA) := by rw [hpA, S_append]
+        set pl' : PieceList G.graphicMatroid (S (Uacc ++ pA)) := hUeq ▸ PieceList.cons pl p with hpl'
         have hNodup' : (Uacc ++ pA).Nodup :=
           List.nodup_append.mpr ⟨hNodup, hpNodup,
             fun a ha b hb heq => hpDisj b hb (heq ▸ ha)⟩
-        exact checkPieces_sound hI₀' pl' hNodup' hok
+        obtain ⟨pl'', hNodup'', hMarg''⟩ := checkPieces_sound hI₀' pl' hNodup' hok
+        refine ⟨pl'', hNodup'', ?_⟩
+        intro acc0 accf hsz hmarg0 hfold
+        rw [List.foldlM_cons] at hfold
+        cases hstepres : (raw.local_pmf.trees.foldlM
+            (fun acc t => do
+              let _ ← check (!decide (t.weight.2 = 0)) "weight has a zero denominator"
+              let w : ℚ := (t.weight.1 : ℚ) / (t.weight.2 : ℚ)
+              t.edges.foldlM
+                (fun acc eNat => do
+                  let e ← toE eNat
+                  pure (acc.set! e.val (acc.getD e.val 0 + w)))
+                acc)
+            acc0 : Except String (Array ℚ)) with
+        | error err => rw [hstepres] at hfold; simp [bind, Except.bind] at hfold
+        | ok acc1 =>
+          rw [hstepres] at hfold
+          simp only [bind, Except.bind] at hfold
+          have hp1 := hpMarg acc0 acc1 hsz hstepres
+          have hacc1marg : ∀ e' : Fin m, acc1.getD e'.val 0 = pl'.marginalSum e' := by
+            intro e'
+            rw [hp1.2 e', hmarg0 e', hpl', PieceList.marginalSum_cast hUeq (PieceList.cons pl p) e']
+            rfl
+          exact hMarg'' acc1 accf hp1.1 hacc1marg hfold
 
 theorem natToFin_val {bound n : Nat} {f : Fin bound} (h : natToFin bound n = Except.ok f) :
     f.val = n := by
@@ -442,22 +846,33 @@ theorem buildGraph_edges_val {raw : RawGraph} {cg : CheckedGraph}
 the certificate's graph's spanning trees exists, built entirely from the
 certificate's own `pieces` data via `checkPieces_sound`/`PieceList.glueAllGraph`
 (no hand-transcription, works for *any* accepted certificate, not just
-`house`), and (b) the certificate's own computed `rho` really is admissible
--- the Kruskal-admissibility axiom (`Admissibility.lean`), applied for real
+`house`), (b) the certificate's own computed `rho` really is admissible --
+the Kruskal-admissibility axiom (`Admissibility.lean`), applied for real
 this time, not sidestepped by a uniform-density special case the way
-`HouseCert.lean`'s `houseCertificateOptimal` was.
+`HouseCert.lean`'s `houseCertificateOptimal` was -- and (c) **the gap this
+file's module docstring flagged is now closed**: the certificate's own
+`computedEta` (`sumTreeContributions`'s output, the same one `eta`/`rho`'s
+runtime check in `checkCertificate` is built from) is, as a function,
+*exactly* this same `μ`'s marginal -- not just "some pmf exists" and
+"some computed eta exists" separately. This is what
+`checkPiece_sound`/`checkPieces_sound`'s new marginal-fold conjuncts (above)
+were built for: `hMargFinal`, applied to `sumTreeContributions`'s own
+starting accumulator (`Array.replicate m 0`, matching `pl0 = PieceList.nil`'s
+`marginalSum = 0`), gives this directly.
 
-**Scope, deliberately**: this does not (yet) prove the two halves are the
-*same* certificate's `(rho, mu)` pair in the sense `certificate_optimality`
-needs (`rho = mu.marginal / sqNorm mu.marginal`) -- that needs a further
-correspondence between `sumTreeContributions`'s `Array.set!`/`getD`-based
-computation and `PieceList.marginalSum`'s clean recursive sum, which is
-real, separate follow-up work (comparable in size to `checkPiece_sound`
-above), not something this theorem silently assumes. Tracked in
-`Certification_Plan.md`'s PR5 entry. -/
+**Scope, deliberately still open**: this does not (yet) show `ρ` (the
+certificate's declared, *normalized* density) equals `η / sqNorm η` in the
+`CertDensity`/`sqNorm` vocabulary `certificate_optimality` needs -- that
+needs a further bridge between the array-level `normSq` fold
+`checkCertificate` computes and the `Finset.sum`-based `sqNorm`
+(`Family.lean`), which is real, separate follow-up work, not something this
+theorem silently assumes. Tracked in `Certification_Plan.md`'s PR5 entry. -/
 theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate raw = Except.ok ()) :
-    ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m)) (ρ : CertDensity (Fin m))
-      (_μ : Pmf G.graphicMatroid), IsAdmissible G.graphicMatroid ρ := by
+    ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m)) (toE : Nat → Except String (Fin m))
+      (computedEta : Array ℚ) (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid),
+      sumTreeContributions m toE raw.pieces = Except.ok computedEta ∧
+      (fun e : Fin m => computedEta.getD e.val 0) = μ.marginal ∧
+      IsAdmissible G.graphicMatroid ρ := by
   unfold checkCertificate at hok
   split_ifs at hok with hver
   · dsimp only at hok
@@ -504,15 +919,30 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
                       have hI₀ : (cg.toMultigraph.graphicMatroid ↾
                           S ([] : List (Fin cg.endpoints.size))).IsBase (S ([] : List (Fin cg.endpoints.size))) :=
                         hSnil.symm ▸ hI₀empty
-                      have pl0 : PieceList cg.toMultigraph.graphicMatroid
+                      set pl0 : PieceList cg.toMultigraph.graphicMatroid
                           (S ([] : List (Fin cg.endpoints.size))) :=
-                        hSnil.symm ▸ PieceList.nil
-                      obtain ⟨pl, hNodupFinal⟩ := checkPieces_sound hI₀ pl0 List.nodup_nil hUacc
+                        hSnil.symm ▸ PieceList.nil with hpl0
+                      obtain ⟨pl, hNodupFinal, hMargFinal⟩ := checkPieces_sound hI₀ pl0 List.nodup_nil hUacc
                       have hSuniv : (S Uacc : Set (Fin cg.endpoints.size)) = Set.univ :=
                         S_eq_univ_of_nodup_length hNodupFinal (by rw [Fintype.card_fin]; exact hlen)
-                      have plUniv : PieceList cg.toMultigraph.graphicMatroid Set.univ := hSuniv ▸ pl
+                      set plUniv : PieceList cg.toMultigraph.graphicMatroid Set.univ :=
+                        hSuniv ▸ pl with hplUniv
                       set μ := PieceList.glueAllGraph (N := cg.toMultigraph.graphicMatroid)
                         (graphicMatroid_E cg.toMultigraph) plUniv with hμ
+                      have hacc0marg : ∀ e' : Fin cg.endpoints.size,
+                          (Array.replicate cg.endpoints.size (0 : ℚ)).getD e'.val 0 = pl0.marginalSum e' := by
+                        intro e'
+                        have h0 : (Array.replicate cg.endpoints.size (0 : ℚ)).getD e'.val 0 = 0 := by simp
+                        rw [h0, hpl0, PieceList.marginalSum_cast hSnil.symm PieceList.nil e']
+                        rfl
+                      have hEtaMarginal : (fun e : Fin cg.endpoints.size => computedEta.getD e.val 0)
+                          = μ.marginal := by
+                        funext e
+                        rw [hMargFinal (Array.replicate cg.endpoints.size 0) computedEta
+                          Array.size_replicate hacc0marg hEta e,
+                          ← PieceList.marginalSum_cast hSuniv pl e, ← hplUniv, hμ]
+                        unfold PieceList.glueAllGraph
+                        rw [Pmf.cast_marginal, PieceList.glueAll_marginal]
                       -- Bridge `checkCertificate`'s `Kruskal.run` call (over the raw JSON edge
                       -- list) to `Admissibility`'s axiom (stated over `cg.endpoints`).
                       have hEdgesEq : cg.endpoints.map (fun p : Fin cg.n × Fin cg.n => (p.1.val, p.2.val))
@@ -533,9 +963,9 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
                         cg.endpoints (computedEta.map (fun x => x /
                           List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
                             (List.range cg.endpoints.size))) hMstle
-                      refine ⟨cg.n, cg.endpoints.size, cg.toMultigraph,
-                        fun e => (computedEta.map (fun x => x /
+                      refine ⟨cg.n, cg.endpoints.size, cg.toMultigraph, natToFin cg.endpoints.size,
+                        computedEta, fun e => (computedEta.map (fun x => x /
                           List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
-                            (List.range cg.endpoints.size))).getD e.val 0, μ, hAdm⟩
+                            (List.range cg.endpoints.size))).getD e.val 0, μ, hEta, hEtaMarginal, hAdm⟩
   · simp only [bind, Except.bind] at hok
     exact absurd hok (by simp)

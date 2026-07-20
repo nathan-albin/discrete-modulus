@@ -967,19 +967,53 @@ changes the §6 certificate-schema question**
       further correspondence between `sumTreeContributions`'s
       `Array.set!`/`getD`-based computation and `PieceList.marginalSum`'s
       clean recursive sum, real separate follow-up work, tracked below.
-- [ ] Close the remaining scope gap in `checkCertificate_sound` above: prove
-      the checked `rho`/`mu` pair actually satisfies
-      `certificate_optimality`'s hypotheses (not just that *some* admissible
-      `rho` and *some* pmf `mu` separately exist), by relating
-      `sumTreeContributions`'s imperative per-piece fold to
-      `PieceList.marginalSum`'s recursive sum.
+- [x] **The `sumTreeContributions`-vs-`PieceList.marginalSum` gap is closed.**
+      `Soundness.lean` gained a chain of generic bridging lemmas
+      (`foldlM_getD_eq_of_forall`/`foldlM_size_eq_of_forall`, the
+      "fold matches a sum of per-element contributions" fact reused at all
+      three nesting levels; `sum_map_ite_eq_of_nodup`/`forall₂_map_eq`/
+      `forall₂_exists_of_mem_left`, small generic list facts; `edgeFold_getD_eq`,
+      the per-tree edge-fold correspondence, needing `checkTree`'s own
+      `T.Nodup` check — newly exposed via `checkTree_nodup` — since without it
+      a repeated edge index in one tree's list would double-count against
+      `treesPmf_marginal`'s Set-indicator formula). `checkPiece_sound` and
+      `checkPieces_sound` (both now specialized to `E := Fin m`, matching
+      `sumTreeContributions`'s own indexing — the reason genericity was never
+      exercisable here in the first place, per that function's own docstring)
+      each gained one more conjunct: given the accumulator already matches
+      the *starting* `PieceList`'s `marginalSum`, running the corresponding
+      slice of `sumTreeContributions`'s fold produces a result matching the
+      *extended* `PieceList`'s `marginalSum`. **Simpler than the original
+      plan expected**, per the mid-session realization that pieces partition
+      the edges: no cross-piece disjointness bookkeeping was needed at all —
+      each piece's own contribution is added on both sides unconditionally
+      (`PieceList.marginalSum`'s own `cons` case already matches one step of
+      `sumTreeContributions`'s outer fold exactly), so the "other pieces
+      don't touch this edge" fact just falls out of the two sides' matching
+      recursive shape rather than needing a separate argument.
+      `checkCertificate_sound`'s conclusion now asserts, for the *same*
+      accepted certificate, that `sumTreeContributions`'s own `computedEta`
+      (as a function) is *exactly* the constructed `μ`'s marginal — not
+      just "some pmf exists" and "some eta exists" separately. Axiom-checked
+      (`#print axioms`): `propext`, `Classical.choice`, `Quot.sound`, and the
+      one intended `Kruskal.run_isAdmissible_of_weight_ge_one` axiom — no
+      `sorry`, no surprise dependency. `lake build` (whole project) passes.
+- [ ] **Narrower remaining gap, precisely scoped by the above.** Still not
+      shown: that the certificate's declared, *normalized* `rho` equals
+      `η / sqNorm η` in the `CertDensity`/`sqNorm` vocabulary
+      `certificate_optimality` needs — that needs a further bridge between
+      `checkCertificate`'s array-level `normSq` fold (a `List.foldl` over
+      `List.range m`) and the `Finset.sum`-based `sqNorm` (`Family.lean`),
+      which `Soundness.lean`'s updated module docstring now flags explicitly
+      as the next item, separate from (and smaller than) the gap just closed.
 - [ ] End-to-end test: `house`/`nested` traces all the way through solver →
       builder → Lean, `lake build`/kernel accepts, feeding a *parsed*
       certificate into `certificate_optimality` itself (not just
       `checkCertificate_sound`'s existence conclusion). (`house`'s own
       `houseCertificateOptimal` above is the first real instance of the
       underlying optimality claim, still hand-transcribed rather than
-      parsed from the JSON file end-to-end; blocked on the scope gap above.)
+      parsed from the JSON file end-to-end; blocked on the `normSq`/`sqNorm`
+      gap above, not the `marginalSum` one, which is now closed.)
 
 **PR 6 (follow-up, not blocking PR 5): prove Kruskal correct, close the TCB gap**
 - [ ] Prove the greedy-exchange argument for Kruskal on the graphic matroid
