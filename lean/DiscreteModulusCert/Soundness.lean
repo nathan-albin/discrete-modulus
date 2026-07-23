@@ -13,7 +13,7 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 (`Except String Unit`) -- accepting a certificate is a runtime fact, not (by
 itself) a kernel-checked proof that a genuine `Pmf`/`PieceList` exists for
 that data. This file closes that gap generically, for *any* raw
-certificate, not just `HouseCert.lean`'s hand-transcribed `house` instance:
+certificate `checkCertificate` accepts, not a hand-picked example:
 `checkCertificate_sound` shows accepting implies a real `Pmf
 G.graphicMatroid` and admissible `ρ` exist with `certificate_optimality`'s
 conclusion, and `checkCertificate_optimal` (the file's capstone) wires that
@@ -304,9 +304,9 @@ variable {V E : Type*} [DecidableEq V] [Fintype V] [DecidableEq E] [Fintype E]
 
 /-! ## Generic `S`-manipulation lemmas
 
-Ported from `HouseCert.lean`'s versions of the same facts, generalized from
-that file's fixed concrete `house` graph to an arbitrary `V`/`E`/`G` -- none
-of these actually depend on `G` except `forall_diff_not_isForest_of_list_all`. -/
+Small facts about `CertChecker.S` (the edge-set-of-a-list abbreviation),
+stated over an arbitrary `V`/`E`/`G` -- none of these actually depend on
+`G` except `forall_diff_not_isForest_of_list_all`. -/
 
 theorem S_ne_of_mem_not_mem {l₁ l₂ : List E} {x : E} (hx1 : x ∈ l₁) (hx2 : x ∉ l₂) :
     (S l₁ : Set E) ≠ S l₂ := by
@@ -888,11 +888,13 @@ theorem buildGraph_edges_val {raw : RawGraph} {cg : CheckedGraph}
 `checkCertificate` accepts a raw certificate, then (a) a genuine `Pmf` on
 the certificate's graph's spanning trees exists, built entirely from the
 certificate's own `pieces` data via `checkPieces_sound`/`PieceList.glueAllGraph`
-(no hand-transcription, works for *any* accepted certificate, not just
-`house`), (b) the certificate's own computed `rho` really is admissible --
-the Kruskal-admissibility axiom (`Admissibility.lean`), applied for real
-this time, not sidestepped by a uniform-density special case the way
-`HouseCert.lean`'s `houseCertificateOptimal` was -- and (c) **the gap this
+(no hand-transcription, works for *any* accepted certificate), (b) the
+certificate's own computed `rho` really is admissible -- always via the
+Kruskal-admissibility axiom (`Admissibility.lean`), unconditionally, even
+for a certificate whose `rho` happens to be uniform (where
+`Admissibility.lean`'s axiom-free `isAdmissible_const_div_ncard_of_isBase`
+would also apply, but this generic theorem doesn't special-case that) --
+and (c) **the gap this
 file's module docstring flagged is now closed**: the certificate's own
 `computedEta` (`sumTreeContributions`'s output, the same one `eta`/`rho`'s
 runtime check in `checkCertificate` is built from) is, as a function,
@@ -1037,9 +1039,9 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
 `checkCertificate_sound`'s existence facts directly into
 `certificate_optimality` (`Optimality.lean`) -- the theorem "the verifier
 accepts implies the certificate is optimal" ultimately reduces to, for
-*any* accepted certificate, not just `HouseCert.lean`'s hand-transcribed
-`house` instance. If `checkCertificate` accepts a raw certificate, its
-(reconstructed) `ρ` minimizes `sqNorm` over every admissible density on the
+*any* accepted certificate. If `checkCertificate` accepts a raw
+certificate, its (reconstructed) `ρ` minimizes `sqNorm` over every
+admissible density on the
 certificate's graphic matroid (`ρ` solves the modulus problem), and the
 reconstructed `μ`'s marginal minimizes `sqNorm` over the marginals of every
 pmf on that matroid's bases (`μ` solves the dual min-norm-point problem) --

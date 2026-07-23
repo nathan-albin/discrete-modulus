@@ -45,10 +45,10 @@ Kruskal-computed minimum weight is `< 1`; only the *algorithm's own
 correctness*, not whether the check runs, is unverified.
 
 **Why this is a plain executable, not `decide`/`native_decide` on a proof
-term.** `HouseCert.lean` proved facts about *specific, hand-transcribed
-edge-index literals* -- data known when Lean itself was compiled, so
+term.** `EndToEndTest.lean` proves facts about *specific* certificates
+whose data is fixed at elaboration time (embedded via `include_str`), so
 `decide`/`native_decide` (tactics that close a proof goal once, at
-elaboration time) were the right tool. A certificate's actual content is
+elaboration time) are the right tool there. A certificate's actual content is
 only known when this program *runs* (read from a file path given on the
 command line), so there is no fixed goal for a tactic to close at
 elaboration time at all. The right tool instead is ordinary functional
@@ -69,9 +69,10 @@ the real forest-decision algorithm rather than a syntactic proxy: piece
 edges disjoint and covering the whole graph, every declared tree is a
 genuine forest and maximal within its piece (so a genuine base of that
 piece's matroid, via the same `isBase_contract_restrict_iff_isForest`
-reduction `HouseCert.lean` uses), and weights nonnegative and summing to
-1 per piece. Running `checkCertificate` and getting `ok` back is, by
-itself, only a runtime fact, not a kernel-checked proof term -- that gap
+reduction `Soundness.lean`'s `checkTree_sound` uses), and weights
+nonnegative and summing to 1 per piece. Running `checkCertificate` and
+getting `ok` back is, by itself, only a runtime fact, not a kernel-checked
+proof term -- that gap
 (a universally-quantified soundness theorem: "if this checker returns
 `ok`, a genuine `PieceList`/`Pmf` exists for the same data, and it's
 optimal") is closed separately, by `Soundness.lean`'s
@@ -142,9 +143,9 @@ variable {V E : Type*} [DecidableEq V] [Fintype V] [DecidableEq E] [Fintype E]
 
 /-- The edge set of an edge-index list, in exactly the `{e | e ∈ l}` shape
 `instDecidableIsForestOfList` is stated for -- `abbrev`, not `def`, so
-instance search (and hence real computation) sees through it. Ported from
-`HouseCert.lean`; kept in sync by hand until these two files are merged
-into one shared library (tracked as a follow-up). -/
+instance search (and hence real computation) sees through it. The single
+canonical definition; `Soundness.lean`'s own `S`-manipulation lemmas
+import and reuse this one rather than redefining it. -/
 abbrev S (l : List E) : Set E := {e | e ∈ l}
 
 /-- Turns a `Bool` check plus an error message into an `Except` action --
@@ -194,9 +195,9 @@ def checkTree (G : Multigraph V E) (I₀acc A T : List E) : Except String PUnit 
 /-- Checks one piece's whole local pmf: every declared tree passes
 `checkTree`, weights are nonnegative, and they sum to exactly `1`. Returns
 the piece's own edge list `A` and the *first* declared tree (an arbitrary
-choice; matroid theory guarantees any one works, see
-`HouseCert.lean`'s `piece2_hI₀`) as the new representative to fold into
-the next piece's `I₀acc`. -/
+choice; matroid theory guarantees any one works, via
+`Glue.lean`'s `isBase_contract_iff_of_isBasis_restrict`) as the new
+representative to fold into the next piece's `I₀acc`. -/
 def checkPiece (G : Multigraph V E) (Uacc : List E) (I₀acc : List E) (raw : RawPiece)
     (toE : Nat → Except String E) : Except String (List E × List E) := do
   let A ← raw.edges.mapM toE

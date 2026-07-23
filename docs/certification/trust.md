@@ -33,10 +33,10 @@ This is made an explicit, named `axiom`
 rather than an implicit gap, so it shows up by name under `#print axioms`
 for any certificate whose `rho` isn't uniform. (A certificate with a
 uniform `rho` — like the house example in `walkthrough.md` — needs no
-such axiom: admissibility follows directly from a basic matroid fact,
-every base has the same cardinality, without trusting an MST oracle at
-all. `HouseCert.lean`'s `houseCertificateOptimal` is proved exactly this
-way, as a check that the axiom really is avoidable when it can be.)
+such axiom: `Admissibility.lean`'s `isAdmissible_const_div_ncard_of_isBase`
+proves admissibility directly from a basic matroid fact, every base has
+the same cardinality, without trusting an MST oracle at all -- a check
+that the axiom really is avoidable when it can be.)
 
 Reframed precisely: this is *not* "we've approximated what admissibility
 means" — `isAdmissible_iff_one_le_pairing_usageVector` (`Optimality.lean`)

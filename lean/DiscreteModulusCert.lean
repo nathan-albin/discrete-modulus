@@ -5,7 +5,6 @@ import DiscreteModulusCert.Glue
 import DiscreteModulusCert.IsBaseCheck
 import DiscreteModulusCert.ForestDecide
 import DiscreteModulusCert.ForestDecideTest
-import DiscreteModulusCert.HouseCert
 import DiscreteModulusCert.Kruskal
 import DiscreteModulusCert.KruskalTest
 import DiscreteModulusCert.Admissibility

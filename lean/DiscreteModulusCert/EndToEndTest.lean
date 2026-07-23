@@ -4,12 +4,11 @@ import Lean.Data.Json
 /-!
 # End-to-end test: real certificate JSON, parsed at compile time, proved optimal
 
-Every earlier soundness result either worked over a hand-transcribed literal
-(`HouseCert.lean`) or over an abstract, universally-quantified `raw :
-RawCertificate` (`Soundness.lean`'s `checkCertificate_sound`/
-`checkCertificate_optimal`). Neither is quite "feed a parsed certificate into
-`certificate_optimality` itself" for a *real* file on disk: this file closes
-that gap.
+Every earlier soundness result worked over an abstract,
+universally-quantified `raw : RawCertificate` (`Soundness.lean`'s
+`checkCertificate_sound`/`checkCertificate_optimal`) -- not quite "feed a
+parsed certificate into `certificate_optimality` itself" for a *real*
+file on disk: this file closes that gap.
 
 `include_str` (Lean 4 core) embeds `cpp/examples/house.certificate.json` and
 `cpp/examples/nested.certificate.json`'s actual contents as string literals
@@ -50,8 +49,8 @@ def houseRaw : Except String RawCertificate := parseRawCertificate houseJson
 def nestedRaw : Except String RawCertificate := parseRawCertificate nestedJson
 
 /-- The genuine, parsed `RawCertificate` for `house` -- not a hand-written
-literal (`HouseCert.lean`'s approach) and not a fallback value: `houseRaw`
-really does parse to `some _`, checked (not assumed) by `native_decide`. -/
+literal and not a fallback value: `houseRaw` really does parse to
+`some _`, checked (not assumed) by `native_decide`. -/
 def houseCertRaw : RawCertificate := houseRaw.toOption.get (by native_decide)
 
 def nestedCertRaw : RawCertificate := nestedRaw.toOption.get (by native_decide)

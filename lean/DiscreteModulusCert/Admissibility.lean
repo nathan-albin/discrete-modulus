@@ -11,9 +11,7 @@ matroid. `CertChecker.lean` already *uses* that trust
 an ordinary runtime `Bool` check -- nothing marks *where* the trust actually
 enters the kernel-checked side. This file makes that boundary an explicit
 Lean `axiom`, so it shows up by name under `#print axioms` for any
-certificate whose `rho` isn't uniform (unlike `house`'s, `HouseCert.lean`'s
-`houseCertificateOptimal` needed no such axiom at all -- see its own
-docstring).
+certificate whose `rho` isn't uniform.
 
 **No connectedness hypothesis.** `IsAdmissible`/`Pmf` (`Family.lean`) are
 stated purely over an abstract `Matroid E`, with no reference to graph
@@ -22,8 +20,15 @@ edges ascending by weight, greedily keep each that joins two still-separate
 union-find components), is the general matroid-greedy algorithm for the
 graphic matroid -- it produces a genuine minimum-weight *base* (a spanning
 forest, one tree per component) whether or not the graph is connected. So
-this axiom, unlike `HouseCert.lean`'s pattern, never needs to establish or
-assume `G` is connected. -/
+this axiom never needs to establish or assume `G` is connected.
+
+**The complementary fact: when you don't need this axiom at all.**
+`isAdmissible_const_div_ncard_of_isBase` below shows a *uniform* density
+is admissible directly from a basic matroid fact (every base has the same
+cardinality), with no MST oracle anywhere -- the case `house`'s certificate
+falls into (`rho = 1/4` on every edge), used by `EndToEndTest.lean` to
+build a fully axiom-free optimality proof for it. See
+`docs/certification/trust.md`. -/
 
 namespace DiscreteModulusCert
 
@@ -38,6 +43,36 @@ create an import cycle once `Soundness.lean` imports both this file and
 def mkMultigraph (n : Nat) (endpoints : Array (Fin n × Fin n)) :
     Multigraph (Fin n) (Fin endpoints.size) :=
   ⟨fun e => s(endpoints[e].1, endpoints[e].2)⟩
+
+section UniformAdmissibility
+variable {E : Type*} [Fintype E]
+
+open Classical in
+/-- Pairing a constant density against any edge set's usage vector is just
+the constant times that set's cardinality. -/
+theorem pairing_const_usageVector_eq (c : ℚ) (T : Set E) :
+    pairing (fun _ => c) (usageVector T) = c * T.ncard := by
+  show (∑ e : E, c * usageVector T e) = c * T.ncard
+  simp only [usageVector_apply]
+  rw [← Finset.mul_sum, Finset.sum_boole, Set.filter_mem_univ_eq_toFinset,
+    ← Set.ncard_eq_toFinset_card']
+
+/-- **A uniform density is admissible whenever you know one base's size --
+no MST oracle needed.** Every base of a matroid has the same cardinality
+(`Matroid.IsBase.ncard_eq_ncard_of_isBase`), so fixing one known base
+`T₀`'s size pins down every other base's pairing against the uniform
+density `1 / T₀.ncard` to exactly `1`. This is the complementary fact to
+`Kruskal.run_isAdmissible_of_weight_ge_one` below: for a certificate whose
+optimal density happens to be uniform, admissibility follows directly
+from this, with no unverified oracle anywhere. -/
+theorem isAdmissible_const_div_ncard_of_isBase {M : Matroid E} {T₀ : Set E}
+    (hT₀ : M.IsBase T₀) (hn : T₀.ncard ≠ 0) :
+    IsAdmissible M (fun _ => (1 : ℚ) / T₀.ncard) := by
+  intro T hT
+  rw [pairing_const_usageVector_eq, hT.ncard_eq_ncard_of_isBase hT₀,
+    div_mul_cancel₀ (1 : ℚ) (Nat.cast_ne_zero.mpr hn)]
+
+end UniformAdmissibility
 
 namespace Kruskal
 

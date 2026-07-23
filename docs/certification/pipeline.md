@@ -230,17 +230,20 @@ constructed pmf's marginal; `checkCertificate_optimal` wires this directly
 into `certificate_optimality`, concluding both halves of "simultaneously
 optimal" for the accepted certificate.
 
-### Two concrete instances (`HouseCert.lean`, `EndToEndTest.lean`)
+### A concrete instance (`EndToEndTest.lean`)
 
-`HouseCert.lean` was the first full run of this whole chain, on the house
-example, with the certificate's data hand-transcribed into Lean literals
-(to validate the per-piece-verification-then-gluing pipeline in isolation
-before a JSON parser existed). `EndToEndTest.lean` repeats the same
-conclusion — `house_end_to_end_optimal`/`nested_end_to_end_optimal` — for
-the real, on-disk certificate files, parsed by the real JSON parser at
-compile time (`include_str`) and checked via `native_decide` rather than
-hand-transcribed. This is the strongest instance of the claim: a genuine,
-kernel-checked proof about the exact bytes the Python builder produced.
+`EndToEndTest.lean`'s `house_end_to_end_optimal`/`nested_end_to_end_optimal`
+prove the full conclusion — a real, on-disk certificate file's density and
+pmf really are simultaneously optimal — for the actual bytes the Python
+builder produced, parsed by the real JSON parser at compile time
+(`include_str`) and checked via `native_decide`, not hand-transcribed.
+(An earlier version of this file, `HouseCert.lean`, validated the whole
+per-piece-verification-then-gluing pipeline by hand-transcribing the
+house certificate's data into Lean literals, before a JSON parser or the
+generic `Soundness.lean` theorems existed; removed once `EndToEndTest.lean`
+made it redundant. Its one genuinely distinct result — that house's
+uniform `rho` needs no Kruskal axiom at all — lives on as
+`Admissibility.lean`'s `isAdmissible_const_div_ncard_of_isBase`.)
 
 ### A couple of implementation notes
 
