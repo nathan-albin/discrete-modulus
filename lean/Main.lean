@@ -20,9 +20,9 @@ output, rather than by a kernel-checked proof that the algorithm is
 correct -- everything else a passing certificate asserts is fully
 kernel-checked. Printed unconditionally alongside every ACCEPTED result
 (not just noted in documentation), since it's a static fact regardless
-of which certificate was checked.
-CERTDOC: link to the trusted-computing-base writeup and the status of
-proving Kruskal's algorithm correct. -/
+of which certificate was checked. See `docs/certification/trust.md`
+for the full trusted-computing-base ledger and the status of proving
+Kruskal's algorithm correct. -/
 def kruskalCaveat : String :=
   "  NOTE: admissibility of rho relies on an unverified Kruskal implementation \
 (its output is trusted, not proven, to be a genuine minimum-weight spanning tree)."

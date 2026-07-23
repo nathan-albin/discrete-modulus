@@ -23,8 +23,8 @@ of trust already extended to Lean's own compiler by `native_decide`
 elsewhere in this project, just made an explicit, named gap instead of an
 implicit one.
 
-CERTDOC: link to the trusted-computing-base writeup and the status of
-proving this algorithm correct as a follow-up. -/
+See `docs/certification/trust.md` for the full trusted-computing-base
+ledger and the status of proving this algorithm correct as a follow-up. -/
 
 namespace DiscreteModulusCert
 namespace Kruskal

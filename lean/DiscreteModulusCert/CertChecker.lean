@@ -18,7 +18,10 @@ edge-index lists with rational weights), and top-level `eta`/`rho` arrays
 (one rational per edge) -- see `RawCertificate`/`RawPiece`/`RawTree`
 below for the exact shape parsed.
 
-CERTDOC: link to the authoritative certificate schema document.
+See `docs/certification/schema.md` for the authoritative field-by-field
+certificate schema reference, and
+`docs/certification/certificate_schema.json` for the machine-checkable
+JSON Schema.
 
 **Checked (not trusted) `eta`/`rho` fields.** The certificate declares
 the optimal pmf's marginal (`eta`) and admissible density (`rho`)
@@ -232,9 +235,9 @@ on the Python side (`certificate_builder.py`), but works entirely over
 `{V E : Type*} [Fintype E]` abstraction: that abstraction has no
 computable `E → Fin m` projection available generically (`Fintype.equivFin`
 is `noncomputable`). Working directly from the raw `Nat`-indexed JSON
-data, where `m` is already concrete, sidesteps this entirely.
-CERTDOC: link to the writeup of other places this same `Fintype.equivFin`
-noncomputability obstacle showed up. -/
+data, where `m` is already concrete, sidesteps this entirely. See
+`docs/certification/pipeline.md`'s "implementation notes" for this same
+obstacle in context. -/
 def sumTreeContributions (m : Nat) (toE : Nat → Except String (Fin m))
     (pieces : List RawPiece) : Except String (Array ℚ) :=
   pieces.foldlM

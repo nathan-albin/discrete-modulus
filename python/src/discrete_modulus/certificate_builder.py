@@ -1,6 +1,8 @@
 """
-Builds a certificate (schema version 5, `certificate_schema.json`) from a
-C++ solver trace (`solver_trace.hpp`) and the original input graph.
+Builds a certificate (schema version 5,
+`docs/certification/certificate_schema.json`) from a C++ solver trace
+(`solver_trace.hpp`) and the original input graph. See
+`docs/certification/` for the full pipeline writeup and a worked example.
 
 This is a standalone, untrusted, "elaborate freely" tool: bugs here
 produce a certificate the Lean verifier rejects, not a false "verified"
@@ -45,8 +47,9 @@ or cross-check the original edge list's own ordering. This indexing is
 independent of the `pieces` list's own (reversed) order -- edge index
 assignment and piece emission order serve different purposes.
 
-CERTDOC: link to the validation script/results confirming steps 1-2 above
-against a real multi-round solver trace.
+See `docs/certification/pipeline.md`'s certificate-builder section for
+the validation results confirming steps 1-2 above against a real
+multi-round solver trace.
 """
 
 from __future__ import annotations

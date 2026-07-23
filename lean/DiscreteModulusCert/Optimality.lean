@@ -18,8 +18,9 @@ Python package). Both halves follow from the same two ingredients
 (`Pmf.one_le_pairing_marginal_of_admissible` plus squared Cauchy-Schwarz),
 just with the roles of `ρ` and the pmf's marginal swapped.
 
-CERTDOC: link to the full derivation and motivation for this duality
-argument. -/
+See `docs/certification/pipeline.md`'s "Cauchy-Schwarz duality" section
+for the full derivation and motivation, and
+`docs/certification/walkthrough.md` for it worked out on real numbers. -/
 
 namespace DiscreteModulusCert
 

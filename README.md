@@ -36,12 +36,16 @@ on top of [`lean-modulus`](https://github.com/nathan-albin/lean-modulus).
 - [`julia/`](julia/) — not implemented yet; see its `README.md` for
   intended scope.
 - [`lean/`](lean/) — a Lean 4 project (`DiscreteModulusCert`, managed with
-  [Lake](https://github.com/leanprover/lake)) that will kernel-check
+  [Lake](https://github.com/leanprover/lake)) that kernel-checks
   certificates of spanning-tree-modulus optimality without trusting the C++
   solver's arithmetic. Depends on
   [`lean-modulus`](https://github.com/nathan-albin/lean-modulus) (pinned to a
-  specific commit) for its graph/matroid infrastructure. Early-stage: so far
-  just project scaffolding plus an import smoke test.
+  specific commit) for its graph/matroid infrastructure. See
+  [`docs/certification/`](docs/certification/) for how this fits together
+  with the C++ solver and the Python certificate builder.
+- [`docs/certification/`](docs/certification/) — what a certificate is, how
+  the solver/builder/verifier pipeline produces and checks one, and exactly
+  what is (and isn't) trusted, with a worked example.
 - [`.github/workflows/`](.github/workflows/) — CI: linting, tests (Python,
   C++, and Lean), and the book/docs build+deploy (see [CI](#ci) below).
 - [`.devcontainer/`](.devcontainer/) — a devcontainer with Python, `uv`,

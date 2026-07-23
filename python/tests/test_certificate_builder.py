@@ -31,7 +31,7 @@ from discrete_modulus.certificate_builder import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES = REPO_ROOT / "cpp" / "examples"
-SCHEMA_PATH = REPO_ROOT / "scratch" / "certificate_schema.json"
+SCHEMA_PATH = REPO_ROOT / "docs" / "certification" / "certificate_schema.json"
 
 
 def _build(name: str) -> dict:
