@@ -12,3 +12,4 @@ import DiscreteModulusCert.Admissibility
 import DiscreteModulusCert.CertChecker
 import DiscreteModulusCert.CertCheckerTest
 import DiscreteModulusCert.Soundness
+import DiscreteModulusCert.EndToEndTest

@@ -1018,14 +1018,34 @@ changes the §6 certificate-schema question**
       dependency, on both theorems. `lake build` (whole project) and
       `lake exe verify_cert` against all three example certificates still
       pass, no regressions.
-- [ ] End-to-end test: `house`/`nested` traces all the way through solver →
-      builder → Lean, `lake build`/kernel accepts, feeding a *parsed*
-      certificate into `certificate_optimality` itself (not just
-      `checkCertificate_sound`'s existence conclusion). (`house`'s own
-      `houseCertificateOptimal` above is the first real instance of the
-      underlying optimality claim, still hand-transcribed rather than
-      parsed from the JSON file end-to-end; blocked on the `normSq`/`sqNorm`
-      gap above, not the `marginalSum` one, which is now closed.)
+- [x] **End-to-end test — done, for both `house` and `nested`.** New file
+      `lean/DiscreteModulusCert/EndToEndTest.lean` (wired into the umbrella
+      `DiscreteModulusCert.lean`, learning from the earlier
+      forgot-to-import bug). Uses Lean core's `include_str` to embed the
+      real, on-disk `cpp/examples/house.certificate.json` and
+      `.../nested.certificate.json` as string literals at elaboration
+      time — the actual bytes `certificate_builder.py` wrote, not a
+      re-typed copy — parses them with the real `Lean.Data.Json`/
+      `FromJson` machinery into a genuine `RawCertificate` (unwrapped from
+      the parser's `Except` via `Option.get`, justified by `native_decide`
+      rather than a dummy fallback value), checks `checkCertificate`
+      accepts each (`native_decide` again — compiled, the same mechanism
+      `verify_cert`/`nested`'s 190-edge piece already rely on;
+      `CertCheckerTest.lean`'s interpreted `#eval` would be far too slow),
+      and feeds the acceptance proof straight into `checkCertificate_optimal`.
+      Result: `house_end_to_end_optimal`/`nested_end_to_end_optimal`, both
+      concluding real, on-disk certificates are genuinely optimal, no
+      hand-transcription anywhere in the chain (stronger than
+      `HouseCert.lean`'s `houseCertificateOptimal`, which worked over
+      literals typed into the Lean source by hand). Axiom-checked:
+      `propext`, `Classical.choice`, `Quot.sound`,
+      `Kruskal.run_isAdmissible_of_weight_ge_one`, plus the expected
+      per-callsite `native_decide` compiler axioms (the same standard
+      trust this codebase already accepts elsewhere for forest-decision
+      checks, not a new class of dependency) — no `sorry`. Whole-project
+      `lake build` passes (`nested`'s `EndToEndTest` build takes ~5
+      minutes, dominated by `native_decide` compiling and running the
+      190-edge piece's checks).
 
 **PR 6 (follow-up, not blocking PR 5): prove Kruskal correct, close the TCB gap**
 - [ ] Prove the greedy-exchange argument for Kruskal on the graphic matroid
@@ -1970,9 +1990,17 @@ check:**
 
 ## 7. Definition of done / success criteria
 
-- [ ] `examples/house` and `examples/nested` go end-to-end: solver (traced) →
-      builder (certificate) → Lean verifier accepts, with the TCB caveat
-      (§3) visible in the verifier's output.
+- [x] **`examples/house` and `examples/nested` go end-to-end: solver
+      (traced) → builder (certificate) → Lean verifier accepts, with the
+      TCB caveat (§3) visible.** `lake exe verify_cert` prints `ACCEPTED`
+      plus the Kruskal caveat for both (and `branch_test`); the checked-in
+      `.certificate.json` files were produced by
+      `certificate_builder.build_certificate`, not hand-run. Beyond just
+      the runtime "ACCEPTED" print, `EndToEndTest.lean` (§4 PR5) now also
+      produces a genuine kernel-checked proof term
+      (`house_end_to_end_optimal`/`nested_end_to_end_optimal`) that these
+      same on-disk certificates are optimal, parsed by the real JSON
+      parser rather than hand-transcribed.
 - [ ] TCB ledger (§3) stays current and is linked from the top-level repo
       README once this work lands, not just this scratch doc.
 - [ ] PR 6 tracked as follow-up work, not required for "v1 done."
