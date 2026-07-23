@@ -43,8 +43,7 @@ import networkx as nx
 import numpy as np
 
 from .core_deflation import find_core
-from .min_norm_point import MinNormPointResult
-from .protocols import ExactArray
+from .protocols import ExactArray, MinNormPointResult
 from .tree_packing import build_tree_packing
 
 

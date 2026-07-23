@@ -72,7 +72,7 @@ import networkx as nx
 import numpy as np
 
 from .families.networkx_families import MinimumSpanningTree
-from .min_norm_point import MinNormPointResult, SupportEntry
+from .protocols import MinNormPointResult, SupportEntry
 
 
 def _tree_graph(G: nx.Graph, cons: list) -> nx.Graph:

@@ -48,72 +48,19 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from fractions import Fraction
-from typing import Any, NamedTuple
+from typing import Any
 
 import numpy as np
 
-from .protocols import ExactArray, FloatArray, ShortestObjectFinder
+from .protocols import (
+    ExactArray,
+    FloatArray,
+    MinNormPointResult,
+    ShortestObjectFinder,
+    SupportEntry,
+)
 
 ActiveKey = tuple[Any, ...]
-
-
-class SupportEntry(NamedTuple):
-    """
-    One vertex of the pmf's support.
-
-    Attributes
-    ----------
-    cons : object
-        Whatever `ShortestObjectFinder.cons` returned for this vertex
-        (e.g. a spanning tree's edge list).
-
-    n : ExactArray
-        The vertex's exact usage vector.
-
-    weight : Fraction
-        Its weight in the pmf.
-    """
-
-    cons: Any
-    n: ExactArray
-    weight: Fraction
-
-
-class MinNormPointResult(NamedTuple):
-    """
-    The result of `min_norm_point_afw` or `min_norm_point_wolfe`.
-
-    Attributes
-    ----------
-    x : ExactArray
-        The minimum-norm point of conv(Gamma) (eta* for this round).
-
-    support : list of SupportEntry
-        The sparse pmf: `sum(e.weight * e.n for e in support) == x`,
-        `sum(e.weight for e in support) == 1`.
-
-    iterations : int
-        Number of update steps taken (major iterations for Wolfe's
-        algorithm, forward/away steps for AFW) before convergence.
-
-    oracle_calls : int
-        Number of calls to `find_shortest` -- the fair cost unit for
-        comparing the two algorithms, since their per-iteration cost
-        otherwise differs (O(r) for AFW vs. O(r^3) for Wolfe's algorithm).
-
-    extra_stats : dict of str to int
-        Algorithm-specific counters. Both algorithms set
-        `"active_set_removals"` (AFW's drop steps / Wolfe's evictions --
-        the same event, a vertex's weight being driven to exactly zero
-        and removed, under different classical names). Wolfe's algorithm
-        additionally sets `"minor_iterations"`.
-    """
-
-    x: ExactArray
-    support: list[SupportEntry]
-    iterations: int
-    oracle_calls: int
-    extra_stats: dict[str, int]
 
 
 def _zero_vector(m: int) -> ExactArray:
