@@ -16,7 +16,9 @@ that data. This file closes that gap generically, for *any* raw
 certificate, not just `HouseCert.lean`'s hand-transcribed `house` instance:
 `checkCertificate_sound` shows accepting implies a real `Pmf
 G.graphicMatroid` and admissible `ρ` exist with `certificate_optimality`'s
-conclusion.
+conclusion, and `checkCertificate_optimal` (the file's capstone) wires that
+directly into `certificate_optimality` itself: for any accepted
+certificate, its `ρ` and `μ` really are simultaneously optimal.
 
 Does not modify `CertChecker.lean` -- every theorem here is *about* its
 existing, already-tested functions.
@@ -256,6 +258,47 @@ theorem edgeFold_getD_eq {bound : Nat} (toE : Nat → Except String (Fin bound))
   rfl
 
 end ArrayFoldMarginal
+
+section NormSqBridge
+
+/-! ## Bridging `checkCertificate`'s array-level `normSq` fold to `sqNorm`.
+
+`checkCertificate` (`CertChecker.lean`) computes the sum of squared etas as a
+plain `List.foldl` over `List.range m`, since that's the natural thing to
+write against an `Array ℚ` accumulator at runtime. `certificate_optimality`
+(`Optimality.lean`) is stated in terms of `sqNorm`, a `Finset.sum` over
+`Fin m`. This section shows the two agree, so a certificate's declared `rho`
+can be shown to literally equal `eta / sqNorm eta` in the vocabulary the
+optimality lemma needs, not just the array-level vocabulary the runtime
+checker happens to use. -/
+
+theorem list_range_foldl_add_eq_sum_range (m : Nat) (f : Nat → ℚ) :
+    (List.range m).foldl (fun acc i => acc + f i) 0 = ∑ i ∈ Finset.range m, f i := by
+  induction m with
+  | zero => simp
+  | succ n ih => rw [List.range_succ, List.foldl_append, ih, Finset.sum_range_succ]; simp
+
+/-- The array-level `normSq` fold `checkCertificate` computes agrees with
+`sqNorm` applied to the array read off as a `Fin m → ℚ` function --
+unconditionally, regardless of the array's actual size (out-of-range reads
+on either side are `0`, contributing nothing to either sum). -/
+theorem normSq_eq_sqNorm (m : Nat) (computedEta : Array ℚ) :
+    (List.range m).foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
+      = sqNorm (fun e : Fin m => computedEta.getD e.val 0) := by
+  rw [list_range_foldl_add_eq_sum_range,
+    ← Fin.sum_univ_eq_sum_range (fun i => computedEta.getD i 0 * computedEta.getD i 0) m]
+  unfold sqNorm
+  exact Finset.sum_congr rfl (fun i _ => by ring)
+
+/-- `Array.map`'s effect on `getD`, specialized to division: division's
+default-preserving property (`0 / c = 0`) means the two sides agree
+regardless of whether the index is in bounds. -/
+theorem array_getD_map_div (arr : Array ℚ) (i : Nat) (c : ℚ) :
+    (arr.map (· / c)).getD i 0 = arr.getD i 0 / c := by
+  simp only [Array.getD_eq_getD_getElem?, Array.getElem?_map]
+  rcases h : arr[i]? with _ | x <;> simp
+
+end NormSqBridge
 
 variable {V E : Type*} [DecidableEq V] [Fintype V] [DecidableEq E] [Fintype E]
 
@@ -860,18 +903,21 @@ were built for: `hMargFinal`, applied to `sumTreeContributions`'s own
 starting accumulator (`Array.replicate m 0`, matching `pl0 = PieceList.nil`'s
 `marginalSum = 0`), gives this directly.
 
-**Scope, deliberately still open**: this does not (yet) show `ρ` (the
-certificate's declared, *normalized* density) equals `η / sqNorm η` in the
-`CertDensity`/`sqNorm` vocabulary `certificate_optimality` needs -- that
-needs a further bridge between the array-level `normSq` fold
-`checkCertificate` computes and the `Finset.sum`-based `sqNorm`
-(`Family.lean`), which is real, separate follow-up work, not something this
-theorem silently assumes. Tracked in `Certification_Plan.md`'s PR5 entry. -/
+**Closed**: `ρ` (the certificate's declared, *normalized* density) is shown
+to equal `η / sqNorm η` in the `CertDensity`/`sqNorm` vocabulary
+`certificate_optimality` needs, via `normSq_eq_sqNorm`/`array_getD_map_div`
+(above) bridging the array-level `normSq` fold `checkCertificate` computes
+to the `Finset.sum`-based `sqNorm` (`Family.lean`). See
+`checkCertificate_optimal` below, which wires this all the way into
+`certificate_optimality` itself. -/
 theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate raw = Except.ok ()) :
     ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m)) (toE : Nat → Except String (Fin m))
       (computedEta : Array ℚ) (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid),
       sumTreeContributions m toE raw.pieces = Except.ok computedEta ∧
       (fun e : Fin m => computedEta.getD e.val 0) = μ.marginal ∧
+      sqNorm (fun e : Fin m => computedEta.getD e.val 0) ≠ 0 ∧
+      ρ = (fun e : Fin m => computedEta.getD e.val 0 /
+        sqNorm (fun e' : Fin m => computedEta.getD e'.val 0)) ∧
       IsAdmissible G.graphicMatroid ρ := by
   unfold checkCertificate at hok
   split_ifs at hok with hver
@@ -963,9 +1009,48 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
                         cg.endpoints (computedEta.map (fun x => x /
                           List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
                             (List.range cg.endpoints.size))) hMstle
+                      -- Bridge the array-level `normSq` fold to `sqNorm`, and its
+                      -- nonvanishing check, to the `certificate_optimality` vocabulary.
+                      have hNormSqNe : (List.foldl
+                          (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
+                          (List.range cg.endpoints.size)) ≠ 0 := by
+                        have h := check_eq_ok_iff.mp hNormSq
+                        simpa using h
+                      have hηpos : sqNorm (fun e : Fin cg.endpoints.size => computedEta.getD e.val 0) ≠ 0 := by
+                        rw [← normSq_eq_sqNorm]; exact hNormSqNe
+                      have hρeq : (fun e : Fin cg.endpoints.size => (computedEta.map (fun x => x /
+                            List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
+                              (List.range cg.endpoints.size))).getD e.val 0)
+                          = (fun e : Fin cg.endpoints.size => computedEta.getD e.val 0 /
+                            sqNorm (fun e' : Fin cg.endpoints.size => computedEta.getD e'.val 0)) := by
+                        funext e
+                        rw [array_getD_map_div, normSq_eq_sqNorm]
                       refine ⟨cg.n, cg.endpoints.size, cg.toMultigraph, natToFin cg.endpoints.size,
                         computedEta, fun e => (computedEta.map (fun x => x /
                           List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
-                            (List.range cg.endpoints.size))).getD e.val 0, μ, hEta, hEtaMarginal, hAdm⟩
+                            (List.range cg.endpoints.size))).getD e.val 0, μ, hEta, hEtaMarginal, hηpos,
+                        hρeq, hAdm⟩
   · simp only [bind, Except.bind] at hok
     exact absurd hok (by simp)
+
+/-- **Capstone: an accepted certificate is genuinely optimal.** Wires
+`checkCertificate_sound`'s existence facts directly into
+`certificate_optimality` (`Optimality.lean`) -- the theorem this project's
+plan document ultimately wants "the verifier" to conclude, for *any*
+accepted certificate, not just `HouseCert.lean`'s hand-transcribed `house`
+instance. If `checkCertificate` accepts a raw certificate, its
+(reconstructed) `ρ` minimizes `sqNorm` over every admissible density on the
+certificate's graphic matroid (`ρ` solves the modulus problem), and the
+reconstructed `μ`'s marginal minimizes `sqNorm` over the marginals of every
+pmf on that matroid's bases (`μ` solves the dual min-norm-point problem) --
+both halves of "simultaneously optimal" from the plan's duality argument
+(§1). This closes the last item this file's own module docstring and
+`Certification_Plan.md`'s PR5 entry flagged as open. -/
+theorem checkCertificate_optimal (raw : RawCertificate) (hok : checkCertificate raw = Except.ok ()) :
+    ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m)) (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid),
+      (∀ ρ' : CertDensity (Fin m), IsAdmissible G.graphicMatroid ρ' → sqNorm ρ ≤ sqNorm ρ') ∧
+      (∀ μ' : Pmf G.graphicMatroid, sqNorm μ.marginal ≤ sqNorm μ'.marginal) := by
+  obtain ⟨n, m, G, toE, computedEta, ρ, μ, -, hη, hηpos, hρeq, hAdm⟩ := checkCertificate_sound raw hok
+  refine ⟨n, m, G, ρ, μ, ?_⟩
+  have hopt := certificate_optimality hAdm hη hηpos hρeq
+  rwa [hη] at hopt

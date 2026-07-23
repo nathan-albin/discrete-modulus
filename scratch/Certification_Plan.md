@@ -998,14 +998,26 @@ changes the §6 certificate-schema question**
       (`#print axioms`): `propext`, `Classical.choice`, `Quot.sound`, and the
       one intended `Kruskal.run_isAdmissible_of_weight_ge_one` axiom — no
       `sorry`, no surprise dependency. `lake build` (whole project) passes.
-- [ ] **Narrower remaining gap, precisely scoped by the above.** Still not
-      shown: that the certificate's declared, *normalized* `rho` equals
-      `η / sqNorm η` in the `CertDensity`/`sqNorm` vocabulary
-      `certificate_optimality` needs — that needs a further bridge between
-      `checkCertificate`'s array-level `normSq` fold (a `List.foldl` over
-      `List.range m`) and the `Finset.sum`-based `sqNorm` (`Family.lean`),
-      which `Soundness.lean`'s updated module docstring now flags explicitly
-      as the next item, separate from (and smaller than) the gap just closed.
+- [x] **`normSq`/`sqNorm` bridge — closed.** `Soundness.lean` gained
+      `list_range_foldl_add_eq_sum_range` (a `List.foldl` over `List.range m`
+      matches `∑ i ∈ Finset.range m`, by a two-line induction) and
+      `normSq_eq_sqNorm` (composes with `Fin.sum_univ_eq_sum_range` to reach
+      `sqNorm`, unconditionally — out-of-range `Array.getD` reads are `0` on
+      both sides regardless of the array's actual size, so no size hypothesis
+      is even needed), plus `array_getD_map_div` (`(arr.map (· / c)).getD i 0
+      = arr.getD i 0 / c`, true unconditionally since `0 / c = 0` matches the
+      out-of-bounds default either way). `checkCertificate_sound`'s
+      conclusion now includes `sqNorm (fun e => computedEta.getD e.val 0) ≠ 0`
+      and `ρ = fun e => η e / sqNorm η` literally, in `certificate_optimality`'s
+      own vocabulary — not just the array-level `normSq` checker code used.
+      New capstone `checkCertificate_optimal` wires this directly into
+      `certificate_optimality`, concluding both optimality halves for *any*
+      accepted certificate. Axiom-checked (`#print axioms`): `propext`,
+      `Classical.choice`, `Quot.sound`, and the one intended
+      `Kruskal.run_isAdmissible_of_weight_ge_one` — no `sorry`, no surprise
+      dependency, on both theorems. `lake build` (whole project) and
+      `lake exe verify_cert` against all three example certificates still
+      pass, no regressions.
 - [ ] End-to-end test: `house`/`nested` traces all the way through solver →
       builder → Lean, `lake build`/kernel accepts, feeding a *parsed*
       certificate into `certificate_optimality` itself (not just
