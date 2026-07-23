@@ -8,8 +8,7 @@ import Mathlib.Combinatorics.SimpleGraph.Connectivity.Finite
 /-!
 # End-to-end verification of `examples/house`'s real certificate
 
-First concrete instance of PR 5 (`Certification_Plan.md` §4 Phase C): takes
-the exact data `certificate_builder.build_certificate` produced for
+Takes the exact data `certificate_builder.build_certificate` produced for
 `examples/house` (5 vertices, 6 edges, 2 pieces of 3 edges/3 trees each,
 `cpp/examples/house.eta`'s known `eta* = 2/3` on every edge) and checks it
 entirely inside Lean, using the already-proved machinery
@@ -18,11 +17,16 @@ entirely inside Lean, using the already-proved machinery
 individual forest/maximality/weight checks -- those are all discharged by
 `decide`/`native_decide` against the certificate's own concrete data.
 
-This is deliberately hand-transcribed (not yet parsed from the actual JSON
-file) to validate the whole per-piece-verification-then-gluing pipeline on
-real data before investing in a JSON parser or a Python-side codegen step
--- see the module docstring's closing note for what's still open.
--/
+This is deliberately hand-transcribed (the certificate's edge/tree/weight
+data is typed directly into this file as Lean literals, rather than
+parsed from the JSON file at runtime) to validate the whole
+per-piece-verification-then-gluing pipeline on real data in isolation,
+before building a general JSON parser and a generic soundness theorem
+over arbitrary parsed input -- both of which now exist, see
+`CertChecker.lean` (the runtime parser/checker) and `Soundness.lean`
+(the generic checker-to-proof-term theorem) and `EndToEndTest.lean` (the
+same claim as this file, but for the real, on-disk JSON file, parsed by
+the real parser rather than hand-transcribed here). -/
 
 namespace DiscreteModulusCert
 namespace HouseCert
@@ -588,18 +592,18 @@ theorem houseFullPmf_marginal_5 : houseFullPmf.marginal 5 = 2 / 3 :=
 
 /-! ## `certificate_optimality`, fully proved for house
 
-PR5's "wire PR4's certificate-optimality lemma" checklist item, scoped to
-`house` alone as the first concrete instance (see `Certification_Plan.md`'s
-PR5 checklist). House's own `rho` happens to be *uniform* (every edge
-gets `1/4`), so its admissibility follows directly from a basic matroid
-fact -- every base of a matroid has the same cardinality
-(`Matroid.IsBase.ncard_eq_ncard_of_isBase`) -- rather than from trusting
-an MST oracle: no Kruskal axiom is needed for *this* certificate. This
-does **not** generalize to `nested`/`branch_test` (non-uniform `rho`
-genuinely needs the Kruskal-trust argument) or to arbitrary
-runtime-parsed certificates (still needs the generic
-checker-to-proof-term reflection theorem `CertChecker.lean`'s docstring
-flags) -- both tracked as separate, larger follow-ups. -/
+`certificate_optimality`, wired up concretely for `house` as the first
+real instance of the underlying optimality claim. House's own `rho`
+happens to be *uniform* (every edge gets `1/4`), so its admissibility
+follows directly from a basic matroid fact -- every base of a matroid has
+the same cardinality (`Matroid.IsBase.ncard_eq_ncard_of_isBase`) -- rather
+than from trusting an MST oracle: no Kruskal axiom is needed for *this*
+certificate. This does **not** generalize to `nested`/`branch_test`
+(non-uniform `rho` genuinely needs the Kruskal-trust argument -- see
+`Admissibility.lean`'s axiom, used instead of this uniform-density
+shortcut by `Soundness.lean`'s generic `checkCertificate_sound`/
+`checkCertificate_optimal`, which handle arbitrary runtime-parsed
+certificates including non-uniform ones). -/
 
 /-- House's `eta`, defined as literally `houseFullPmf`'s own marginal (not
 a separate literal function), so feeding it to `certificate_optimality`

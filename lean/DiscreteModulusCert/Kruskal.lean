@@ -3,26 +3,28 @@ import Mathlib.Algebra.Order.Ring.Rat
 /-!
 # Kruskal's algorithm -- the accepted, unverified admissibility oracle
 
-`Certification_Plan.md` §3/§5.2 documents v1's one deliberately-accepted
-soundness gap: checking a density `ρ` is admissible (every spanning tree has
-`ρ`-weight `≥ 1`) reduces to checking the *minimum*-weight spanning tree's
-weight is `≥ 1` (if the minimum clears the bar, every tree does; if some tree
-didn't, it couldn't be less than the true minimum). Finding that minimum is
-exactly what Kruskal's algorithm computes -- but v1 does not prove this
-implementation's output is *actually* a minimum spanning tree, only runs it
+This project's one deliberately-accepted soundness gap: checking a density
+`ρ` is admissible (every spanning tree has `ρ`-weight `≥ 1`) reduces to
+checking the *minimum*-weight spanning tree's weight is `≥ 1` (if the
+minimum clears the bar, every tree does; if some tree didn't, it couldn't
+be less than the true minimum). Finding that minimum is exactly what
+Kruskal's algorithm computes -- but this implementation's output is not
+proven to *actually* be a minimum spanning tree; the checker only runs it
 and trusts the result. That is the whole content of the gap; nothing here
 tries to paper over it.
 
 Because this computation's *correctness* is out of scope for what Lean
-checks (by design -- proving it is PR 6's job, `Certification_Plan.md`
-§4's PR 6 entry), there is no proof obligation riding on this file at all:
-`find`'s termination isn't proven (a `partial def`, since proving it would
-need a well-formedness invariant on the union-find array this project has
-no other use for), and neither is `run` producing a genuine spanning tree.
-This is the same class of trust already extended to Lean's own compiler by
-`native_decide` elsewhere in this project, just made an explicit, named
-gap instead of an implicit one -- see the TCB ledger, §3.
--/
+checks (by design -- a real, planned follow-up, not an oversight), there is
+no proof obligation riding on this file at all: `find`'s termination isn't
+proven (a `partial def`, since proving it would need a well-formedness
+invariant on the union-find array this project has no other use for), and
+neither is `run` producing a genuine spanning tree. This is the same class
+of trust already extended to Lean's own compiler by `native_decide`
+elsewhere in this project, just made an explicit, named gap instead of an
+implicit one.
+
+CERTDOC: link to the trusted-computing-base writeup and the status of
+proving this algorithm correct as a follow-up. -/
 
 namespace DiscreteModulusCert
 namespace Kruskal
@@ -48,9 +50,9 @@ vertices, `endpoints[i]` the two endpoints of edge `i`, and `weight[i]`
 edge `i`'s weight, sorts edge indices ascending by weight and greedily
 keeps each edge that joins two still-separate components, threading a
 union-find structure through. Returns the included edge indices. This is
-v1's accepted, unverified admissibility oracle (see the file docstring) --
-its result is trusted to be a genuine minimum spanning tree of a connected
-graph, not proven to be one. -/
+this project's accepted, unverified admissibility oracle (see the file
+docstring) -- its result is trusted to be a genuine minimum spanning tree
+of a connected graph, not proven to be one. -/
 def run (n : Nat) (endpoints : Array (Nat × Nat)) (weight : Array ℚ) : List Nat :=
   let order := (List.range endpoints.size).mergeSort
     (fun i j => decide (weight.getD i 0 ≤ weight.getD j 0))

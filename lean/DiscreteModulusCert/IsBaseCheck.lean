@@ -3,9 +3,9 @@ import DiscreteModulusCert.Glue
 /-!
 # Reducing a piece's `IsBase` check to a graph forest check
 
-§6 of the plan document left one real gap in "per-piece `IsBase`
-checking": turning a certificate's raw declared tree (an edge-index list)
-into a proof that it's actually a base of that piece's matroid
+The remaining gap in "per-piece `IsBase` checking": turning a certificate's
+raw declared tree (an edge-index list) into a proof that it's actually a
+base of that piece's matroid
 (`(G.graphicMatroid ／ prev) ↾ A`, in `Piece`'s language). This file
 proves the reduction that makes that checkable at all:
 `isBase_contract_restrict_iff_isForest` turns the matroid question into a

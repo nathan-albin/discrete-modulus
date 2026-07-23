@@ -137,8 +137,8 @@ end Pmf
 
 For a *connected* multigraph `G`, `G.graphicMatroid`'s bases are exactly
 its spanning trees (`Multigraph.isSpanningTree_iff_isBase`), so
-`IsAdmissible`/`Pmf` over `G.graphicMatroid` mean exactly what the plan
-document calls "admissible for `G`" / "a pmf on `G`'s spanning trees." -/
+`IsAdmissible`/`Pmf` over `G.graphicMatroid` mean exactly "admissible for
+`G`" / "a pmf on `G`'s spanning trees." -/
 
 theorem isAdmissible_graphicMatroid_iff {V : Type*} (G : Multigraph V E)
     (hGconn : (G.toSimpleGraph Set.univ).Connected) {ρ : CertDensity E} :

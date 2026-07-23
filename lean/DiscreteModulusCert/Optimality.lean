@@ -6,18 +6,20 @@ import Mathlib.Tactic.FieldSimp
 /-!
 # The certificate-optimality lemma
 
-The direct Cauchy-Schwarz argument from `Certification_Thoughts.md`
-(`scratch/` in the `discrete-modulus` repo, not part of this Lean
-project): for `ρ` admissible and `μ` a pmf with marginal `η`, if
-`ρ = η / ‖η‖²` then `ρ` and `μ` are simultaneously optimal — `ρ` achieves
-the minimum squared norm over all admissible densities (`ρ` solves the
-modulus problem), and `μ` achieves the minimum squared norm of its own
-marginal over all pmfs (`μ` solves the dual min-norm-point problem — the
-same quantity Wolfe's algorithm computes). Both halves follow from the
-same two ingredients (`Pmf.one_le_pairing_marginal_of_admissible` plus
-squared Cauchy-Schwarz), just with the roles of `ρ` and the pmf's marginal
-swapped.
--/
+The direct Cauchy-Schwarz duality argument: for `ρ` admissible and `μ` a
+pmf with marginal `η`, if `ρ = η / ‖η‖²` then `ρ` and `μ` are
+simultaneously optimal — `ρ` achieves the minimum squared norm over all
+admissible densities (`ρ` solves the modulus problem), and `μ` achieves
+the minimum squared norm of its own marginal over all pmfs (`μ` solves the
+dual min-norm-point problem — the same quantity Wolfe's algorithm and the
+constructive tree-packing solver compute, see
+`discrete_modulus.min_norm_point`/`discrete_modulus.tree_packing` in the
+Python package). Both halves follow from the same two ingredients
+(`Pmf.one_le_pairing_marginal_of_admissible` plus squared Cauchy-Schwarz),
+just with the roles of `ρ` and the pmf's marginal swapped.
+
+CERTDOC: link to the full derivation and motivation for this duality
+argument. -/
 
 namespace DiscreteModulusCert
 
@@ -85,10 +87,12 @@ norm over admissible densities) and `μ` solves its dual (minimizes the
 squared norm of its own marginal over all pmfs). For `M = G.graphicMatroid`
 with `G` connected, `isAdmissible_graphicMatroid_iff` (`Family.lean`)
 translates `IsAdmissible M ρ` back into "every spanning tree of `G` has
-`ρ`-weight ≥ 1." This is the theorem PR 5's verifier ultimately invokes:
-parse a certificate's `ρ`, `μ`, `η`, check the three hypotheses below in
-`ℚ` (admissibility via the Kruskal oracle, §5.2; `hη`/`hηpos`/`hρeq`
-purely arithmetic), and conclude both halves of optimality. -/
+`ρ`-weight ≥ 1." This is the theorem the certificate verifier ultimately
+invokes (see `Soundness.lean`'s `checkCertificate_optimal`): parse a
+certificate's `ρ`, `μ`, `η`, check the three hypotheses below in `ℚ`
+(admissibility via the Kruskal oracle, `Admissibility.lean`/`Kruskal.lean`;
+`hη`/`hηpos`/`hρeq` purely arithmetic), and conclude both halves of
+optimality. -/
 theorem certificate_optimality {ρ : CertDensity E} (hρAdm : IsAdmissible M ρ)
     {μ : Pmf M} {η : E → ℚ} (hη : η = μ.marginal) (hηpos : sqNorm η ≠ 0)
     (hρeq : ρ = fun e => η e / sqNorm η) :
@@ -100,13 +104,14 @@ theorem certificate_optimality {ρ : CertDensity E} (hρAdm : IsAdmissible M ρ)
 /-- **Admissibility definitional lemma.** `ρ` is admissible for `M` iff
 every base of `M` has `ρ`-weight at least `1` — genuinely definitional
 (`IsAdmissible` is stated exactly this way), kept as a named, discoverable
-lemma since it's the hinge PR 5's admissibility check actually invokes
-(composed with `isAdmissible_graphicMatroid_iff` for the graph-language
-version, "every spanning tree"). The further equivalence to "the
-*minimum* base weight is `≥ 1`" (the form that literally matches a
-Kruskal computation's output, §5.2) needs the minimum to be attained —
-deferred until PR 5 actually wires in a Kruskal implementation to compute
-against. -/
+lemma since it's the hinge the certificate checker's admissibility check
+actually invokes (composed with `isAdmissible_graphicMatroid_iff` for the
+graph-language version, "every spanning tree"). The further equivalence
+to "the *minimum* base weight is `≥ 1`" (the form that literally matches
+Kruskal's computed output) needs the minimum to be attained; that
+composition is done directly against `Kruskal.run`'s output in
+`Admissibility.lean`'s axiom rather than as a further corollary of this
+lemma. -/
 theorem isAdmissible_iff_one_le_pairing_usageVector {ρ : CertDensity E} :
     IsAdmissible M ρ ↔ ∀ T : Set E, M.IsBase T → 1 ≤ pairing ρ (usageVector T) :=
   Iff.rfl

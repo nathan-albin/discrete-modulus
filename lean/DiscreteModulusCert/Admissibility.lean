@@ -4,9 +4,9 @@ import DiscreteModulusCert.Family
 /-!
 # The Kruskal-admissibility trust boundary, as a named axiom
 
-`Certification_Plan.md` §3/§5.2 documents v1's one accepted soundness gap:
-`Kruskal.run`'s output is trusted, not proven, to be a genuine minimum-weight
-base of the graphic matroid. `CertChecker.lean` already *uses* that trust
+This project's one accepted soundness gap: `Kruskal.run`'s output is
+trusted, not proven, to be a genuine minimum-weight base of the graphic
+matroid. `CertChecker.lean` already *uses* that trust
 (computing a density's admissibility via Kruskal's MST weight), but only as
 an ordinary runtime `Bool` check -- nothing marks *where* the trust actually
 enters the kernel-checked side. This file makes that boundary an explicit
@@ -41,14 +41,14 @@ def mkMultigraph (n : Nat) (endpoints : Array (Fin n × Fin n)) :
 
 namespace Kruskal
 
-/-- **v1's accepted, unverified admissibility oracle, as a named axiom.**
-Bridges "Kruskal's computed minimum-spanning-forest weight is `≥ 1`"
-directly to `IsAdmissible`, at exactly the granularity
-`Certification_Plan.md`'s own wording asks for (bridging the computed
-weight to admissibility, not decomposed further into "Kruskal computes a
-genuine minimum base" plus a separate logical step) -- this is the one
-place trust enters the kernel-checked side for a certificate whose `rho`
-isn't uniform. `endpoints : Array (Fin n × Fin n)` matches
+/-- **This project's accepted, unverified admissibility oracle, as a named
+axiom.** Bridges "Kruskal's computed minimum-spanning-forest weight is
+`≥ 1`" directly to `IsAdmissible`, at exactly the granularity needed
+(bridging the computed weight to admissibility, not decomposed further
+into "Kruskal computes a genuine minimum base" plus a separate logical
+step) -- this is the one place trust enters the kernel-checked side for a
+certificate whose `rho` isn't uniform. `endpoints : Array (Fin n × Fin n)`
+matches
 `CheckedGraph`'s own shape exactly, so applying this axiom at a
 `CertChecker` call site only needs one small value-level bridging lemma
 (`Soundness.lean`), not a graph rebuild. -/

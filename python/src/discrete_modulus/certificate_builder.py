@@ -1,14 +1,13 @@
 """
-Builds a v4 certificate (`Certification_Plan.md` §6,
-`scratch/certificate_schema.json`) from a C++ solver trace
-(`solver_trace.hpp`) and the original input graph.
+Builds a certificate (schema version 5, `certificate_schema.json`) from a
+C++ solver trace (`solver_trace.hpp`) and the original input graph.
 
-This is the "standalone tool" PR 2 of the certification plan calls for:
-untrusted, "elaborate freely" code -- bugs here produce a certificate the
-Lean verifier rejects, not a false "verified" result, so this module
-favors clarity over defensiveness in most places, but still runs its own
-cheap sanity checks (`validate_certificate`) before handing a certificate
-off, since those catch builder bugs long before a Lean run would.
+This is a standalone, untrusted, "elaborate freely" tool: bugs here
+produce a certificate the Lean verifier rejects, not a false "verified"
+result, so this module favors clarity over defensiveness in most places,
+but still runs its own cheap sanity checks (`validate_certificate`)
+before handing a certificate off, since those catch builder bugs long
+before a Lean run would.
 
 Pipeline, per round of the solver trace:
 
@@ -21,14 +20,15 @@ Pipeline, per round of the solver trace:
    later round's vertex set, so no earlier round's dispatched edge can
    ever spuriously reappear when reconstructing a later `h_k` this way.
    (Confirmed computationally against a real multi-round trace before
-   this module was written -- see `scratch/nested_trace_validation.py`.)
+   this module was written.)
 2. Shrink `h_k`'s pieces (its connected components after removing
    `crit_set`) to points, keeping `crit_set` as edges -- genuinely a
-   `MultiGraph` in general (`scratch/nested_trace_validation.py` found
-   multiplicity up to 3 on `examples/nested`), which is exactly what
+   `MultiGraph` in general (confirmed against a real multi-round trace to
+   reach multiplicity up to 3 on `examples/nested`), which is exactly what
    `pmf_construction.build_factored_pmf` already expects.
-3. Run `build_factored_pmf` on the shrunk multigraph (deflation + Wolfe's
-   algorithm per strictly-homogeneous piece, already implemented/tested).
+3. Run `build_factored_pmf` on the shrunk multigraph (deflation +
+   constructive tree packing per strictly-homogeneous piece, already
+   implemented/tested).
 4. Translate every piece's local edge indices into GLOBAL indices (into
    the certificate's own top-level `graph.edges` array), and append them
    to the certificate's flat `pieces` list -- **in reverse round order**
@@ -44,6 +44,9 @@ built entirely from the trace itself, with no need to separately supply
 or cross-check the original edge list's own ordering. This indexing is
 independent of the `pieces` list's own (reversed) order -- edge index
 assignment and piece emission order serve different purposes.
+
+CERTDOC: link to the validation script/results confirming steps 1-2 above
+against a real multi-round solver trace.
 """
 
 from __future__ import annotations
@@ -148,16 +151,15 @@ def _shrink_round(
 
 def build_certificate(g: nx.Graph, trace: SolverTrace, verbose: bool = False) -> dict[str, Any]:
     """
-    Builds a v4 certificate (`certificate_schema.json`) for `g` from its
+    Builds a certificate (`certificate_schema.json`) for `g` from its
     recorded solver `trace`. See the module docstring for the pipeline.
 
     Sanity-checks each round as it's built: `build_factored_pmf`'s own
     marginal should be uniformly the round's own recorded `theta` on
-    every one of that round's shrunk edges -- the same check
-    `scratch/nested_trace_validation.py` ran by hand on a real trace
-    before this module existed. This is a build-time invariant of the
-    deflation/pmf-construction math itself (mirroring `cunningham.hpp`'s
-    own internal `assert(theta == ...)`), distinct from
+    every one of that round's shrunk edges -- the same check confirmed by
+    hand on a real trace before this module existed. This is a build-time
+    invariant of the deflation/pmf-construction math itself (mirroring
+    `cunningham.hpp`'s own internal `assert(theta == ...)`), distinct from
     `validate_certificate`'s purely certificate-level checks below.
 
     **Round order in `pieces` is reversed relative to `trace.rounds`.**
@@ -262,8 +264,10 @@ def compute_eta(cert: dict[str, Any]) -> list[Fraction]:
 
 
 def compute_rho(eta: list[Fraction]) -> list[Fraction]:
-    """rho = eta / ||eta||^2, the admissible density Cauchy-Schwarz duality
-    (`Certification_Plan.md` §1) makes simultaneously optimal with eta."""
+    """rho = eta / ||eta||^2, the admissible density the Cauchy-Schwarz
+    duality argument makes simultaneously optimal with eta (see
+    `lean/DiscreteModulusCert/Optimality.lean`'s `certificate_optimality`
+    for the formal statement and proof)."""
 
     norm_sq = sum((e * e for e in eta), Fraction(0))
     if norm_sq == 0:
@@ -365,11 +369,10 @@ def build_certificate_from_files(prefix: str) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> None:
     """
     `python -m discrete_modulus.certificate_builder <prefix>`: builds,
-    validates, and writes `<prefix>.certificate.json` -- the standalone
-    tool `Certification_Plan.md`'s PR 2 calls for, matching `spt_mod`'s own
-    `<prefix>` convention. Previously every checked-in
-    `cpp/examples/*.certificate.json` was produced by an untracked, one-off
-    command; this makes regenerating any of them a single, repeatable step.
+    validates, and writes `<prefix>.certificate.json`, matching `spt_mod`'s
+    own `<prefix>` convention. Makes regenerating any checked-in
+    `cpp/examples/*.certificate.json` a single, repeatable step rather than
+    an untracked, one-off command.
     """
 
     argv = sys.argv[1:] if argv is None else argv

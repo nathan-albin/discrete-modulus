@@ -5,16 +5,23 @@ import Lean.Data.Json
 /-!
 # A runnable JSON certificate checker
 
-PR 5's first genuinely standalone verifier: reads a certificate JSON file
-(`scratch/certificate_schema.json`, v5) at *program runtime* and checks
-every invariant `validate_certificate` (the untrusted Python-side sanity
-check) checks, but this time using the same computable decidability
-instance `ForestDecide.lean` built (`instDecidableIsForestOfList`) --
-genuinely running Cunningham/forest-decision code against the parsed data,
-not just a syntactic sanity check.
+A genuinely standalone verifier: reads a certificate JSON file at
+*program runtime* and checks every invariant `validate_certificate` (the
+untrusted Python-side sanity check) also checks, but this time using the
+same computable decidability instance `ForestDecide.lean` built
+(`instDecidableIsForestOfList`) -- genuinely running Cunningham/forest-
+decision code against the parsed data, not just a syntactic sanity check.
+A certificate is a JSON object with a top-level graph (vertex count plus
+a global edge list), a flat ordered `pieces` array (each piece its own
+edge subset plus a local pmf over that piece's own spanning trees, as
+edge-index lists with rational weights), and top-level `eta`/`rho` arrays
+(one rational per edge) -- see `RawCertificate`/`RawPiece`/`RawTree`
+below for the exact shape parsed.
 
-**v5 adds checked (not trusted) `eta`/`rho` fields.** The certificate
-declares the optimal pmf's marginal (`eta`) and admissible density (`rho`)
+CERTDOC: link to the authoritative certificate schema document.
+
+**Checked (not trusted) `eta`/`rho` fields.** The certificate declares
+the optimal pmf's marginal (`eta`) and admissible density (`rho`)
 per edge; this checker recomputes both independently from `pieces` (the
 same composition `Pmf.glue_marginal`/`PieceList.glueAll_marginal`,
 `Glue.lean`, prove sound -- linear in pieces x edges, never the glued
@@ -25,14 +32,14 @@ this checker at all, and diffable directly against the C++ solver's own
 `*.eta` output.
 
 **Admissibility of `rho`, via the accepted Kruskal-oracle gap
-(`Kruskal.lean`, `Certification_Plan.md` §3/§5.2).** `rho` is admissible
-iff *every* spanning tree has `rho`-weight `≥ 1`, which holds iff the
-*minimum*-weight spanning tree does. `Kruskal.run` computes that minimum
-greedily; its correctness (that the greedy algorithm's output really is a
-minimum spanning tree) is v1's one deliberately unverified step -- the
-result is trusted, not proven. This checker still genuinely rejects a
-certificate whose Kruskal-computed minimum weight is `< 1`; only the
-*algorithm's own correctness*, not whether the check runs, is unverified.
+(`Kruskal.lean`).** `rho` is admissible iff *every* spanning tree has
+`rho`-weight `≥ 1`, which holds iff the *minimum*-weight spanning tree
+does. `Kruskal.run` computes that minimum greedily; its correctness (that
+the greedy algorithm's output really is a minimum spanning tree) is this
+project's one deliberately unverified step -- the result is trusted, not
+proven. This checker still genuinely rejects a certificate whose
+Kruskal-computed minimum weight is `< 1`; only the *algorithm's own
+correctness*, not whether the check runs, is unverified.
 
 **Why this is a plain executable, not `decide`/`native_decide` on a proof
 term.** `HouseCert.lean` proved facts about *specific, hand-transcribed
@@ -53,21 +60,22 @@ classical equality (unlike `Pmf.support : Finset (Set E)`, which is
 genuinely noncomputable) -- deliberately so, since a runtime checker has to
 actually *run*.
 
-**What this does and doesn't establish (see `Certification_Plan.md` §5.1.6
-follow-up items).** This checks exactly what `validate_certificate` checks,
-faithfully and independently, using the real forest-decision algorithm
-rather than a syntactic proxy: piece edges disjoint and covering the whole
-graph, every declared tree is a genuine forest and maximal within its
-piece (so a genuine base of that piece's matroid, via the same
-`isBase_contract_restrict_iff_isForest` reduction `HouseCert.lean` uses),
-and weights nonnegative and summing to 1 per piece. It does *not* yet
-produce a Lean proof TERM (a `Pmf`/`PieceList` value) the kernel has
-type-checked -- that needs a separate, universally-quantified soundness
-theorem ("if this checker returns `ok`, a genuine `PieceList`/`Pmf` exists
-for the same data"), proved once at compile time over arbitrary input,
-linking this computable checker to the noncomputable `Pmf` machinery the
-way `instDecidableIsForestOfList` already links `decide` to `IsForest`.
-Tracked as the next step, not yet done here.
+**What this does and doesn't establish, by itself.** This checks exactly
+what `validate_certificate` checks, faithfully and independently, using
+the real forest-decision algorithm rather than a syntactic proxy: piece
+edges disjoint and covering the whole graph, every declared tree is a
+genuine forest and maximal within its piece (so a genuine base of that
+piece's matroid, via the same `isBase_contract_restrict_iff_isForest`
+reduction `HouseCert.lean` uses), and weights nonnegative and summing to
+1 per piece. Running `checkCertificate` and getting `ok` back is, by
+itself, only a runtime fact, not a kernel-checked proof term -- that gap
+(a universally-quantified soundness theorem: "if this checker returns
+`ok`, a genuine `PieceList`/`Pmf` exists for the same data, and it's
+optimal") is closed separately, by `Soundness.lean`'s
+`checkCertificate_sound`/`checkCertificate_optimal`, linking this
+computable checker to the noncomputable `Pmf`/`certificate_optimality`
+machinery the way `instDecidableIsForestOfList` already links `decide` to
+`IsForest`.
 -/
 
 namespace DiscreteModulusCert
@@ -222,11 +230,11 @@ tree's weight into every edge it uses. Mirrors `compute_eta_from_pieces`
 on the Python side (`certificate_builder.py`), but works entirely over
 `Nat`/`Fin m` rather than through `checkPiece`/`checkPieces`'s generic
 `{V E : Type*} [Fintype E]` abstraction: that abstraction has no
-computable `E → Fin m` projection available generically
-(`Fintype.equivFin` is `noncomputable` -- the same obstacle
-`scratch/residual_performance_mystery.md` already hit, for a different
-reason). Working directly from the raw `Nat`-indexed JSON data, where `m`
-is already concrete, sidesteps this entirely. -/
+computable `E → Fin m` projection available generically (`Fintype.equivFin`
+is `noncomputable`). Working directly from the raw `Nat`-indexed JSON
+data, where `m` is already concrete, sidesteps this entirely.
+CERTDOC: link to the writeup of other places this same `Fintype.equivFin`
+noncomputability obstacle showed up. -/
 def sumTreeContributions (m : Nat) (toE : Nat → Except String (Fin m))
     (pieces : List RawPiece) : Except String (Array ℚ) :=
   pieces.foldlM
@@ -294,7 +302,9 @@ def checkCertificate (raw : RawCertificate) : Except String Unit := do
   let mstEdges := Kruskal.run cg.n raw.graph.edges.toArray computedRho
   let mstWeight : ℚ := mstEdges.foldl (fun acc i => acc + computedRho.getD i 0) 0
   let _ ← check (!decide (mstWeight < 1))
-    s!"admissibility check failed: Kruskal's minimum spanning tree has rho-weight {mstWeight} < 1 (UNVERIFIED: relies on an unproven Kruskal implementation, Certification_Plan.md §3/§5.2)"
+    s!"admissibility check failed: Kruskal's minimum spanning tree has rho-weight {mstWeight} < 1 \
+(UNVERIFIED: relies on an unproven Kruskal implementation -- its output is trusted, not proven, \
+to be a genuine minimum-weight spanning tree)"
 
 def checkCertificateJson (s : String) : Except String Unit := do
   let j ← Json.parse s

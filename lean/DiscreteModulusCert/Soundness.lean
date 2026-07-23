@@ -1035,17 +1035,18 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
 
 /-- **Capstone: an accepted certificate is genuinely optimal.** Wires
 `checkCertificate_sound`'s existence facts directly into
-`certificate_optimality` (`Optimality.lean`) -- the theorem this project's
-plan document ultimately wants "the verifier" to conclude, for *any*
-accepted certificate, not just `HouseCert.lean`'s hand-transcribed `house`
-instance. If `checkCertificate` accepts a raw certificate, its
+`certificate_optimality` (`Optimality.lean`) -- the theorem "the verifier
+accepts implies the certificate is optimal" ultimately reduces to, for
+*any* accepted certificate, not just `HouseCert.lean`'s hand-transcribed
+`house` instance. If `checkCertificate` accepts a raw certificate, its
 (reconstructed) `ρ` minimizes `sqNorm` over every admissible density on the
 certificate's graphic matroid (`ρ` solves the modulus problem), and the
 reconstructed `μ`'s marginal minimizes `sqNorm` over the marginals of every
 pmf on that matroid's bases (`μ` solves the dual min-norm-point problem) --
-both halves of "simultaneously optimal" from the plan's duality argument
-(§1). This closes the last item this file's own module docstring and
-`Certification_Plan.md`'s PR5 entry flagged as open. -/
+both halves of "simultaneously optimal" from the Cauchy-Schwarz duality
+argument (`Optimality.lean`'s module docstring). This closes the gap this
+file's own module docstring flags -- turning "checker accepts" into a
+genuine kernel-checked optimality proof, not just an existence fact. -/
 theorem checkCertificate_optimal (raw : RawCertificate) (hok : checkCertificate raw = Except.ok ()) :
     ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m)) (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid),
       (∀ ρ' : CertDensity (Fin m), IsAdmissible G.graphicMatroid ρ' → sqNorm ρ ≤ sqNorm ρ') ∧

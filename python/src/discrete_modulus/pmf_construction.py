@@ -4,17 +4,17 @@ Builds an exact pmf on spanning trees of a homogeneous shrunk
 uniform) is known to be achievable, as it would be for a component the
 spanning-tree-modulus solver dispatches for a single round.
 
-Rather than running `min_norm_point.min_norm_point_wolfe` once on the
-whole shrunk graph, this first deflates it (`core_deflation`) into a
-rigid base plus a sequence of cores, each strictly homogeneous by
-construction (once a core is peeled away, the piece left behind can
-never have a further forbidden tree -- see `core_deflation`'s module
-docstring). Wolfe's algorithm then only ever sees small, strictly
-homogeneous pieces -- exactly its validated regime (a cold start on the
-house graph converges in 3 major iterations) -- so there is no need to
-detect or recover from the failure mode (unbounded active-set growth
-chasing a degenerate/forbidden-tree marginal) that motivated deflating
-in the first place.
+Rather than running a continuous optimization once on the whole shrunk
+graph, this first deflates it (`core_deflation`) into a rigid base plus a
+sequence of cores, each strictly homogeneous by construction (once a core
+is peeled away, the piece left behind can never have a further forbidden
+tree -- see `core_deflation`'s module docstring). Every piece handed to
+`_solve_piece` below is therefore strictly homogeneous with a single
+uniform target marginal, so its own min-norm point is known in closed
+form and `tree_packing.build_tree_packing` constructs the exact pmf
+directly -- no continuous optimization, and no risk of the unpredictable
+convergence tail `min_norm_point.min_norm_point_wolfe` has on some
+pieces (see `tree_packing`'s own module docstring for why).
 
 The result is a *factored* pmf: one independent local pmf per piece,
 plus each piece's edge provenance back to the original graph, rather

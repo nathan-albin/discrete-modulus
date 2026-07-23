@@ -13,10 +13,10 @@ natural route through Mathlib, `isAcyclic_iff_forall_isBridge` +
 `IsBridge`'s own decidability and a `Fintype`/`Finset` handle on `edgeSet`
 aren't wired up.
 
-This file sidesteps `IsBridge` entirely and builds the decision procedure the
-plan anticipated: a verified union-find-style algorithm, phrased as
-structural recursion on a `List E` of candidate edges (a certificate's tree
-is exactly such a list — an edge-index list, per §6 of the plan), inserting
+This file sidesteps `IsBridge` entirely and builds the decision procedure
+directly: a verified union-find-style algorithm, phrased as structural
+recursion on a `List E` of candidate edges (a certificate's tree is exactly
+such a list — an edge-index list), inserting
 one edge at a time and using Mathlib's `isAcyclic_sup_fromEdgeSet_iff` (an
 honest iff, both directions, transported into `isForest_insert_iff` below) to
 decide at each step whether the new edge closes a cycle.

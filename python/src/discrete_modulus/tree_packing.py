@@ -19,14 +19,14 @@ Wolfe's failure mode on some pieces: its active set can grow for
 minutes with no sign of convergence, purely from vertex/edge-labeling
 sensitivity, with no cheap way to predict which pieces will do this in
 advance. This module's cost is bounded instead by q (the piece's own
-theta denominator) times a handful of MST calls, and was validated
-(see `Certification_Plan.md`) on: the real piece that caused Wolfe's
-long tail (`examples/nested`'s round-2 K20-shaped piece), the two
-complete-graph sizes (K40/K50) that stalled single-hop swaps alone, and
-several genuinely sparse, non-complete homogeneous pieces obtained by
-peeling random sparse graphs down to a rigid base via `core_deflation`.
+theta denominator) times a handful of MST calls, and was validated on:
+the real piece that caused Wolfe's long tail (`examples/nested`'s
+round-2 K20-shaped piece), the two complete-graph sizes (K40/K50) that
+stalled single-hop swaps alone, and several genuinely sparse,
+non-complete homogeneous pieces obtained by peeling random sparse graphs
+down to a rigid base via `core_deflation`.
 
-Two-tier method (ported from `scratch/matroid_union_packing.py`):
+Two-tier method:
 
 1. Away-step (`_away_step_pass`): repeatedly evict the heaviest tree
    (by total coverage-weight of its own edges) and replace it with the

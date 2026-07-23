@@ -14,13 +14,18 @@ the same computable `Decidable` instances, run at native speed.
 open DiscreteModulusCert.CertChecker
 
 /-- The one non-standard trust assumption a passing certificate still
-carries -- kept visible in the verifier's own output (not just
-`Certification_Plan.md`'s TCB ledger, §3), printed unconditionally
-alongside every ACCEPTED result, since it's a static fact about v1
-regardless of which certificate was checked. -/
+carries. Admissibility of `rho` is checked by running Kruskal's
+algorithm to find a minimum-weight spanning tree and trusting its
+output, rather than by a kernel-checked proof that the algorithm is
+correct -- everything else a passing certificate asserts is fully
+kernel-checked. Printed unconditionally alongside every ACCEPTED result
+(not just noted in documentation), since it's a static fact regardless
+of which certificate was checked.
+CERTDOC: link to the trusted-computing-base writeup and the status of
+proving Kruskal's algorithm correct. -/
 def kruskalCaveat : String :=
   "  NOTE: admissibility of rho relies on an unverified Kruskal implementation \
-(see Certification_Plan.md §3/§5.2 -- PR 6 is the tracked follow-up to prove it correct)."
+(its output is trusted, not proven, to be a genuine minimum-weight spanning tree)."
 
 def main (args : List String) : IO UInt32 := do
   match args with
