@@ -151,6 +151,10 @@ Functions</h2></td></tr>
 <tr class="memitem:a448f22a97d68917b97e12a41d3a0c2ec" id="r_a448f22a97d68917b97e12a41d3a0c2ec"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="namespacediscrete__modulus.html#a1d5fab15156ff5803b3df81364aae9ff">Graph</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacediscrete__modulus.html#a448f22a97d68917b97e12a41d3a0c2ec">induced_components</a> (<a class="el" href="namespacediscrete__modulus.html#a1d5fab15156ff5803b3df81364aae9ff">Graph</a> &amp;g, const std::set&lt; <a class="el" href="namespacediscrete__modulus.html#aa471c39644508465a8c9efec6656ef61">Edge</a> &gt; &amp;A)</td></tr>
 <tr class="memdesc:a448f22a97d68917b97e12a41d3a0c2ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Splits <code>g</code> into connected components after removing the critical edge set <code>A</code>.  <br /></td></tr>
 <tr class="separator:a448f22a97d68917b97e12a41d3a0c2ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22db3dcbae2cab593f89268a4406d851" id="r_a22db3dcbae2cab593f89268a4406d851"><td class="memTemplParams" colspan="2">template&lt;typename G &gt; </td></tr>
+<tr class="memitem:a22db3dcbae2cab593f89268a4406d851"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacediscrete__modulus.html#a22db3dcbae2cab593f89268a4406d851">is_simple_graph</a> (const G &amp;g)</td></tr>
+<tr class="memdesc:a22db3dcbae2cab593f89268a4406d851"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether <code>g</code> is a simple graph: no self-loops, no parallel edges between the same pair of vertices.  <br /></td></tr>
+<tr class="separator:a22db3dcbae2cab593f89268a4406d851"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66dfaa4843bdd90f31d47be16009e33c" id="r_a66dfaa4843bdd90f31d47be16009e33c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacediscrete__modulus.html#a1d5fab15156ff5803b3df81364aae9ff">Graph</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacediscrete__modulus.html#a66dfaa4843bdd90f31d47be16009e33c">cycle_plus_triangle</a> (int n)</td></tr>
 <tr class="memdesc:a66dfaa4843bdd90f31d47be16009e33c"><td class="mdescLeft">&#160;</td><td class="mdescRight">A cycle on <code>n</code> vertices plus one extra chord (between vertices 1 and n-1).  <br /></td></tr>
 <tr class="separator:a66dfaa4843bdd90f31d47be16009e33c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -670,6 +674,29 @@ template&lt;typename G &gt; </div>
 </div><div class="memdoc">
 
 <p>Splits <code>g</code> into connected components after removing the critical edge set <code>A</code>. </p>
+
+</div>
+</div>
+<a id="a22db3dcbae2cab593f89268a4406d851" name="a22db3dcbae2cab593f89268a4406d851"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a22db3dcbae2cab593f89268a4406d851">&#9670;&#160;</a></span>is_simple_graph()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename G &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">bool discrete_modulus::is_simple_graph </td>
+          <td>(</td>
+          <td class="paramtype">const G &amp;&#160;</td>
+          <td class="paramname"><em>g</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Checks whether <code>g</code> is a simple graph: no self-loops, no parallel edges between the same pair of vertices. </p>
+<p><a class="el" href="namespacediscrete__modulus.html#a56facab6b13081b44dc1897289ddbb77">spanning_tree_modulus</a> assumes this. It's not just a matter of degree: <code>eta_star</code>'s own construction looks up <code>edge(u, v, g)</code>, which identifies an edge by its endpoint pair alone &ndash; unambiguous only when <code>g</code> is simple. Fed a multigraph, that lookup would silently return an arbitrary one of several parallel edges and mis-assign its <code>eta*</code>, not fail loudly. (The spanning-tree-modulus solver was never designed to handle multigraph inputs &ndash; the <em>shrunk</em> multigraphs that show up in deflation/certification, e.g. <code>Multigraph</code> in the Lean verifier or the <code>networkx</code> multigraphs <code>pmf_construction.py</code> builds, are a separate, purely conceptual construction the certificate builder reasons about after the fact; the solver itself only ever recurses on vertex-induced subgraphs of the original input, so it never needs to represent one internally.) </p>
 
 </div>
 </div>

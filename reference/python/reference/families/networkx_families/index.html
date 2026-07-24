@@ -1169,7 +1169,7 @@ as <code>rho</code>.</p>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_multigraph</span><span class="p">:</span>
         <span class="c1"># keys=True disambiguates which parallel edge the MST used</span>
         <span class="c1"># -- needed both to look up its &#39;enum&#39; index below and so</span>
-        <span class="c1"># `cons` identifies a genuine spanning tree, not just a</span>
+        <span class="c1"># `cons` identifies a spanning tree, not just a</span>
         <span class="c1"># multiset of vertex pairs.</span>
         <span class="n">T</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">minimum_spanning_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">T</span><span class="p">:</span>
