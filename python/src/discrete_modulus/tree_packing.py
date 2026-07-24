@@ -22,7 +22,7 @@ advance. This module's cost is bounded instead by q (the piece's own
 theta denominator) times a handful of MST calls, and was validated on:
 the real piece that caused Wolfe's long tail (`examples/nested`'s
 round-2 K20-shaped piece), the two complete-graph sizes (K40/K50) that
-stalled single-hop swaps alone, and several genuinely sparse,
+stalled single-hop swaps alone, and several sparse,
 non-complete homogeneous pieces obtained by peeling random sparse graphs
 down to a rigid base via `core_deflation`.
 
@@ -49,7 +49,7 @@ Two-tier method:
    overlapping T_h (scale d' by 2q+1 and add 1 for edges in T_h) --
    without this, swapping to an equally-good-but-different tree can
    silently make zero progress. Even with tie-breaking this is not by
-   itself a complete algorithm: it can reach a genuine local minimum
+   itself a complete algorithm: it can reach a local minimum
    (T_h already IS its own energy-minimizing replacement) before E
    hits 0.
 2. BFS multi-hop augmenting search (`_find_augmenting_chain`), the

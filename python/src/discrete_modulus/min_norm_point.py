@@ -73,7 +73,7 @@ def _key(n: ExactArray) -> ActiveKey:
 
 def _as_rational(n: FloatArray | ExactArray) -> ExactArray:
     """
-    Casts a usage vector to a genuinely `Fraction`-valued array.
+    Casts a usage vector to a `Fraction`-valued array.
 
     `ShortestObjectFinder` implementations aren't required to fill a
     `dtype=object` result with `Fraction` specifically -- e.g.

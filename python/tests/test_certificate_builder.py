@@ -10,7 +10,7 @@ tests -- keeps this suite independent of the C++ build, matching
 `test.yml`'s own python-only CI scope.
 
 `house` is the single-round case (no deflation needed); `nested` exercises
-real multi-round gluing across 3 rounds, the middle one with genuine
+real multi-round gluing across 3 rounds, the middle one with
 parallel edges once shrunk (confirmed against a real multi-round trace to
 reach multiplicity up to 3), the third requiring within-round core
 deflation (a K20-shaped piece).

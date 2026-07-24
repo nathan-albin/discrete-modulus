@@ -3,11 +3,11 @@ import DiscreteModulusCert.CertChecker
 /-!
 A standalone, compiled certificate verifier: `verify_cert <path/to/certificate.json>`.
 Reads the file, parses it, and checks every invariant `CertChecker.lean`
-implements (piece disjointness/coverage, every declared tree a genuine
+implements (piece disjointness/coverage, every declared tree a
 forest and maximal within its piece, weights nonnegative and summing to
 1, eta/rho matching pieces, admissibility of rho via Kruskal), printing
 ACCEPTED or REJECTED with a reason. Unlike `#eval` (which runs under
-Lean's bytecode interpreter), this is genuinely compiled native code --
+Lean's bytecode interpreter), this is compiled native code --
 the same computable `Decidable` instances, run at native speed.
 -/
 

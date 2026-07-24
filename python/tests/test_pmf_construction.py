@@ -16,11 +16,11 @@ Test strategy
 
 3. Nested ties on a multi-level house graph (parametrized over several
    levels), checking exact marginals and that every sampled tree is a
-   genuine spanning tree of the original graph -- end-to-end validation
+   spanning tree of the original graph -- end-to-end validation
    of the provenance bookkeeping through several contractions, not just
    a single one.
 
-4. A genuine MultiGraph input (parallel edges, the shape of a real
+4. A MultiGraph input (parallel edges, the shape of a real
    solver-dispatched shrunk multigraph) -- checks the whole pipeline
    (core detection, contraction, MinimumSpanningTree, provenance) stays
    correct once parallel edges are actually in play, not just tested
@@ -115,7 +115,7 @@ def test_multi_level_house_graph_exact_marginals(levels: int) -> None:
 
 
 def test_multigraph_shrunk_graph_exact_marginals() -> None:
-    # A genuine multigraph, built by uniformly doubling every edge of
+    # A  multigraph, built by uniformly doubling every edge of
     # the house graph -- the shape a real contracted round can produce.
     # Doubling *uniformly* preserves every relative density exactly (so
     # the graph stays homogeneous with the same {0, 1, 2} core), unlike

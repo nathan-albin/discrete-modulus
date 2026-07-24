@@ -151,7 +151,7 @@ inline std::vector<Graph> induced_components(Graph& g, const std::set<Edge>& A) 
  * @ref spanning_tree_modulus assumes this. It's not just a matter of
  * degree: `eta_star`'s own construction looks up `edge(u, v, g)`, which
  * identifies an edge by its endpoint pair alone -- unambiguous only when
- * @p g is simple. Fed a genuine multigraph, that lookup would silently
+ * @p g is simple. Fed a multigraph, that lookup would silently
  * return an arbitrary one of several parallel edges and mis-assign its
  * `eta*`, not fail loudly. (The spanning-tree-modulus solver was never
  * designed to handle multigraph inputs -- the *shrunk* multigraphs that
@@ -159,7 +159,7 @@ inline std::vector<Graph> induced_components(Graph& g, const std::set<Edge>& A) 
  * verifier or the `networkx` multigraphs `pmf_construction.py` builds,
  * are a separate, purely conceptual construction the certificate builder
  * reasons about after the fact; the solver itself only ever recurses on
- * genuine vertex-induced subgraphs of the original input, so it never
+ * vertex-induced subgraphs of the original input, so it never
  * needs to represent one internally.)
  */
 template <typename G>

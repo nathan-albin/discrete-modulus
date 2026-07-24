@@ -184,7 +184,7 @@ class MinimumSpanningTree:
         if self.is_multigraph:
             # keys=True disambiguates which parallel edge the MST used
             # -- needed both to look up its 'enum' index below and so
-            # `cons` identifies a genuine spanning tree, not just a
+            # `cons` identifies a spanning tree, not just a
             # multiset of vertex pairs.
             T = list(nx.minimum_spanning_edges(self.G, weight="rho", keys=True, data=False))
             for u, v, k in T:

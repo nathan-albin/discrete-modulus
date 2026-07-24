@@ -131,7 +131,7 @@ printing `ACCEPTED`. The conclusion: `buildGraph raw.graph = Except.ok cg`
 pins `cg` to be *the* graph the certificate's own `graph` field describes
 (not just some graph with the right shape); the two `parseRationalArray`
 equations pin `declaredEta`/`declaredRho` to be *the* certificate's own
-parsed `eta`/`rho` fields; and given those, there's a genuine pmf `μ` on
+parsed `eta`/`rho` fields; and given those, there's a pmf `μ` on
 `cg`'s spanning trees, with marginal exactly `declaredEta`, such that
 `declaredRho` achieves the minimum `sqNorm` among *every* admissible
 density on this graph, and `μ`'s marginal achieves the minimum `sqNorm`

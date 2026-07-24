@@ -299,7 +299,7 @@ theorem array_getD_map_div (arr : Array ℚ) (i : Nat) (c : ℚ) :
   simp only [Array.getD_eq_getD_getElem?, Array.getElem?_map]
   rcases h : arr[i]? with _ | x <;> simp
 
-/-- **Bridges `checkQArrayEq`'s runtime pass/fail result to genuine array
+/-- **Bridges `checkQArrayEq`'s runtime pass/fail result to array
 equality**, unconditionally over every index (not just in-bounds ones):
 out-of-range reads on both sides default to `0`, so they agree there too,
 regardless of whether the two arrays even have the same size in that
@@ -1126,7 +1126,7 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
 certificate, the graph it describes (`buildGraph raw.graph`), its own
 declared `rho` field minimizes `sqNorm` over every admissible density on
 that graph's graphic matroid (`rho` solves the modulus problem), and a
-genuine pmf `μ` on that matroid's bases, with marginal exactly the
+pmf `μ` on that matroid's bases, with marginal exactly the
 certificate's own declared `eta` field, minimizes `sqNorm` over the
 marginals of every pmf on that matroid's bases (`μ` solves the dual
 min-norm-point problem): both halves of "simultaneously optimal" from the

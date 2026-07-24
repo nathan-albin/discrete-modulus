@@ -51,7 +51,7 @@ hits two traps, both handled below:
    minimizer (nodes that cannot reach the sink), not the minimal one --
    confirmed by reading its source: it computes reachability *to* the
    sink on the pruned residual graph. The minimal minimizer (which is
-   what picks out a genuine smaller core instead of falling back to the
+   what picks out a smaller core instead of falling back to the
    whole graph) has to be computed by hand, as vertices reachable *from*
    the source in a properly-conserved max flow's residual graph (not
    `preflow_push`'s `value_only=True` mode, whose returned "flow" is a

@@ -24,7 +24,7 @@ Pipeline, per round of the solver trace:
    (Confirmed computationally against a real multi-round trace before
    this module was written.)
 2. Shrink `h_k`'s pieces (its connected components after removing
-   `crit_set`) to points, keeping `crit_set` as edges -- genuinely a
+   `crit_set`) to points, keeping `crit_set` as edges -- a
    `MultiGraph` in general (confirmed against a real multi-round trace to
    reach multiplicity up to 3 on `examples/nested`), which is exactly what
    `pmf_construction.build_factored_pmf` already expects.
