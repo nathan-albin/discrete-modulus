@@ -10,5 +10,6 @@ import DiscreteModulusCert.KruskalTest
 import DiscreteModulusCert.Admissibility
 import DiscreteModulusCert.CertChecker
 import DiscreteModulusCert.CertCheckerTest
+import DiscreteModulusCert.MalformedCertTest
 import DiscreteModulusCert.Soundness
 import DiscreteModulusCert.EndToEndTest

@@ -26,6 +26,8 @@ import pytest
 
 from discrete_modulus.certificate_builder import (
     build_certificate_from_files,
+    compute_eta_from_pieces,
+    compute_rho,
     validate_certificate,
 )
 
@@ -102,3 +104,87 @@ def test_nested_has_three_rounds_worth_of_pieces() -> None:
         trace_data = json.load(f)
     assert len(trace_data["rounds"]) == 3
     assert len(cert["pieces"]) >= 3
+
+
+# --- validate_certificate should reject malformed certificates -----------
+#
+# Each test below starts from `house`'s own real, valid certificate and
+# breaks exactly one thing about it, confirming `validate_certificate`
+# actually notices (as opposed to a check that looks right but silently
+# passes anything). `house`'s two pieces are each a 3-edge triangle with a
+# uniform 3-tree pmf -- see `test_house_deflates_into_its_known_core_plus_remainder`.
+#
+# Two invariants a hand-edited certificate might break are *not* tested
+# here, because `validate_certificate` can't see them: it never
+# independently confirms a declared tree is actually a spanning tree of its
+# piece (only that its edges are a subset of the piece's own edges, and
+# that per-piece weights sum to 1), and it never checks
+# optimality/admissibility at all (only that the declared eta/rho compose
+# correctly from `pieces`, which a self-consistently-recomputed eta/rho
+# always will, optimal or not). A tree with an edge dropped (no longer
+# spanning) or a non-optimal pmf, with eta/rho recomputed to
+# match, both sail through `validate_certificate` unnoticed -- confirmed
+# directly, while writing these tests, against
+# `lean/DiscreteModulusCert/testdata/malformed/house_nonmaximal_tree.certificate.json`
+# and `.../house_nonoptimal_pmf.certificate.json`. Catching those two is
+# exactly what the Lean checker's forest-maximality and Kruskal-based
+# admissibility checks are for --
+# `lean/DiscreteModulusCert/MalformedCertTest.lean` tests them there.
+
+
+def test_validate_rejects_tampered_eta() -> None:
+    cert = _build("house")
+    cert["eta"][0] = [1, 2]  # every edge's real marginal is 2/3
+    with pytest.raises(AssertionError, match="declared eta doesn't match"):
+        validate_certificate(cert)
+
+
+def test_validate_rejects_tree_edge_from_a_different_piece() -> None:
+    cert = _build("house")
+    # Piece 0's edges are {0, 1, 2}; edge 3 belongs to piece 1.
+    cert["pieces"][0]["local_pmf"]["trees"][0]["edges"] = [0, 3]
+    with pytest.raises(AssertionError, match="edge outside its own piece"):
+        validate_certificate(cert)
+
+
+def test_validate_rejects_tree_edge_dropped_from_a_spanning_tree() -> None:
+    # Dropping an edge from a declared tree changes which edges its weight
+    # gets counted towards, so this is actually caught via the eta
+    # consistency check below -- not because validate_certificate notices
+    # the tree stopped spanning its piece (it has no way to notice that;
+    # see the module-level comment above).
+    cert = _build("house")
+    cert["pieces"][0]["local_pmf"]["trees"][0]["edges"] = [0]  # was [0, 1]
+    with pytest.raises(AssertionError, match="declared eta doesn't match"):
+        validate_certificate(cert)
+
+
+def test_validate_rejects_negative_tree_weight() -> None:
+    cert = _build("house")
+    trees = cert["pieces"][0]["local_pmf"]["trees"]
+    trees[0]["weight"] = [-1, 3]
+    trees[1]["weight"] = [2, 3]
+    with pytest.raises(AssertionError, match="negative tree weight"):
+        validate_certificate(cert)
+
+
+def test_validate_accepts_a_non_optimal_pmf() -> None:
+    # The flip side of the module-level comment above, made explicit: a
+    # skewed-but-real distribution over piece 0's three spanning
+    # trees (still nonnegative, still summing to 1), with eta/rho
+    # recomputed to match, passes validate_certificate even though it's
+    # not the optimal pmf `house_nonoptimal_pmf.certificate.json` (Lean
+    # side) is rejected for. This isn't a bug in validate_certificate --
+    # it was never meant to check optimality, only its own internal
+    # bookkeeping (see its docstring) -- but it's worth pinning down so
+    # this fact doesn't get discovered by surprise later.
+    cert = _build("house")
+    trees = cert["pieces"][0]["local_pmf"]["trees"]
+    trees[0]["weight"] = [1, 2]
+    trees[1]["weight"] = [1, 4]
+    trees[2]["weight"] = [1, 4]
+    eta = compute_eta_from_pieces(cert["pieces"], len(cert["graph"]["edges"]))
+    rho = compute_rho(eta)
+    cert["eta"] = [[f.numerator, f.denominator] for f in eta]
+    cert["rho"] = [[f.numerator, f.denominator] for f in rho]
+    validate_certificate(cert)  # does not raise
