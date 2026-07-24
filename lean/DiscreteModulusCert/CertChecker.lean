@@ -308,10 +308,50 @@ def checkCertificate (raw : RawCertificate) : Except String Unit := do
 (UNVERIFIED: relies on an unproven Kruskal implementation; its output is trusted, not proven, \
 to be a minimum-weight spanning tree)"
 
-def checkCertificateJson (s : String) : Except String Unit := do
+/-- **FNV-1a, 64-bit variant**, over a string's UTF-8 bytes. Deliberately
+not cryptographic and not Lean-specific: a simple, standard, widely
+documented algorithm chosen so a human can reimplement it independently
+(a few lines in any language) and cross-check its output against
+`verify_cert`'s, without needing to trust *this* code -- only that both
+implementations agree, which is directly checkable. See
+`docs/certification/theorem.md` for a companion Python one-liner and the
+worked example this is for. -/
+def fnv1a64 (s : String) : UInt64 :=
+  let fnvPrime : UInt64 := 1099511628211
+  let fnvOffset : UInt64 := 14695981039346656037
+  s.toUTF8.foldl (fun h b => (h ^^^ b.toUInt64) * fnvPrime) fnvOffset
+
+/-- A content fingerprint of the graph a certificate declares: `num_vertices`
+and `edges` (in the certificate's own order -- edge array position is a
+stable identity elsewhere in the schema, so this doesn't sort them),
+encoded as `"{n};{u}-{v},{u}-{v},..."` and hashed with `fnv1a64`. Unlike
+the vertex/edge *counts* alone (a coarse, shape-only check that two
+different graphs of the same size would pass identically), this changes
+with the actual edge set, so it's a real, if non-cryptographic, identity
+check: a human can recompute it directly from the certificate's own
+visible `graph` field, or from the original source graph, entirely
+independent of trusting this program's JSON parser to have read it
+correctly. -/
+def graphFingerprint (numVertices : Nat) (edges : List (Nat × Nat)) : UInt64 :=
+  fnv1a64 s!"{numVertices};{String.intercalate "," (edges.map (fun (u, v) => s!"{u}-{v}"))}"
+
+/-- Parses and checks a certificate JSON string, returning the checked
+graph's own vertex/edge counts and content fingerprint
+(`graphFingerprint`) alongside a successful result. These are read
+directly off the same `raw` that `checkCertificate` just verified, not
+recomputed or reparsed -- printing them (`Main.lean`) lets a human
+cross-check "the graph `verify_cert` reasoned about" against their own
+independent knowledge of the source graph (its size, and now its actual
+edge set, not just its shape), without having to trust the JSON parser's
+internals to do so. See `docs/certification/theorem.md` for the
+JSON-parsing trust boundary this is mitigating, and why it can't be
+closed by kernel-checking alone. -/
+def checkCertificateJson (s : String) : Except String (Nat × Nat × UInt64) := do
   let j ← Json.parse s
   let raw ← fromJson? (α := RawCertificate) j
   checkCertificate raw
+  return (raw.graph.num_vertices, raw.graph.edges.length,
+    graphFingerprint raw.graph.num_vertices raw.graph.edges)
 
 end CertChecker
 end DiscreteModulusCert

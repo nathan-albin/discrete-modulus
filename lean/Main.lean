@@ -32,8 +32,9 @@ def main (args : List String) : IO UInt32 := do
   | [path] =>
     let s ← IO.FS.readFile path
     match checkCertificateJson s with
-    | .ok () =>
-      IO.println s!"{path}: ACCEPTED"
+    | .ok (numVertices, numEdges, fingerprint) =>
+      IO.println s!"{path}: ACCEPTED  (graph: {numVertices} vertices, {numEdges} edges, \
+fingerprint {fingerprint.toNat})"
       IO.println kruskalCaveat
       return 0
     | .error e =>

@@ -29,17 +29,17 @@ open DiscreteModulusCert.CertChecker
 #eval do
   let s ← IO.FS.readFile "../cpp/examples/house.certificate.json"
   match checkCertificateJson s with
-  | .ok () => IO.println "house: ACCEPTED (rho-admissibility relies on unverified Kruskal, see Main.lean)"
+  | .ok (nv, ne, fp) => IO.println s!"house: ACCEPTED (graph: {nv} vertices, {ne} edges, fingerprint {fp.toNat}; rho-admissibility relies on unverified Kruskal, see Main.lean)"
   | .error e => IO.println s!"house: REJECTED: {e}"
 
 #eval do
   let s ← IO.FS.readFile "../cpp/examples/nested.certificate.json"
   match checkCertificateJson s with
-  | .ok () => IO.println "nested: ACCEPTED (rho-admissibility relies on unverified Kruskal, see Main.lean)"
+  | .ok (nv, ne, fp) => IO.println s!"nested: ACCEPTED (graph: {nv} vertices, {ne} edges, fingerprint {fp.toNat}; rho-admissibility relies on unverified Kruskal, see Main.lean)"
   | .error e => IO.println s!"nested: REJECTED: {e}"
 
 #eval do
   let s ← IO.FS.readFile "../cpp/examples/branch_test.certificate.json"
   match checkCertificateJson s with
-  | .ok () => IO.println "branch_test: ACCEPTED (rho-admissibility relies on unverified Kruskal, see Main.lean)"
+  | .ok (nv, ne, fp) => IO.println s!"branch_test: ACCEPTED (graph: {nv} vertices, {ne} edges, fingerprint {fp.toNat}; rho-admissibility relies on unverified Kruskal, see Main.lean)"
   | .error e => IO.println s!"branch_test: REJECTED: {e}"
