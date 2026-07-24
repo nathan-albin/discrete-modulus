@@ -54,16 +54,16 @@ theorem mapM_ok_forall₂ {α β : Type*} (f : α → Except String β) :
       cases hfa : f a with
       | error e =>
         rw [hfa] at h
-        simp [bind, pure, Except.pure, Except.bind, Functor.map, Except.map] at h
+        simp [bind, Except.bind] at h
       | ok b =>
         rw [hfa] at h
         cases htr : t.mapM f with
         | error e =>
           rw [htr] at h
-          simp [bind, pure, Except.pure, Except.bind, Functor.map, Except.map] at h
+          simp [bind, Except.bind] at h
         | ok bs =>
           rw [htr] at h
-          simp only [bind, pure, Except.pure, Except.bind, Functor.map, Except.map,
+          simp only [bind, pure, Except.pure, Except.bind,
             Except.ok.injEq] at h
           subst h
           exact List.Forall₂.cons hfa (mapM_ok_forall₂ f htr)
@@ -308,15 +308,19 @@ Small facts about `CertChecker.S` (the edge-set-of-a-list abbreviation),
 stated over an arbitrary `V`/`E`/`G` -- none of these actually depend on
 `G` except `forall_diff_not_isForest_of_list_all`. -/
 
+omit [DecidableEq E] [Fintype E] in
 theorem S_ne_of_mem_not_mem {l₁ l₂ : List E} {x : E} (hx1 : x ∈ l₁) (hx2 : x ∉ l₂) :
     (S l₁ : Set E) ≠ S l₂ := by
   intro h; apply hx2; have hx1' : x ∈ S l₁ := hx1; rw [h] at hx1'; exact hx1'
 
+omit [DecidableEq E] [Fintype E] in
 theorem S_subset_of_forall_mem {l₁ l₂ : List E} (h : ∀ x ∈ l₁, x ∈ l₂) : S l₁ ⊆ S l₂ := h
 
+omit [DecidableEq E] [Fintype E] in
 theorem S_append (l₁ l₂ : List E) : (S l₁ : Set E) ∪ S l₂ = S (l₁ ++ l₂) := by
   ext x; simp [S, List.mem_append]
 
+omit [DecidableEq E] [Fintype E] in
 theorem S_nil : (S ([] : List E) : Set E) = ∅ := by ext x; simp [S]
 
 /-- A `Nodup` list whose length matches `Fintype.card E` must enumerate
@@ -331,9 +335,10 @@ theorem S_eq_univ_of_nodup_length {l : List E} (hnodup : l.Nodup)
     rw [List.toFinset_card_of_nodup hnodup, hlen]
   have huniv : l.toFinset = (Finset.univ : Finset E) := Finset.eq_univ_of_card _ hcard
   have hSeq : (S l : Set E) = (l.toFinset : Set E) := by
-    ext x; simp [S, List.mem_toFinset]
+    ext x; simp [S]
   rw [hSeq, huniv, Finset.coe_univ]
 
+omit [DecidableEq V] [Fintype V] [DecidableEq E] [Fintype E] in
 /-- The list-level version of `isBase_contract_restrict_iff_isForest`'s
 maximality conjunct, lifted to the `Set`-level statement that theorem
 actually needs. -/
@@ -394,6 +399,7 @@ noncomputable def treesPmf {M : Matroid E} {trees : List (List E × ℚ)}
     exact hsum
 
 open Classical in
+omit [Fintype E] in
 /-- **`treesPmf`'s marginal, in closed form** -- the per-edge sum
 `CertChecker.sumTreeContributions` computes directly over the raw
 `trees` list. Needed to show the constructed piece pmf's marginal matches
@@ -467,15 +473,17 @@ theorem checkTree_sound {G : Multigraph V E} {prev A I₀acc T : List E}
     rw [heq]
     simpa using hthis
 
+omit [DecidableEq V] [Fintype V] [DecidableEq E] in
 theorem subset_contract_E_of_disjoint {G : Multigraph V E} {prev A : List E}
     (hdisj : ∀ e ∈ A, e ∉ prev) :
     S A ⊆ (G.graphicMatroid ／ (S prev)).E := by
   rw [Matroid.contract_ground, graphicMatroid_E]
-  refine Set.subset_diff.mpr ⟨Set.subset_univ _, ?_⟩
+  refine Set.subset_sdiff.mpr ⟨Set.subset_univ _, ?_⟩
   rw [Set.disjoint_left]
   intro e he hep
   exact hdisj e he hep
 
+omit [DecidableEq E] [Fintype E] in
 /-- Threading a representative base of `prev` through one more block: if
 `I₀` is a base of `N ↾ prev` and `T` is a base of the next block's own
 (already-contracted) matroid `(N ／ prev) ↾ A`, then `I₀ ∪ T` is a base of
@@ -489,7 +497,7 @@ theorem isBase_restrict_union {N : Matroid E} {prev A : Set E} (hAE : A ⊆ (N �
   have hdisjAU : Disjoint A prev := by
     have h := hAE
     rw [Matroid.contract_ground] at h
-    exact (Set.subset_diff.mp h).2
+    exact (Set.subset_sdiff.mp h).2
   have hUsub : prev ⊆ (N ↾ (prev ∪ A)).E := by
     rw [Matroid.restrict_ground_eq]; exact Set.subset_union_left
   have heqRestrict : (N ↾ (prev ∪ A)) ↾ prev = N ↾ prev :=
@@ -567,13 +575,11 @@ noncomputable def checkPiece_sound {m : Nat} {G : Multigraph V (Fin m)} {Uacc I�
   cases hA' : raw.edges.mapM toE with
   | error e =>
     rw [hA'] at hok
-    simp [bind, pure, Except.pure, Except.bind, Functor.map, Except.map] at hok
+    simp [bind, Except.bind] at hok
   | ok A' =>
     rw [hA'] at hok
     simp only [bind, Except.bind] at hok
-    split_ifs at hok with h1 h2 <;>
-      simp only [bind, pure, Except.pure, Except.bind, Functor.map, Except.map] at hok
-    all_goals (try (exfalso; simp at hok; done))
+    (split_ifs at hok with h1 h2; simp only [pure, Except.pure] at hok)
     have hA1 : A'.Nodup := of_decide_eq_true h1
     have hA2 : ∀ e ∈ A', e ∉ Uacc := by
       have := List.all_eq_true.mp h2
@@ -925,15 +931,15 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
   split_ifs at hok with hver
   · dsimp only at hok
     cases hcg : buildGraph raw.graph with
-    | error e => rw [hcg] at hok; simp [bind, pure, Except.pure, Except.bind] at hok
+    | error e => rw [hcg] at hok; simp [bind, Except.bind] at hok
     | ok cg =>
       rw [hcg] at hok
       simp only [bind, Except.bind] at hok
       cases hUacc : checkPieces cg.toMultigraph (natToFin cg.endpoints.size) raw.pieces [] [] 0 with
-      | error e => rw [hUacc] at hok; simp [bind, pure, Except.pure, Except.bind] at hok
+      | error e => rw [hUacc] at hok; simp at hok
       | ok Uacc =>
         rw [hUacc] at hok
-        simp only [bind, Except.bind] at hok
+        simp only [] at hok
         split_ifs at hok with hlen
         split at hok
         next => exact absurd hok (by simp)
