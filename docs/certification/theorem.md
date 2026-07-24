@@ -174,9 +174,98 @@ above and confirming it says what §1 claims `ACCEPTED` means.
 One thing worth checking that isn't a Lean question at all: does `cg` (as
 built from `raw.graph` by `buildGraph`) actually match the graph you
 intended to certify? That's a "does the JSON say what I think it says"
-question, answered by [`schema.md`](schema.md), not by reading more Lean.
+question, answered by [`schema.md`](schema.md) and expanded on next, not
+by reading more Lean.
 
-## 5. What this buys you
+## 5. The JSON-parsing boundary: what kernel-checking can't cover
+
+Every theorem above is a claim the kernel checked. This is the one part
+of the pipeline that isn't, and structurally can't be: kernel-checking
+proves things about mathematical objects, not "this program correctly
+read *these* particular bytes from disk just now." `checkCertificate_optimal`
+is universally quantified over `raw : RawCertificate`. A completely
+faithful theorem about that type still says nothing about whether the
+*specific* `raw` `lake exe verify_cert` constructed from your file, via
+`IO.FS.readFile` and `Lean.Data.Json.parse` and the auto-derived
+`FromJson` decoders, is the `raw` you meant. A bug anywhere in that
+chain (the parser, the derived decoder, a wrong path, a stale file)
+could make `verify_cert` faithfully prove something true and
+uninteresting about the wrong graph, and still print `ACCEPTED`.
+
+**What's actually there, checked directly rather than assumed.**
+[`schema.md`](schema.md) already warns that a JSON parser silently
+coercing large integers to floats would corrupt this format, since
+`eta`/`rho`/tree weights are `[numerator, denominator]` pairs with no
+bound on magnitude. Reading Lean core's own parser
+(`Lean.Data.Json.Parser`) directly confirms this isn't a risk here:
+`JsonNumber` is a `(mantissa : Int, exponent : Nat)` pair throughout
+parsing and decoding (`getNat?`/`getInt?` pattern-match on it directly) —
+`Float`/`Double` never appears anywhere in the path from bytes to
+`RawCertificate`. That's a checked fact now, not an assumption; see
+[`trust.md`](trust.md)'s new row for it.
+
+**What mitigates the rest: print enough that a human can cross-check
+without trusting the parser at all.** `lake exe verify_cert` prints,
+alongside every `ACCEPTED`, the checked graph's vertex count, edge count,
+and a content fingerprint:
+
+```
+../cpp/examples/house.certificate.json: ACCEPTED  (graph: 5 vertices, 6 edges, fingerprint 2557820888710597248)
+```
+
+The fingerprint (`CertChecker.graphFingerprint`) is FNV-1a-64, a
+simple, standard, non-cryptographic hash, deliberately *not*
+Lean-specific, over the string `"{n};{u}-{v},{u}-{v},..."` built from
+`num_vertices` and `edges` in the certificate's own order. It's meant to
+be reimplemented independently and compared, not trusted because this
+project computed it. A five-line Python equivalent, run against the
+certificate's own visible `graph` field (or the original source graph)
+without touching Lean at all:
+
+```python
+def fnv1a64(data: bytes) -> int:
+    h = 0xcbf29ce484222325
+    for b in data:
+        h ^= b
+        h = (h * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF
+    return h
+
+def graph_fingerprint(num_vertices, edges):
+    s = f"{num_vertices};" + ",".join(f"{u}-{v}" for u, v in edges)
+    return fnv1a64(s.encode("utf-8"))
+```
+
+Run against `house`'s `graph` field (`num_vertices=5`,
+`edges=[[0,1],[0,4],[1,4],[1,2],[2,3],[3,4]]`), this prints
+`2557820888710597248` — the exact number `verify_cert` printed above,
+confirmed directly. The vertex/edge counts alone are a coarse, shape-only
+check (two different graphs of the same size would pass identically);
+the fingerprint changes with the actual edge set, so agreement between
+two independent implementations is real evidence the parser read the
+graph you think it did, not just evidence it read *a* graph of the right
+size.
+
+**For a specific certificate, there's a stronger option than trusting
+the runtime path at all: don't take one.**
+[`EndToEndTest.lean`](../../lean/DiscreteModulusCert/EndToEndTest.lean)
+shows the pattern: `include_str` embeds a certificate file's exact bytes
+into the *compiled Lean artifact itself* (`houseJson`/`nestedJson`), so
+there's no `IO.FS.readFile`, no command-line argument, no "which file did
+it actually read" question at all; the bytes are part of the source
+`lake build` checked. Parsing still happens
+(`parseRawCertificate`/`fromJson?`, the same code `verify_cert` uses),
+and its result still isn't proof-relevant on its own, so
+`houseCertRaw_accepted`/`nestedCertRaw_accepted` close that gap the same
+way `verify_cert`'s printed `ACCEPTED` would, except with `native_decide`
+producing an actual kernel-checked proof term instead of a runtime `IO`
+action's return value. Feeding that into `checkCertificate_optimal`
+(`house_end_to_end_optimal`/`nested_end_to_end_optimal`) gives a 
+theorem, checked once when this file was built, about *that exact file's
+bytes*, which is strictly stronger than "I ran the binary and it printed
+`ACCEPTED`," at the cost of needing a new `EndToEndTest.lean` entry (and
+a `lake build`) per certificate you want this for.
+
+## 6. What this buys you
 
 Restating [`trust.md`](trust.md)'s conclusion in this document's terms:
 for a certificate whose `rho` is uniform (like `house`'s), `#print axioms

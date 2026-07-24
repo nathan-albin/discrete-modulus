@@ -128,7 +128,7 @@ lake exe verify_cert ../cpp/examples/house.certificate.json
 ```
 
 ```
-../cpp/examples/house.certificate.json: ACCEPTED
+../cpp/examples/house.certificate.json: ACCEPTED  (graph: 5 vertices, 6 edges, fingerprint 2557820888710597248)
   NOTE: admissibility of rho relies on an unverified Kruskal implementation
   (its output is trusted, not proven, to be a minimum-weight spanning tree).
 ```
@@ -146,6 +146,15 @@ During this stage, the verifier:
    (`Optimality.lean`'s `certificate_optimality`): $\rho$ pairs against $\eta$
    to exactly $1$ ($\left<\rho,\eta\right> = 6 \times \tfrac14 \times
    \tfrac23 = 1$), and $\|\rho\|^2 \|\eta\|^2 = \tfrac38 \times \tfrac83 = 1$. Cauchy-Schwarz is satisfied with equality, proving that $\rho$ and $\mu$ are both optimal.
+
+The `(graph: ...)` summary alongside `ACCEPTED` isn't part of the kernel-checked
+conclusion, it's a human cross-check on the one step that can't be
+kernel-checked, namely reading the file off disk and parsing it. The
+vertex/edge counts are a quick check; the fingerprint is a content hash
+(FNV-1a-64 over `"{n};{u}-{v},..."`) you can recompute independently, in any
+language, from the certificate's own `graph` field, and compare against what's
+printed. See [`theorem.md`](theorem.md)'s note on the JSON-parsing trust
+boundary for why this exists and how to reproduce it yourself.
 
 `ACCEPTED` means the certificate has been checked by the Lean verifier. You
 can also see `lean/DiscreteModulusCert/EndToEndTest.lean`'s
