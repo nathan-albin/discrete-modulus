@@ -174,21 +174,19 @@ private theorem coe_setOf_mem_cons_of_mem {a : E} {l : List E} (ha : a ∈ l) :
 
 /-!
 **A components cache, for callers checking many candidate insertions
-against the same base forest.** `decidableIsForestInsertOfList` (`Decide`
-above) is already a *single* cheap reachability check — but a certificate's
-maximality check calls it once per candidate edge (`CertChecker.lean`'s
-`checkTree`, `O(|piece edges|)` candidates against the *same* base forest),
-and each call independently reruns `bfsClosure` from scratch, even though
-the underlying graph never changes across those calls. `forestComponents`
-below computes that graph's connected components *once* — reusing
-`bfsClosure`'s already-proven correctness, called only once per distinct
-component rather than once per candidate — so repeated queries become
-cheap `Finset`/`List` lookups. Confirmed necessary, not just a nicety: on
-`nested.certificate.json`'s 190-edge piece, a single reachability query
-against an already-built ~19-edge forest measured the same cost whether or
-not `instDecidableIsForestOfList`'s own per-level redundancy was fixed
-first — the dominant cost was *always* the `O(|piece edges|)`-many
-independent fresh queries, not the recursion shape.
+against the same base forest.** A certificate's maximality check
+(`CertChecker.lean`'s `checkTree`) calls a single-insertion decision once
+per candidate edge, `O(|piece edges|)` candidates against the *same* base
+forest. `forestComponents` below computes that graph's connected
+components *once* via `mergeStep`/`buildComponents` (an incremental
+union-find over `Finset V` partitions — see the file docstring for why
+this replaced an earlier `bfsClosure`-based version), so repeated queries
+against the shared cache become cheap `Finset`/`List` lookups instead of
+each candidate redoing its own reachability search.
+`decidableIsForestInsertOfList` (`Decide` below) reuses this same
+components cache, building it fresh per call since it has no precomputed
+cache of its own to share across calls the way the maximality-check loop
+does.
 -/
 
 variable [Fintype V] [DecidableEq V]
@@ -196,9 +194,8 @@ variable [Fintype V] [DecidableEq V]
 /-- The (at most 2-element) vertex set of a `Sym2 V` edge value, extracted
 without ever naming which vertex is "first" — swap-invariance here is the
 trivial fact `{u, v} = {v, u}` as `Finset`s, unlike trying to extract an
-*ordered* pair (which would need extra structure on `V`; see
-`FastReachable`'s docstring for why that route was rejected elsewhere in
-this file). -/
+*ordered* pair (which would need extra structure on `V` to pick a
+canonical order, unavailable for a bare `[Fintype V] [DecidableEq V]`). -/
 def edgeVerts (z : Sym2 V) : Finset V :=
   Sym2.lift ⟨fun u v => ({u, v} : Finset V), fun u v => by
     ext x; simp only [Finset.mem_insert, Finset.mem_singleton]; tauto⟩ z
@@ -507,12 +504,13 @@ theorem connected_forestComponents_iff (l : List E) (p q : V) :
   · rintro ⟨w⟩
     exact reachable_imp_connected G l w
 
-/-- **The fast single-insertion decision, backed by a precomputed
-components cache.** Same statement and result as
-`decidableIsForestInsertOfList`, but the reachability half is a `List`/
-`Finset` lookup against `comps` (assumed to already be `forestComponents G
-l`) instead of a fresh `bfsClosure` search — the version to call from a
-loop testing many candidate insertions against the same base forest. -/
+/-- **The single-insertion decision, backed by a components cache.** Same
+statement as `decidableIsForestInsertOfList` (which is in fact a thin
+wrapper around this, below), but takes the components cache (`comps`,
+assumed to already be `forestComponents G l`) as a parameter rather than
+building it itself — the version to call from a loop testing many
+candidate insertions against the same base forest, so the cache is built
+once and reused across all of them instead of once per candidate. -/
 def decidableIsForestInsertOfComponents (l : List E) (a : E)
     (hF : G.IsForest ({e | e ∈ l} : Set E)) (comps : List (Finset V))
     (hcomps : comps = forestComponents G l) :

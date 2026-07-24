@@ -20,12 +20,15 @@ justified by `native_decide` rather than assumed) gives a genuine, concrete
 `RawCertificate` term -- no dummy fallback value, no hand-transcription.
 `native_decide` then runs `checkCertificate` against that concrete term
 (compiled, the same mechanism `verify_cert`/`ForestDecide.lean`'s maximality
-checks already rely on for `nested`'s 190-edge piece -- `#eval`'s interpreter
-would be far too slow here, see `CertCheckerTest.lean`'s own docstring for
-why `nested`'s `#eval` stays disabled). Feeding the resulting acceptance
-proof into `checkCertificate_optimal` (`Soundness.lean`) yields a
-kernel-checked term concluding real, on-disk certificates are genuinely
-optimal -- the actual end-to-end claim, not a proxy for it.
+checks already rely on for `nested`'s 190-edge piece) -- not for speed
+(`#eval` is fast enough here too, see `CertCheckerTest.lean`'s own
+docstring), but because `native_decide` yields a genuine kernel-checked
+*proof term* (`houseCertRaw_accepted`/`nestedCertRaw_accepted` below),
+which `#eval` -- a runtime action that only runs and prints, producing no
+proof -- can't provide. Feeding that acceptance proof into
+`checkCertificate_optimal` (`Soundness.lean`) yields a kernel-checked term
+concluding real, on-disk certificates are genuinely optimal -- the actual
+end-to-end claim, not a proxy for it.
 -/
 
 namespace DiscreteModulusCert

@@ -174,11 +174,12 @@ certificate pieces (`nested.certificate.json`'s 190-edge/10-tree piece):
 `instDecidableIsForestOfList` recomputes one reachability check per
 recursion level (`O(|I₀acc ++ T|)` of them) for *every* candidate, and even
 after that was collapsed to a single check per candidate
-(`decidableIsForestInsertOfList`), each of those still reran a fresh
-`bfsClosure` against a base graph that never changes across the whole
-`A \ T` loop. Building the base graph's connected components once and
-reusing them for every candidate turns each check into a cheap `List`/
-`Finset` lookup instead. -/
+(`decidableIsForestInsertOfList`), each of those still reran its own
+connected-components search against a base graph that never changes across
+the whole `A \ T` loop. Building the base graph's connected components once
+(see `ForestDecide.lean`'s `mergeStep`/`buildComponents`) and reusing them
+for every candidate turns each check into a cheap `List`/`Finset` lookup
+instead. -/
 def checkTree (G : Multigraph V E) (I₀acc A T : List E) : Except String PUnit := do
   let _ ← check T.Nodup "tree has a duplicate edge index"
   let _ ← check (T.all (· ∈ A)) "tree uses an edge outside its own piece"
