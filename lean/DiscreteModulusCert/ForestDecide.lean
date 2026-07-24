@@ -378,7 +378,8 @@ def decidableIsForestInsertOfList (l : List E) (a : E) (hF : G.IsForest ({e | e 
       rw [coe_setOf_mem_cons]; exact Set.mem_insert a _)) hloop)
   else if hreach : sym2Reachable (G.toSimpleGraph {e | e ∈ l}) (G.endpoints a) then
     isFalse (fun hFs => by
-      obtain ⟨u, v, huv⟩ := Sym2.exists.mp ⟨G.endpoints a, rfl⟩
+      induction huv : G.endpoints a with
+      | _ u v =>
       have hne : u ≠ v := fun h => hloop (by rw [huv, h]; exact Sym2.diag_isDiag v)
       have hFs' : G.IsForest (insert a ({e | e ∈ l} : Set E)) := by
         rw [← coe_setOf_mem_cons]; exact hFs
@@ -387,7 +388,8 @@ def decidableIsForestInsertOfList (l : List E) (a : E) (hF : G.IsForest ({e | e 
       exact (isForest_insert_iff G hF ha huv hne).mp hFs' hreach')
   else
     isTrue (by
-      obtain ⟨u, v, huv⟩ := Sym2.exists.mp ⟨G.endpoints a, rfl⟩
+      induction huv : G.endpoints a with
+      | _ u v =>
       have hne : u ≠ v := fun h => hloop (by rw [huv, h]; exact Sym2.diag_isDiag v)
       have hnr : ¬ (G.toSimpleGraph {e | e ∈ l}).Reachable u v := fun hcontra => by
         have hcontra' : sym2Reachable (G.toSimpleGraph {e | e ∈ l}) (s(u, v) : Sym2 V) :=
@@ -626,7 +628,8 @@ def decidableIsForestInsertOfComponents (l : List E) (a : E)
       rw [coe_setOf_mem_cons]; exact Set.mem_insert a _)) hloop)
   else if hreach : ∃ c ∈ comps, edgeVerts (G.endpoints a) ⊆ c then
     isFalse (fun hFs => by
-      obtain ⟨u, v, huv⟩ := Sym2.exists.mp ⟨G.endpoints a, rfl⟩
+      induction huv : G.endpoints a with
+      | _ u v =>
       have hne : u ≠ v := fun h => hloop (by rw [huv, h]; exact Sym2.diag_isDiag v)
       have hFs' : G.IsForest (insert a ({e | e ∈ l} : Set E)) := by
         rw [← coe_setOf_mem_cons]; exact hFs
@@ -637,7 +640,8 @@ def decidableIsForestInsertOfComponents (l : List E) (a : E)
       exact (isForest_insert_iff G hF ha huv hne).mp hFs' hreach')
   else
     isTrue (by
-      obtain ⟨u, v, huv⟩ := Sym2.exists.mp ⟨G.endpoints a, rfl⟩
+      induction huv : G.endpoints a with
+      | _ u v =>
       have hne : u ≠ v := fun h => hloop (by rw [huv, h]; exact Sym2.diag_isDiag v)
       have hnr : ¬ (G.toSimpleGraph {e | e ∈ l}).Reachable u v := fun hcontra => by
         apply hreach

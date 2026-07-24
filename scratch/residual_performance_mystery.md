@@ -88,6 +88,77 @@ don't repeat it.
    ideally close to `branch_test`'s ~2.3s given both should have comparable per-candidate cost once
    this is fixed.
 
+## Update (2026-07-24): root cause found via `perf`
+
+Picked this up and made progress in two stages.
+
+**Stage 1 — the `Sym2.ind` rewrite (the "most promising untried lead" above)
+was tried and does help, modestly.** Replaced `obtain ⟨u, v, huv⟩ :=
+Sym2.exists.mp ⟨G.endpoints a, rfl⟩` with `induction huv : G.endpoints a with
+| _ u v =>` in both `decidableIsForestInsertOfList` and
+`decidableIsForestInsertOfComponents` (both branches of each). This compiles
+cleanly and is a strict improvement, but it's not the dominant cost:
+`nested`'s `lake exe verify_cert` went from ~32s (this machine's baseline,
+not directly comparable to the ~42s figure above) to a consistent ~25.7s
+across repeated runs. Applied and kept — no reason not to.
+
+**Stage 2 — the real bottleneck, found by installing `perf` (WSL2 needs the
+kernel-generic package's binary invoked directly, e.g.
+`/usr/lib/linux-tools-6.8.0-136/perf`, since the `/usr/bin/perf` wrapper
+refuses to run against WSL2's non-standard kernel version string) and
+profiling `lake exe verify_cert` on `nested` directly.**
+
+`perf report` puts 57% of total cycles in `List.elem` (`l_List_elem___redArg`),
+reached via `instBEqOfDecidableEq` → `Sym2.instDecidableRel`, called from
+**`instDecidableRelAdjToSimpleGraphOfList`** — the adjacency-decidability
+instance this file's own docstring already flags as "scans the edge list."
+That instance is called from **`bfsStep`**'s `Finset.univ.filter (H.Adj u)`
+line — and `Finset.univ : Finset V` there is **the whole graph's vertex
+set**, not just the vertices touched by the edge list `l` currently being
+closed over.
+
+This matters because `nested.certificate.json`'s graph has **60 vertices
+total across all 3 pieces**, but any single piece/tree only uses ~20 of
+them. `bfsClosure`'s termination argument (`FastReachable` section) bounds
+the number of rounds by `Fintype.card V` — i.e. 60, not the ~20 actually
+relevant to a given `checkTree` call — and every one of those rounds scans
+all 60 vertices via `Finset.univ`, each vertex's adjacency check doing a
+linear scan through `l` (up to 190 edges) with `Sym2`-equality comparisons
+that carry real allocation/refcounting overhead (visible in the profile as
+`mi_free` / `lean_dec_ref_cold` under the same call path). `forestComponents`
+(which wraps `bfsClosure`) runs once per `checkTree` call, and there are 16
+such calls across `nested`'s pieces — so this cost is paid 16 times over.
+
+**Why every manual isolation attempt before `perf` came back "fast" (a
+real trap, worth recording for next time):** stubbing out
+`decidableIsForestInsertOfComponents`'s `hreach` branch (or its whole body)
+with `sorry` didn't just remove the per-candidate check — since `comps`
+(built via `forestComponents`, the *actual* expensive call) became
+provably unused once `hreach` no longer referenced it, the compiler's dead-
+argument elimination silently dropped the `forestComponents` computation
+at the `checkTree` call site too. Every hand-built reproduction (matching
+vertex/edge counts, using the real functions directly, runtime- vs.
+compile-time-known sizes) missed this because none of them preserved a
+call to `forestComponents` whose *result* was actually forced downstream
+in a way matching the real `checkTree`/`extra.all` shape closely enough.
+Lesson: when isolating a suspected hot function, checking that the
+isolated version still forces every value the real call site forces is at
+least as important as matching data shapes/sizes — a much sharper trap
+than the "let-binding not forced" gotcha already documented above, since
+here the *compiler*, not just laziness, was quietly doing the eliding.
+
+**Untried but well-scoped fix:** restrict `bfsStep`'s frontier expansion to
+a precomputed vertex-support set for `l` (e.g. the union of `edgeVerts
+(G.endpoints e)` over `e ∈ l`) instead of `Finset.univ : Finset V`. BFS
+starting from vertices only reachable via `l`'s own edges can never leave
+that support set, so this should be sound, but it requires re-deriving
+`subset_bfsStep`/`bfsClosure`'s termination argument (currently keyed to
+`Fintype.card V`) against the smaller support set's cardinality instead,
+plus re-checking `connected_forestComponents_iff` and everything downstream
+still goes through cleanly. Not attempted yet — a genuine proof-engineering
+task, not a quick patch, and the right next step if `nested`'s ~25s is
+still worth chasing further.
+
 ## Constraints (must hold throughout)
 
 - No `Classical.choice`/`sorry` in the final decision path — must stay genuinely computable.

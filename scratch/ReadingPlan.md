@@ -27,13 +27,13 @@ else; they'll make every file below faster to place.
 
 - [x] `docs/certification/README.md` — architecture overview, the
       three-stage pipeline, trust-per-stage table.
-- [ ] `docs/certification/walkthrough.md` — the house graph through all
+- [x] `docs/certification/walkthrough.md` — the house graph through all
       three stages with real file contents at each step.
-- [ ] `docs/certification/pipeline.md` — the "how," per stage, naming
+- [x] `docs/certification/pipeline.md` — the "how," per stage, naming
       actual files/functions. This one doubles as a map for Tier 3 below.
-- [ ] `docs/certification/schema.md` — field-by-field reference for both
+- [x] `docs/certification/schema.md` — field-by-field reference for both
       JSON formats.
-- [ ] `docs/certification/trust.md` — the TCB ledger; read this
+- [x] `docs/certification/trust.md` — the TCB ledger; read this
       critically, since it's the whole point of the exercise.
 
 ## Tier 1 — C++ solver changes (small, ~10 min)
