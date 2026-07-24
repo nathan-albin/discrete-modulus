@@ -8,11 +8,11 @@ import Mathlib.Tactic.FieldSimp
 
 The direct Cauchy-Schwarz duality argument: for `ρ` admissible and `μ` a
 pmf with marginal `η`, if `ρ = η / ‖η‖²` then `ρ` and `μ` are
-simultaneously optimal — `ρ` achieves the minimum squared norm over all
+simultaneously optimal. `ρ` achieves the minimum squared norm over all
 admissible densities (`ρ` solves the modulus problem), and `μ` achieves
 the minimum squared norm of its own marginal over all pmfs (`μ` solves the
-dual min-norm-point problem — the same quantity Wolfe's algorithm and the
-constructive tree-packing solver compute, see
+dual min-norm-point problem, the same quantity Wolfe's algorithm and the
+constructive tree-packing solver compute; see
 `discrete_modulus.min_norm_point`/`discrete_modulus.tree_packing` in the
 Python package). Both halves follow from the same two ingredients
 (`Pmf.one_le_pairing_marginal_of_admissible` plus squared Cauchy-Schwarz),
@@ -20,7 +20,8 @@ just with the roles of `ρ` and the pmf's marginal swapped.
 
 See `docs/certification/pipeline.md`'s "Cauchy-Schwarz duality" section
 for the full derivation and motivation, and
-`docs/certification/walkthrough.md` for it worked out on real numbers. -/
+`docs/certification/walkthrough.md` for it worked out on a concrete
+example. -/
 
 namespace DiscreteModulusCert
 
@@ -33,7 +34,7 @@ private theorem sqNorm_div_const (f : E → ℚ) (c : ℚ) :
   simp only [sqNorm, div_pow]
   rw [← Finset.sum_div]
 
-/-- If `ρ = η / ‖η‖²` for `‖η‖² ≠ 0`, then `‖ρ‖² * ‖η‖² = 1` — the algebraic
+/-- If `ρ = η / ‖η‖²` for `‖η‖² ≠ 0`, then `‖ρ‖² * ‖η‖² = 1`: the algebraic
 fact behind "`ρ` and `η/‖η‖` are parallel unit-pairing vectors" in the
 Cauchy-Schwarz argument. -/
 theorem sqNorm_mul_sqNorm_eq_one_of_eq_div {η ρ : CertDensity E} (hηpos : sqNorm η ≠ 0)
@@ -59,7 +60,7 @@ theorem isMinOn_sqNorm_adm_of_certificate {ρ : CertDensity E} (_hρAdm : IsAdmi
 
 /-- **Certificate optimality, dual half**: for `ρ` admissible of the form
 `η / ‖η‖²`, `η` achieves the minimum squared norm among the marginals of
-*all* pmfs on `M`'s bases — exactly the quantity Wolfe's algorithm
+*all* pmfs on `M`'s bases, exactly the quantity Wolfe's algorithm
 (`min_norm_point_wolfe` in the Python builder) computes. -/
 theorem isMinOn_sqNorm_marginal_of_certificate {ρ : CertDensity E} (hρAdm : IsAdmissible M ρ)
     {μ : Pmf M} {η : E → ℚ} (_hη : η = μ.marginal) (hηpos : sqNorm η ≠ 0)
@@ -103,12 +104,12 @@ theorem certificate_optimality {ρ : CertDensity E} (hρAdm : IsAdmissible M ρ)
     isMinOn_sqNorm_marginal_of_certificate hρAdm hη hηpos hρeq⟩
 
 /-- **Admissibility definitional lemma.** `ρ` is admissible for `M` iff
-every base of `M` has `ρ`-weight at least `1` — genuinely definitional
+every base of `M` has `ρ`-weight at least `1`: purely definitional
 (`IsAdmissible` is stated exactly this way), kept as a named, discoverable
 lemma since it's the hinge the certificate checker's admissibility check
-actually invokes (composed with `isAdmissible_graphicMatroid_iff` for the
-graph-language version, "every spanning tree"). The further equivalence
-to "the *minimum* base weight is `≥ 1`" (the form that literally matches
+invokes (composed with `isAdmissible_graphicMatroid_iff` for the
+graph-language version, "every spanning tree"). The further equivalence to
+"the *minimum* base weight is `≥ 1`" (the form that literally matches
 Kruskal's computed output) needs the minimum to be attained; that
 composition is done directly against `Kruskal.run`'s output in
 `Admissibility.lean`'s axiom rather than as a further corollary of this

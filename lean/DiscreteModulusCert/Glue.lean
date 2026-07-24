@@ -6,7 +6,7 @@ import DiscreteModulusCert.Family
 A certificate's per-block local pmfs need composing into one pmf on the
 whole graph's spanning trees. The whole multi-round, multi-core laminar
 family the solver/builder produces reduces to *one flat, ordered list* of
-blocks, verified by a single fold -- not a tree needing general recursion
+blocks, verified by a single fold, not a tree needing general recursion
 (matching `pmf_construction.py`'s `FactoredPmf.pieces` /
 `solver_trace.hpp`'s `SolverTrace.rounds`: within-round deflation pieces
 and across-round pieces are structurally identical from this file's point
@@ -16,16 +16,16 @@ file provides:
 * `isBase_union_of_isBase_restrict_isBase_contract` /
   `isBase_contract_iff_of_isBasis_restrict`: the two matroid facts behind
   gluing, generalized from `lean-modulus`'s graphic-matroid-specific
-  versions to an arbitrary ambient `Matroid E` — needed because folding a
-  *list* of blocks means gluing against intermediate ambients (`M ↾ X` for
-  various `X`), not just the top-level `M` itself.
+  versions to an arbitrary ambient `Matroid E`. This is needed because
+  folding a *list* of blocks means gluing against intermediate ambients
+  (`M ↾ X` for various `X`), not just the top-level `M` itself.
 * `Pmf.glue`: lifts the single-basis gluing fact to whole pmfs, given an
   ambient `N`, a block `A ⊆ N.E`, a pmf on the block's own bases, and a
   pmf on the *canonical* (tree-independent) rest-of-`N`-after-contracting-`A`.
 * `Piece`/`PieceList`/`PieceList.glueAll`: the flat-list fold itself. A
   `PieceList N U` is an ordered sequence of blocks whose edges union to
   `U`, each block's pmf typed relative to everything *before* it in the
-  list (already contracted away) — exactly the shape `pmf_construction.py`
+  list (already contracted away): exactly the shape `pmf_construction.py`
   produces. `glueAll` folds it into a single `Pmf (N ↾ U)`.
 -/
 
@@ -41,7 +41,7 @@ omit [Fintype E] in
 base `I` of the restriction to a block `A` plus a base `J` of the
 contraction by `I` unions to a base of the whole (ambient) matroid `N`.
 Generalizes `Multigraph.isBase_union_of_isBase_restrict_isBase_contract`
-(fixed to `N = G.graphicMatroid`) — needed here because folding a *list*
+(fixed to `N = G.graphicMatroid`); needed here because folding a *list*
 of blocks glues against intermediate ambients `G.graphicMatroid ↾ X`, not
 just the top-level matroid itself. Proved the same way `lean-modulus`
 proves its version: a thin specialization of Mathlib's general
@@ -81,7 +81,7 @@ justified it**, generalized to an arbitrary ambient matroid (see
 `isBase_union_of_isBase_restrict_isBase_contract` for why the
 generalization is needed). For `I` a basis (spanning tree) of the block
 `A`, contracting by `I` and contracting by the whole block `A` have the
-same bases outside `A` — a general matroid fact (via
+same bases outside `A`: a general matroid fact (via
 `IsBasis'.contract_eq_contract_delete`: contracting by `A` is the same as
 contracting by `I` and then deleting `A \ I`, and deleting the loops
 `A \ I` creates doesn't change which disjoint sets are bases). -/
@@ -148,8 +148,8 @@ private theorem glue_injOn (μA : Pmf (N ↾ A)) (μRest : Pmf (N ／ A))
 the rest of the ambient matroid `N` after contracting that block, into a
 single pmf on `N`'s bases. `hAE` is needed for the ambient generalization
 (automatic, `Set.subset_univ`, when `N` is a connected graph's
-`graphicMatroid`); `hdisj` — `μRest`'s trees never touch the block at all
-— is the only hypothesis about the *pmfs themselves*; compatibility with
+`graphicMatroid`); `hdisj` (`μRest`'s trees never touch the block at all)
+is the only hypothesis about the *pmfs themselves*; compatibility with
 whichever tree of the block gets drawn is automatic
 (`isBase_contract_iff_of_isBasis_restrict`). -/
 noncomputable def Pmf.glue (hAE : A ⊆ N.E) (μA : Pmf (N ↾ A)) (μRest : Pmf (N ／ A))
@@ -215,7 +215,7 @@ private theorem usageVector_union_of_disjoint {I J : Set E} (hIJ : Disjoint I J)
 
 omit [Fintype E] in
 /-- **The marginal-compositionality lemma.** A glued pmf's marginal at any
-edge is exactly the *sum* of the two pieces' own local marginals — never
+edge is exactly the *sum* of the two pieces' own local marginals, never
 computed from the glued pmf's (exponentially large) support directly.
 This is what makes `η` cheap to derive from a certificate's per-piece
 `local_pmf`s rather than from the fully-glued top-level pmf: folding this
@@ -226,7 +226,7 @@ the Cartesian-product blowup `Pmf.glue`'s `support` field carries.
 Proved the same way `Pmf.glue`'s own `sum_one` field is: reindex the
 support-image sum back to the underlying product of supports via
 `glue_injOn`, then split `usageVector (J ∪ I) e` into `usageVector J e +
-usageVector I e` (valid since `J`, `I` are disjoint — `J` a basis of the
+usageVector I e` (valid since `J`, `I` are disjoint: `J` a basis of the
 contraction is disjoint from `A`, and `I ⊆ A`), and factor each half of
 the resulting double sum using the two pmfs' own `sum_one` fields. -/
 theorem Pmf.glue_marginal (hAE : A ⊆ N.E) (μA : Pmf (N ↾ A)) (μRest : Pmf (N ／ A))
@@ -294,8 +294,8 @@ noncomputable def trivialPmf (N : Matroid E) : Pmf (N ↾ (∅ : Set E)) where
   nonneg := by intro T _; norm_num
   sum_one := by simp
 
-/-- Transport a pmf along an equality of matroids — `support`/`weight` are
-unchanged (`cast_support`/`cast_weight`), only the `isBase` proof's type
+/-- Transport a pmf along an equality of matroids. `support`/`weight` are
+unchanged (`cast_support`/`cast_weight`); only the `isBase` proof's type
 changes. -/
 def Pmf.cast {M M' : Matroid E} (h : M = M') (μ : Pmf M) : Pmf M' := h ▸ μ
 
@@ -315,7 +315,7 @@ omit [Fintype E] in
 
 /-- One block in a laminar family: its own edge set `A`, together with a
 pmf on its own bases *given* everything listed before it (`prev`) is
-already contracted away — exactly the shape `pmf_construction.py`'s
+already contracted away, exactly the shape `pmf_construction.py`'s
 `LocalPiece` has (a piece's own `graph`, computed on the already-shrunk
 working graph, together with its `result`). -/
 structure Piece (N : Matroid E) (prev : Set E) where
@@ -325,7 +325,7 @@ structure Piece (N : Matroid E) (prev : Set E) where
   /-- The pmf on this block's own bases, given `prev` already contracted. -/
   pmf : Pmf ((N ／ prev) ↾ A)
 
-/-- A flat, ordered laminar family of blocks whose edges union to `U` —
+/-- A flat, ordered laminar family of blocks whose edges union to `U`:
 the shape the certificate schema uses for its `pieces` field (a flat
 array, not a tree), matching `pmf_construction.py`'s `FactoredPmf.pieces` /
 `solver_trace.hpp`'s `SolverTrace.rounds` (concatenated: within-round
@@ -366,7 +366,7 @@ noncomputable def PieceList.glueAll {N : Matroid E} : ∀ {U : Set E}, PieceList
       exact hdisjAU.mono_left hJA
 
 omit [Fintype E] in
-/-- The sum of every piece's own local marginal — cheap to compute (linear
+/-- The sum of every piece's own local marginal: cheap to compute (linear
 in `pieces × edges`, one small `Finset.sum` per piece), unlike
 `PieceList.glueAll`'s own combined pmf, whose support is exponential in the
 piece count. `PieceList.glueAll_marginal` shows this is exactly the glued
@@ -378,11 +378,11 @@ noncomputable def PieceList.marginalSum {N : Matroid E} : ∀ {U : Set E}, Piece
 
 omit [Fintype E] in
 /-- Transporting a `PieceList` along an equality of its edge-set index
-doesn't change its `marginalSum` — needed because a top-level certificate's
-`PieceList` (e.g. `houseCertPieces`) is typically built for the *union* of
-its own pieces' edges, then transported via `▸` to `Set.univ` (the
-"partition-completeness" proof, `PieceList.glueAllGraph`'s own argument)
-before folding. -/
+doesn't change its `marginalSum`. This matters because a top-level
+certificate's `PieceList` (e.g. `houseCertPieces`) is typically built for
+the *union* of its own pieces' edges, then transported via `▸` to
+`Set.univ` (the "partition-completeness" proof,
+`PieceList.glueAllGraph`'s own argument) before folding. -/
 theorem PieceList.marginalSum_cast {N : Matroid E} {U U' : Set E} (h : U = U')
     (l : PieceList N U) (e : E) : (h ▸ l).marginalSum e = l.marginalSum e := by
   subst h; rfl
@@ -390,7 +390,7 @@ theorem PieceList.marginalSum_cast {N : Matroid E} {U U' : Set E} (h : U = U')
 omit [Fintype E] in
 /-- **The compositional marginal theorem.** Folds `Pmf.glue_marginal` down
 a whole `PieceList`: the fully-glued pmf's marginal at any edge equals the
-sum of every piece's own local marginal at that edge — never the
+sum of every piece's own local marginal at that edge, never the
 (exponentially-support'd) glued pmf's marginal computed directly. This is
 the fact that makes deriving a certificate's `η` from its `pieces` array
 tractable. -/
@@ -426,8 +426,8 @@ theorem PieceList.glueAll_marginal {N : Matroid E} :
       rw [Pmf.glue_marginal, Pmf.cast_marginal, Pmf.cast_marginal, glueAll_marginal tail e]
 
 /-- **Top-level specialization.** A `PieceList` for `G.graphicMatroid`
-whose blocks cover *every* edge (`U = Set.univ`) glues into a genuine
-`Pmf G.graphicMatroid` — feedable directly into `certificate_optimality`.
+whose blocks cover *every* edge (`U = Set.univ`) glues into a
+`Pmf G.graphicMatroid`, feedable directly into `certificate_optimality`.
 Requiring `U = Set.univ` at the type level is exactly the
 "partition-completeness" check a certificate must pass: a verifier can
 only produce this if the certificate's `pieces` list, folded, is shown

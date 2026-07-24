@@ -2,15 +2,15 @@ import DiscreteModulusCert.Kruskal
 
 /-!
 Smoke test for `Kruskal.run` (`Kruskal.lean`) on a tiny, hand-checkable
-triangle: confirms the greedy algorithm actually picks the two cheapest
-edges (not just type-checks vacuously), and that the resulting weight
-sum correctly distinguishes an admissible density from an inadmissible
-one -- the exact arithmetic `CertChecker.checkCertificate`'s admissibility
-check uses. Since `Kruskal.run`'s own correctness is *not* proven (see
-`Kruskal.lean`'s docstring -- that's the accepted gap), there is no `Prop`
-to `native_decide` here; this observes and asserts on the computed output
-directly, the same style `CertCheckerTest.lean` uses for genuinely running
-code.
+triangle: confirms the greedy algorithm picks the two cheapest edges (not
+just that it type-checks), and that the resulting weight sum correctly
+distinguishes an admissible density from an inadmissible one, the same
+arithmetic `CertChecker.checkCertificate`'s admissibility check uses. Since
+`Kruskal.run`'s own correctness is *not* proven (see `Kruskal.lean`'s
+docstring for the accepted gap), there is no `Prop` to `native_decide`
+here; this observes and asserts on the computed output directly, the same
+style `CertCheckerTest.lean` uses for running code rather than proving
+statements about it.
 -/
 
 namespace DiscreteModulusCert.KruskalTest
@@ -30,7 +30,7 @@ private def weights : Array ℚ := #[3, 1, 2]
     IO.println s!"KruskalTest triangle: FAIL (mst={mst}, weight={w}, expected [1, 2] weight 3)"
 
 -- Same triangle, all weights 0: the minimum spanning tree's weight is 0,
--- correctly identified as inadmissible (< 1) -- the same arithmetic
+-- correctly identified as inadmissible (< 1), the same arithmetic
 -- `CertChecker.checkCertificate`'s admissibility check performs, exercised
 -- here in isolation on a case designed to fail it.
 private def zeroWeights : Array ℚ := #[0, 0, 0]

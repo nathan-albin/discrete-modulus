@@ -4,30 +4,30 @@ import DiscreteModulusCert.Glue
 # Reducing a piece's `IsBase` check to a graph forest check
 
 The remaining gap in "per-piece `IsBase` checking": turning a certificate's
-raw declared tree (an edge-index list) into a proof that it's actually a
-base of that piece's matroid
-(`(G.graphicMatroid ／ prev) ↾ A`, in `Piece`'s language). This file
-proves the reduction that makes that checkable at all:
-`isBase_contract_restrict_iff_isForest` turns the matroid question into a
-pure graph-combinatorics one — is a specific, small edge set a forest of
-the *original* graph `G` (`Multigraph.IsForest`, no contraction/relabeling
-in sight) — given one already-verified spanning tree `I₀` of everything
-processed so far (`prev`).
+raw declared tree (an edge-index list) into a proof that it is a base of
+that piece's matroid (`(G.graphicMatroid ／ prev) ↾ A`, in `Piece`'s
+language). This file proves the reduction that makes that checkable at
+all. `isBase_contract_restrict_iff_isForest` turns the matroid question
+into a pure graph-combinatorics one: is a specific, small edge set a
+forest of the *original* graph `G` (`Multigraph.IsForest`, with no
+contraction or relabeling in sight), given one already-verified spanning
+tree `I₀` of everything processed so far (`prev`).
 
-**Resolved in `ForestDecide.lean`.** `Multigraph.IsForest` wasn't known to be
-`Decidable`/computably checkable when this file was written. Its two easy
-conjuncts (no loops, injective endpoints) are immediate finite checks; the
-hard one, `(G.toSimpleGraph F).IsAcyclic`, is *not* decidable "for free" via
-existing Mathlib instances — confirmed directly: `#synth`-style attempts at
-`Decidable G.IsAcyclic` via `isAcyclic_iff_forall_isBridge` (the natural
-route, since `Reachable` is decidable for `Fintype` vertex types) still fail
-to synthesize, because `IsBridge`'s own decidability and a `Fintype`/`Finset`
-handle on `edgeSet` aren't wired up either. `ForestDecide.lean` builds a
-genuine decision procedure instead — structural recursion on a candidate
-tree's edge-index list, deciding each insertion via Mathlib's
-`isAcyclic_sup_fromEdgeSet_iff` — giving a real, `sorry`-free
-`Decidable (G.IsForest {e | e ∈ l})` instance for any `l : List E`, which is
-exactly the shape a certificate's declared tree already comes in. -/
+**Resolved in `ForestDecide.lean`.** `Multigraph.IsForest` wasn't known to
+be `Decidable`, or computably checkable, when this file was written. Its
+two easy conjuncts (no loops, injective endpoints) are immediate finite
+checks; the hard one, `(G.toSimpleGraph F).IsAcyclic`, is not decidable
+"for free" via existing Mathlib instances. This was confirmed directly:
+`#synth`-style attempts at `Decidable G.IsAcyclic` via
+`isAcyclic_iff_forall_isBridge` (the natural route, since `Reachable` is
+decidable for `Fintype` vertex types) still fail to synthesize, because
+`IsBridge`'s own decidability and a `Fintype`/`Finset` handle on `edgeSet`
+aren't wired up either. `ForestDecide.lean` builds a decision procedure
+instead, by structural recursion on a candidate tree's edge-index list,
+deciding each insertion via Mathlib's `isAcyclic_sup_fromEdgeSet_iff`. This
+gives a `sorry`-free `Decidable (G.IsForest {e | e ∈ l})` instance for any
+`l : List E`, exactly the shape a certificate's declared tree already
+comes in. -/
 
 namespace DiscreteModulusCert
 
@@ -38,15 +38,15 @@ variable {V E : Type*} [Fintype E] (G : Multigraph V E)
 
 /-- **The matroid-to-graph reduction.** Given `I₀`, an already-verified
 spanning tree of everything processed so far (`prev`), a candidate `T` for
-the next piece (edges `A`, disjoint from `prev`) is a genuine base of that
-piece's matroid iff (a) `I₀ ∪ T` is a forest of the *original* graph — no
-contraction/relabeling needed, `I₀` being concrete data already stands in
-for "`prev` contracted away" — and (b) no other edge of the piece (`A \ T`)
-can be added without creating a cycle. (b) is the *single-insertion* form
-of maximality (`Indep.isBase_of_forall_insert`); by the matroid exchange
-property it's equivalent to full maximality, and — unlike a quantifier
-over all of `A`'s independent subsets — is a check over the *finite* set
-`A \ T` alone, one candidate insertion at a time. -/
+the next piece (edges `A`, disjoint from `prev`) is a base of that piece's
+matroid iff (a) `I₀ ∪ T` is a forest of the *original* graph, with no
+contraction or relabeling needed (`I₀` being concrete data already stands
+in for "`prev` contracted away"), and (b) no other edge of the piece
+(`A \ T`) can be added without creating a cycle. Condition (b) is the
+*single-insertion* form of maximality (`Indep.isBase_of_forall_insert`);
+by the matroid exchange property it's equivalent to full maximality, and,
+unlike a quantifier over all of `A`'s independent subsets, is a check over
+the *finite* set `A \ T` alone, one candidate insertion at a time. -/
 theorem isBase_contract_restrict_iff_isForest {prev A I₀ T : Set E}
     (hI₀ : (G.graphicMatroid ↾ prev).IsBase I₀) (hAE : A ⊆ (G.graphicMatroid ／ prev).E)
     (hTA : T ⊆ A) :

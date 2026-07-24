@@ -8,8 +8,8 @@ import Mathlib.Algebra.Order.Ring.Rat
 `lean-modulus`'s own `Density`/`FamilyOfObjects`/`Adm`
 (`LeanModulus.Common.FamilyOfObjects`) are valued in `ℝ≥0`, which has no
 subtraction: Mathlib's finite Cauchy-Schwarz inequality
-(`Finset.sum_mul_sq_le_sq_mul_sq`) needs a genuine ordered *ring* and
-doesn't apply to it directly. `lean-modulus`'s own duality proof
+(`Finset.sum_mul_sq_le_sq_mul_sq`) needs an ordered *ring* and doesn't
+apply to it directly. `lean-modulus`'s own duality proof
 (`Common/Duality.lean`) works around this by detouring through `ℝ` via
 `Density.toReal`, plus real-analysis machinery (compactness, extreme
 points) this certificate doesn't need. Since certificate values are exact
@@ -21,7 +21,7 @@ Stated over an arbitrary `Matroid E` (bases), not `Multigraph`/
 composes pmfs across a matroid restriction/contraction split (`M ↾ A`,
 `M ／ I`), and neither `M ↾ A` nor `M ／ I` is obviously "the graphic
 matroid of some other multigraph" without extra graph theory this project
-doesn't otherwise need — working with `Matroid` throughout sidesteps that
+doesn't otherwise need. Working with `Matroid` throughout sidesteps that
 entirely. The graph-specific interpretation ("`M = G.graphicMatroid`, `G`
 connected, so a base is exactly a spanning tree") is a thin corollary at
 the bottom of this file, via `lean-modulus`'s `isSpanningTree_iff_isBase`.
@@ -58,9 +58,9 @@ theorem sq_pairing_le_sqNorm_mul_sqNorm (f g : E → ℚ) :
     pairing f g ^ 2 ≤ sqNorm f * sqNorm g :=
   Finset.sum_mul_sq_le_sq_mul_sq Finset.univ f g
 
-/-- The `{0, 1}`-indicator usage vector of an edge set — a base's own
-usage vector when `T` is a base of the matroid in play, but the
-definition itself doesn't care. -/
+/-- The `{0, 1}`-indicator usage vector of an edge set: a base's own usage
+vector when `T` is a base of the matroid in play, but the definition
+itself doesn't care. -/
 noncomputable def usageVector (T : Set E) : E → ℚ := T.indicator (fun _ => 1)
 
 open Classical in
@@ -78,15 +78,14 @@ def IsAdmissible (M : Matroid E) (ρ : CertDensity E) : Prop :=
 def Adm (M : Matroid E) : Set (CertDensity E) := {ρ | IsAdmissible M ρ}
 
 /-- A finitely-supported probability distribution on the bases of `M`,
-with exact rational weights — the shape a certificate's per-block local
-pmf actually serializes as (a `Finset` of edge sets plus a rational weight
-each). -/
+with exact rational weights: the shape a certificate's per-block local pmf
+serializes as (a `Finset` of edge sets plus a rational weight each). -/
 structure Pmf (M : Matroid E) where
   /-- The bases in the support of the distribution. -/
   support : Finset (Set E)
   /-- The weight assigned to each base (only meaningful on `support`). -/
   weight : Set E → ℚ
-  /-- Every element of the support is genuinely a base of `M`. -/
+  /-- Every element of the support is a base of `M`. -/
   isBase : ∀ T ∈ support, M.IsBase T
   /-- Weights are nonnegative. -/
   nonneg : ∀ T ∈ support, 0 ≤ weight T
@@ -118,8 +117,8 @@ theorem pairing_marginal (μ : Pmf M) (ρ : CertDensity E) :
         exact Finset.sum_congr rfl fun e _ => by ring
 
 /-- If `ρ` is admissible and `μ` is a pmf on `M`'s bases, `ρ`'s pairing
-against `μ`'s marginal is at least `1` — the expectation, over `μ`, of
-the per-base admissibility bound. -/
+against `μ`'s marginal is at least `1`: the expectation, over `μ`, of the
+per-base admissibility bound. -/
 theorem one_le_pairing_marginal_of_admissible {ρ : CertDensity E} (hρ : IsAdmissible M ρ)
     (μ : Pmf M) : 1 ≤ pairing ρ μ.marginal := by
   rw [pairing_marginal]

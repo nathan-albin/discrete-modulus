@@ -4,103 +4,109 @@ import Mathlib.Combinatorics.SimpleGraph.Connectivity.Finite
 /-!
 # Making `Multigraph.IsForest` decidable on a concrete graph
 
-`IsBaseCheck.lean` reduces a certificate's per-piece `IsBase` check to a pure
-graph-combinatorics question — is a candidate edge set `G.IsForest (I₀ ∪ T)`
-for the *original* graph `G` — but flagged that `Multigraph.IsForest` itself
-wasn't yet known to be `Decidable`/computably checkable. The obstruction: the
-natural route through Mathlib, `isAcyclic_iff_forall_isBridge` +
-`Reachable`'s `Fintype`-vertex decidability, doesn't synthesize, because
-`IsBridge`'s own decidability and a `Fintype`/`Finset` handle on `edgeSet`
-aren't wired up.
+`IsBaseCheck.lean` reduces a certificate's per-piece `IsBase` check to a
+pure graph-combinatorics question, whether a candidate edge set
+`G.IsForest (I₀ ∪ T)` holds for the *original* graph `G`, but flagged that
+`Multigraph.IsForest` itself wasn't yet known to be `Decidable`, or
+computably checkable. The obstruction: the natural route through Mathlib,
+`isAcyclic_iff_forall_isBridge` plus `Reachable`'s `Fintype`-vertex
+decidability, doesn't synthesize, because `IsBridge`'s own decidability
+and a `Fintype`/`Finset` handle on `edgeSet` aren't wired up.
 
 This file sidesteps `IsBridge` entirely and builds the decision procedure
 directly: a verified union-find-style algorithm, phrased as structural
-recursion on a `List E` of candidate edges (a certificate's tree is exactly
-such a list — an edge-index list), inserting
-one edge at a time and using Mathlib's `isAcyclic_sup_fromEdgeSet_iff` (an
-honest iff, both directions, transported into `isForest_insert_iff` below) to
-decide at each step whether the new edge closes a cycle.
+recursion on a `List E` of candidate edges (a certificate's tree is
+exactly such a list, an edge-index list), inserting one edge at a time
+and using Mathlib's `isAcyclic_sup_fromEdgeSet_iff` (an honest iff, both
+directions, transported into `isForest_insert_iff` below) to decide at
+each step whether the new edge closes a cycle.
 
-**A subtlety that shaped the design.** The natural first attempt — strong
+**A subtlety that shaped the design.** The natural first attempt (strong
 induction on a `Finset E`, naming a new edge's two endpoints `u v : V` via
-`Sym2.exists` before deciding anything — type-checks and proves the right
-theorem, but its `Decidable` value gets *stuck* under the kernel's `decide`
-reduction: `Sym2.exists` is `Exists`-valued, and extracting `u, v` from it via
-`Classical.choice` to pick which `Decidable` branch (`isTrue`/`isFalse`) to
-build is exactly the kind of "large elimination" a classical witness can't
-support computationally, even though it's perfectly fine *inside* a proof.
-Structural recursion on `List E` (rather than well-founded recursion on
-`Finset.card`) fixes the *other* half of this: `Finset.strongInductionOn`
-compiles to `WellFounded.fix`/`Acc.rec`, which also doesn't reduce well under
-`decide`. The fix for both, combined:
+`Sym2.exists` before deciding anything) type-checks and proves the right
+theorem, but its `Decidable` value gets *stuck* under the kernel's
+`decide` reduction: `Sym2.exists` is `Exists`-valued, and extracting `u,
+v` from it via `Classical.choice` to pick which `Decidable` branch
+(`isTrue`/`isFalse`) to build is exactly the kind of "large elimination" a
+classical witness can't support computationally, even though it's
+perfectly fine *inside* a proof. Structural recursion on `List E` (rather
+than well-founded recursion on `Finset.card`) fixes the *other* half of
+this: `Finset.strongInductionOn` compiles to `WellFounded.fix`/`Acc.rec`,
+which also doesn't reduce well under `decide`. The fix for both,
+combined:
 - Recurse on `List E` via ordinary structural pattern matching (`[]` /
-  `a :: rest`) — always reduces under `decide`, no well-founded recursion.
-- Never *name* an edge's endpoints to decide which branch to take. Instead,
-  `decidableIsForestInsertOfComponents`/`decidableIsForestInsertOfList`
-  decide "is this edge already addable without closing a cycle" as a
-  `Finset`-level membership check (`∃ c ∈ comps, edgeVerts (G.endpoints a) ⊆
-  c`) directly on the `Sym2 V` edge value, via `edgeVerts` (itself built
-  from `Sym2.lift`, so already branch-free at the value level). Naming the
-  endpoints (`induction huv : G.endpoints a with | _ u v => ...`, i.e.
-  `Sym2.ind`) is then only ever needed *inside* the resulting proof
-  obligations (`Prop`-to-`Prop` elimination, always fine), never to pick
-  the `Decidable` branch.
+  `a :: rest`), which always reduces under `decide`, with no well-founded
+  recursion.
+- Never *name* an edge's endpoints to decide which branch to take.
+  Instead, `decidableIsForestInsertOfComponents`/
+  `decidableIsForestInsertOfList` decide "is this edge already addable
+  without closing a cycle" as a `Finset`-level membership check (`∃ c ∈
+  comps, edgeVerts (G.endpoints a) ⊆ c`) directly on the `Sym2 V` edge
+  value, via `edgeVerts` (itself built from `Sym2.lift`, so already
+  branch-free at the value level). Naming the endpoints (`induction huv :
+  G.endpoints a with | _ u v => ...`, i.e. `Sym2.ind`) is then only ever
+  needed *inside* the resulting proof obligations (`Prop`-to-`Prop`
+  elimination, always fine), never to pick the `Decidable` branch.
 
 Both fixes were confirmed necessary and sufficient by direct experiment
-(`#eval`/`decide` on a 3-cycle test graph) before settling on this design.
+(`#eval`/`decide` on a 3-cycle test graph) before settling on this
+design.
 
-**Performance history (two fixes, not one).** The design above type-checks
-and is correct at any size, but went through two rounds of genuine
-algorithmic traps, not just kernel-reduction inconveniences:
-1. Originally wired to Mathlib's own `DecidableRel Reachable` instance for
-   "are these endpoints already connected" — built by transporting
+**Performance history (two fixes, not one).** The design above
+type-checks and is correct at any size, but went through two rounds of
+real algorithmic traps, not just kernel-reduction inconveniences:
+1. Originally wired to Mathlib's own `DecidableRel Reachable` instance
+   for "are these endpoints already connected," built by transporting
    decidability across `reachable_iff_exists_finsetWalkLength_nonempty`,
    whose witness search (`finsetWalkLength`) enumerates *every walk* of
    each candidate length by branching over every neighbor at every step,
-   no visited-set pruning at all — exponential in `Fintype.card V`,
-   confirmed directly to hang for minutes on a 190-edge/20-vertex
-   nearly-complete piece even under `native_decide` (compiled code, so a
-   genuinely exponential computation, not a `decide`-vs-`native_decide`
-   reduction-strategy artifact).
+   with no visited-set pruning at all. This is exponential in
+   `Fintype.card V`, confirmed directly to hang for minutes on a
+   190-edge/20-vertex nearly-complete piece even under `native_decide`
+   (compiled code, so an exponential computation, not a
+   `decide`-vs-`native_decide` reduction-strategy artifact).
 2. Replaced with a textbook bounded BFS closure over plain `Finset`
-   operations (polynomial, not exponential) — a real fix, but one that
+   operations (polynomial, not exponential): an improvement, but one that
    still scanned `Finset.univ` (the *whole* graph's vertex `Fintype`) on
    every round, regardless of how few vertices a given piece actually
-   touches. Confirmed via `perf` to still dominate real `verify_cert`
+   touches. Confirmed via `perf` to still dominate `verify_cert`'s
    runtime on `nested.certificate.json` (60 vertices total across all
    pieces, but any one piece touches only ~20 of them): ~25s of a ~26s
    total run, almost entirely in the per-round adjacency scan.
 
 Both are now replaced by `Components`'s `mergeStep`/`buildComponents`: an
 incremental union-find over `Finset V` partitions, processing each edge's
-own two endpoints once and merging any existing components they touch —
-no `Finset.univ` scan, no BFS rounds, no walk enumeration, and (per the
+own two endpoints once and merging any existing components they touch.
+No `Finset.univ` scan, no BFS rounds, no walk enumeration, and (per the
 subtlety above) no `Classical.choice`-requiring endpoint-naming either,
 since it operates on `edgeVerts`-derived `Finset`s rather than named
 vertices throughout. `decidableIsForestInsertOfList` now delegates to
 `decidableIsForestInsertOfComponents` (building a fresh `forestComponents`
 each call), and `instDecidableIsForestOfList`'s own recursive `O(|l|)`-many
-calls benefit the same way — this dropped `nested`'s `verify_cert` from
+calls benefit the same way. This dropped `nested`'s `verify_cert` from
 ~26s to ~2.5s and its `native_decide`-based end-to-end test from ~300s to
-~10s. An array-backed union-find (`Batteries.UnionFind`) was considered and
-rejected before settling on this `Finset`-based version: indexing into it
-needs a computable `V ≃ Fin (card V)` bijection, which is noncomputable in
-Mathlib for a bare `[Fintype V]` (extracting a canonical enumeration from
-an abstract `Finset`'s underlying `Multiset` quotient needs choice) — the
-same computability obstruction the file's design has to avoid throughout.
+~10s. An array-backed union-find (`Batteries.UnionFind`) was considered
+and rejected before settling on this `Finset`-based version: indexing
+into it needs a computable `V ≃ Fin (card V)` bijection, which is
+noncomputable in Mathlib for a bare `[Fintype V]` (extracting a canonical
+enumeration from an abstract `Finset`'s underlying `Multiset` quotient
+needs choice). This is the same computability obstruction the file's
+design has to avoid throughout.
 
 **Main results:**
-- `isForest_insert_iff`: given `F` is already a forest, inserting a new edge
-  `e` (with endpoints `u ≠ v`) keeps it a forest iff `u`, `v` weren't already
-  reachable in `F`'s simple graph. Both directions — the forward direction is
-  Mathlib's own edge-addition acyclicity iff, transported through
-  `Multigraph.toSimpleGraph`; the backward direction is exactly
-  `Multigraph.IsForest.insert_of_not_reachable`, already proved upstream.
-- `instDecidableIsForestOfList`: a genuine, `decide`-reducible
-  `Decidable (G.IsForest {e | e ∈ l})` instance for any `l : List E`, given
-  `Fintype V`, `DecidableEq V`, `DecidableEq E` — exactly the concrete-graph
-  setting a certificate parser runs in, and exactly the shape (an edge-index
-  list) a certificate's declared tree already comes in.
+- `isForest_insert_iff`: given `F` is already a forest, inserting a new
+  edge `e` (with endpoints `u ≠ v`) keeps it a forest iff `u`, `v` weren't
+  already reachable in `F`'s simple graph. Both directions are covered:
+  the forward direction is Mathlib's own edge-addition acyclicity iff,
+  transported through `Multigraph.toSimpleGraph`; the backward direction
+  is exactly `Multigraph.IsForest.insert_of_not_reachable`, already
+  proved upstream.
+- `instDecidableIsForestOfList`: a `decide`-reducible
+  `Decidable (G.IsForest {e | e ∈ l})` instance for any `l : List E`,
+  given `Fintype V`, `DecidableEq V`, `DecidableEq E`: exactly the
+  concrete-graph setting a certificate parser runs in, and exactly the
+  shape (an edge-index list) a certificate's declared tree already comes
+  in.
 -/
 
 namespace DiscreteModulusCert
@@ -179,7 +185,7 @@ against the same base forest.** A certificate's maximality check
 per candidate edge, `O(|piece edges|)` candidates against the *same* base
 forest. `forestComponents` below computes that graph's connected
 components *once* via `mergeStep`/`buildComponents` (an incremental
-union-find over `Finset V` partitions — see the file docstring for why
+union-find over `Finset V` partitions; see the file docstring for why
 this replaced an earlier `bfsClosure`-based version), so repeated queries
 against the shared cache become cheap `Finset`/`List` lookups instead of
 each candidate redoing its own reachability search.
@@ -192,7 +198,7 @@ does.
 variable [Fintype V] [DecidableEq V]
 
 /-- The (at most 2-element) vertex set of a `Sym2 V` edge value, extracted
-without ever naming which vertex is "first" — swap-invariance here is the
+without ever naming which vertex is "first": swap-invariance here is the
 trivial fact `{u, v} = {v, u}` as `Finset`s, unlike trying to extract an
 *ordered* pair (which would need extra structure on `V` to pick a
 canonical order, unavailable for a bare `[Fintype V] [DecidableEq V]`). -/
@@ -203,7 +209,7 @@ def edgeVerts (z : Sym2 V) : Finset V :=
 omit [Fintype V] in
 theorem edgeVerts_mk (u v : V) : edgeVerts (s(u, v) : Sym2 V) = ({u, v} : Finset V) := rfl
 
-/-- Whether `p`/`q` lie in a common component of a partition `P` — `p = q`
+/-- Whether `p`/`q` lie in a common component of a partition `P`. `p = q`
 covers vertices untouched by any component (implicitly their own singleton
 component). -/
 def connected (P : List (Finset V)) (p q : V) : Prop :=
@@ -212,8 +218,8 @@ def connected (P : List (Finset V)) (p q : V) : Prop :=
 instance decConnected (P : List (Finset V)) (p q : V) : Decidable (connected P p q) := by
   unfold connected; infer_instance
 
-/-- Two `Finset`s recorded in the partition never share a vertex — the
-invariant that makes `connected` (below) genuinely transitive, and that
+/-- Two `Finset`s recorded in the partition never share a vertex: the
+invariant that makes `connected` (below) transitive, and that
 `buildComponents`'s incremental merging maintains throughout. -/
 def PairwiseDisjointFinsets (P : List (Finset V)) : Prop := P.Pairwise Disjoint
 
@@ -234,13 +240,13 @@ theorem disjoint_foldl_union (l : List (Finset V)) (init c : Finset V)
 component that shares a vertex with `verts` into one new component (union
 them all together with `verts` itself); components disjoint from `verts`
 pass through unchanged. Unlike the old `bfsClosure`-based version, this
-never scans `Finset.univ` (the *whole* graph's vertex `Fintype`) — it only
+never scans `Finset.univ` (the *whole* graph's vertex `Fintype`); it only
 ever touches vertices that already appear in `verts` or an already-recorded
 component. Confirmed to matter: on `nested.certificate.json` (60 vertices
 total, but any one piece touches only ~20 of them), `bfsStep`'s per-round
 `Finset.univ.filter` scan, combined with `instDecidableRelAdjToSimpleGraphOfList`'s
 own per-vertex edge-list scan, was the dominant cost of `verify_cert`
-(confirmed via `perf`: ~57% of cycles in the adjacency-check path) — this
+(confirmed via `perf`: ~57% of cycles in the adjacency-check path). This
 union-based merge sidesteps `Finset.univ` (and `bfsStep`/`bfsClosure`
 entirely) for the components cache, processing each edge exactly once. -/
 def mergeStep (verts : Finset V) (P : List (Finset V)) : List (Finset V) :=
@@ -299,7 +305,7 @@ theorem reachable_foldl_union (H : SimpleGraph V) [DecidableRel H.Adj] :
       · exact reachable_union_of_not_disjoint H hvertsReach
           (hvalid hd List.mem_cons_self) (hoverlap hd List.mem_cons_self)
 
-/-- Every component recorded so far is internally mutually `H`-reachable —
+/-- Every component recorded so far is internally mutually `H`-reachable:
 the soundness half of the partition invariant `buildComponents` maintains
 (true, in `forestComponents` below, of a seed formed from a single edge's
 own two endpoints). -/
@@ -508,7 +514,7 @@ theorem connected_forestComponents_iff (l : List E) (p q : V) :
 statement as `decidableIsForestInsertOfList` (which is in fact a thin
 wrapper around this, below), but takes the components cache (`comps`,
 assumed to already be `forestComponents G l`) as a parameter rather than
-building it itself — the version to call from a loop testing many
+building it itself. This is the version to call from a loop testing many
 candidate insertions against the same base forest, so the cache is built
 once and reused across all of them instead of once per candidate. -/
 def decidableIsForestInsertOfComponents (l : List E) (a : E)
@@ -562,13 +568,13 @@ variable [Fintype V] [DecidableEq V] [DecidableEq E]
 Given `{e' | e' ∈ l}` is already known to be a forest, decide whether
 `insert a {e' | e' ∈ l}` still is. A thin wrapper around
 `decidableIsForestInsertOfComponents`, building `forestComponents G l`
-fresh each call -- there's no cache to reuse here (unlike a maximality
+fresh each call. There's no cache to reuse here (unlike a maximality
 check's loop over many candidates against one base forest), but this still
 avoids the old `bfsClosure`/`Finset.univ`-scanning path entirely, which is
 what `instDecidableIsForestOfList`'s own `O(|l|)`-many per-level calls
 (once per recursion level, each checking a different growing prefix)
-actually bottlenecked on -- confirmed via `perf` to dominate real
-`verify_cert` runtime even after `decidableIsForestInsertOfComponents`'s
+bottlenecked on, confirmed via `perf` to dominate `verify_cert`'s
+runtime even after `decidableIsForestInsertOfComponents`'s
 own maximality-check path was fixed the same way. -/
 def decidableIsForestInsertOfList (l : List E) (a : E) (hF : G.IsForest ({e | e ∈ l} : Set E)) :
     Decidable (G.IsForest ({e | e ∈ (a :: l)} : Set E)) :=

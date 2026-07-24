@@ -5,18 +5,17 @@ import Lean.Data.Json
 /-!
 # A runnable JSON certificate checker
 
-A genuinely standalone verifier: reads a certificate JSON file at
-*program runtime* and checks every invariant `validate_certificate` (the
-untrusted Python-side sanity check) also checks, but this time using the
-same computable decidability instance `ForestDecide.lean` built
-(`instDecidableIsForestOfList`) -- genuinely running Cunningham/forest-
-decision code against the parsed data, not just a syntactic sanity check.
-A certificate is a JSON object with a top-level graph (vertex count plus
-a global edge list), a flat ordered `pieces` array (each piece its own
-edge subset plus a local pmf over that piece's own spanning trees, as
-edge-index lists with rational weights), and top-level `eta`/`rho` arrays
-(one rational per edge) -- see `RawCertificate`/`RawPiece`/`RawTree`
-below for the exact shape parsed.
+A standalone verifier: reads a certificate JSON file at *program runtime*
+and checks every invariant `validate_certificate` (the untrusted
+Python-side sanity check) also checks, but this time running the same
+computable decidability instance `ForestDecide.lean` built
+(`instDecidableIsForestOfList`) against the parsed data, not just a
+syntactic sanity check. A certificate is a JSON object with a top-level
+graph (vertex count plus a global edge list), a flat ordered `pieces`
+array (each piece its own edge subset plus a local pmf over that piece's
+own spanning trees, as edge-index lists with rational weights), and
+top-level `eta`/`rho` arrays (one rational per edge). See
+`RawCertificate`/`RawPiece`/`RawTree` below for the exact shape parsed.
 
 See `docs/certification/schema.md` for the authoritative field-by-field
 certificate schema reference, and
@@ -24,62 +23,60 @@ certificate schema reference, and
 JSON Schema.
 
 **Checked (not trusted) `eta`/`rho` fields.** The certificate declares
-the optimal pmf's marginal (`eta`) and admissible density (`rho`)
-per edge; this checker recomputes both independently from `pieces` (the
-same composition `Pmf.glue_marginal`/`PieceList.glueAll_marginal`,
-`Glue.lean`, prove sound -- linear in pieces x edges, never the glued
-pmf's exponential support) and rejects the certificate if the declared
-values don't match. Nothing is trusted that wasn't already being derived;
-the certificate's own `eta`/`rho` are just now legible without running
-this checker at all, and diffable directly against the C++ solver's own
+the optimal pmf's marginal (`eta`) and admissible density (`rho`) per
+edge. This checker recomputes both independently from `pieces` (the same
+composition `Pmf.glue_marginal`/`PieceList.glueAll_marginal`, `Glue.lean`,
+prove sound; linear in pieces times edges, never the glued pmf's
+exponential support) and rejects the certificate if the declared values
+don't match. Nothing is trusted that wasn't already being derived; the
+certificate's own `eta`/`rho` are now legible without running this
+checker at all, and diffable directly against the C++ solver's own
 `*.eta` output.
 
 **Admissibility of `rho`, via the accepted Kruskal-oracle gap
 (`Kruskal.lean`).** `rho` is admissible iff *every* spanning tree has
 `rho`-weight `≥ 1`, which holds iff the *minimum*-weight spanning tree
 does. `Kruskal.run` computes that minimum greedily; its correctness (that
-the greedy algorithm's output really is a minimum spanning tree) is this
-project's one deliberately unverified step -- the result is trusted, not
-proven. This checker still genuinely rejects a certificate whose
-Kruskal-computed minimum weight is `< 1`; only the *algorithm's own
-correctness*, not whether the check runs, is unverified.
+the greedy algorithm's output is a minimum spanning tree) is this
+project's one deliberately unverified step: the result is trusted, not
+proven. This checker still rejects a certificate whose Kruskal-computed
+minimum weight is `< 1`; only the algorithm's own correctness, not
+whether the check runs, is unverified.
 
 **Why this is a plain executable, not `decide`/`native_decide` on a proof
 term.** `EndToEndTest.lean` proves facts about *specific* certificates
 whose data is fixed at elaboration time (embedded via `include_str`), so
 `decide`/`native_decide` (tactics that close a proof goal once, at
-elaboration time) are the right tool there. A certificate's actual content is
-only known when this program *runs* (read from a file path given on the
-command line), so there is no fixed goal for a tactic to close at
-elaboration time at all. The right tool instead is ordinary functional
-code: `instDecidableIsForestOfList` is a genuinely computable `Decidable`
-instance (structural recursion, no `Classical.choice` anywhere -- see its
-own file), so writing `if G.IsForest (S l) then ... else ...` in a regular
-(non-tactic) definition compiles to real executable code that runs the
-same forest-decision algorithm against whatever list `l` this program
-parsed at runtime. This file's checks are all phrased this way: plain,
-computable predicates over `List`/`Fin m`/`ℚ`, never touching `Set E`'s
-classical equality (unlike `Pmf.support : Finset (Set E)`, which is
-genuinely noncomputable) -- deliberately so, since a runtime checker has to
-actually *run*.
+elaboration time) are the right tool there. A certificate's actual
+content is only known when this program *runs* (read from a file path
+given on the command line), so there is no fixed goal for a tactic to
+close at elaboration time. The right tool instead is ordinary functional
+code: `instDecidableIsForestOfList` is a computable `Decidable` instance
+(structural recursion, no `Classical.choice` anywhere; see its own file),
+so writing `if G.IsForest (S l) then ... else ...` in a regular
+(non-tactic) definition compiles to executable code that runs the same
+forest-decision algorithm against whatever list `l` this program parsed
+at runtime. This file's checks are all phrased this way: plain, computable
+predicates over `List`/`Fin m`/`ℚ`, never touching `Set E`'s classical
+equality (unlike `Pmf.support : Finset (Set E)`, which is noncomputable).
+This is deliberate, since a runtime checker has to actually run.
 
 **What this does and doesn't establish, by itself.** This checks exactly
 what `validate_certificate` checks, faithfully and independently, using
-the real forest-decision algorithm rather than a syntactic proxy: piece
-edges disjoint and covering the whole graph, every declared tree is a
-genuine forest and maximal within its piece (so a genuine base of that
-piece's matroid, via the same `isBase_contract_restrict_iff_isForest`
-reduction `Soundness.lean`'s `checkTree_sound` uses), and weights
-nonnegative and summing to 1 per piece. Running `checkCertificate` and
-getting `ok` back is, by itself, only a runtime fact, not a kernel-checked
-proof term -- that gap
-(a universally-quantified soundness theorem: "if this checker returns
-`ok`, a genuine `PieceList`/`Pmf` exists for the same data, and it's
-optimal") is closed separately, by `Soundness.lean`'s
+the forest-decision algorithm itself rather than a syntactic proxy: piece
+edges disjoint and covering the whole graph, every declared tree a forest
+and maximal within its piece (so a base of that piece's matroid, via the
+same `isBase_contract_restrict_iff_isForest` reduction `Soundness.lean`'s
+`checkTree_sound` uses), and weights nonnegative and summing to 1 per
+piece. Running `checkCertificate` and getting `ok` back is, by itself,
+only a runtime fact, not a kernel-checked proof term. That gap (a
+universally-quantified soundness theorem: "if this checker returns `ok`,
+a `PieceList`/`Pmf` exists for the same data, and it's optimal") is closed
+separately, by `Soundness.lean`'s
 `checkCertificate_sound`/`checkCertificate_optimal`, linking this
 computable checker to the noncomputable `Pmf`/`certificate_optimality`
-machinery the way `instDecidableIsForestOfList` already links `decide` to
-`IsForest`.
+machinery, the way `instDecidableIsForestOfList` already links `decide`
+to `IsForest`.
 -/
 
 namespace DiscreteModulusCert
@@ -87,7 +84,7 @@ namespace CertChecker
 
 open Lean Multigraph
 
-/-- `[numerator, denominator]`, exactly as the schema requires -- arbitrary
+/-- `[numerator, denominator]`, exactly as the schema requires: arbitrary
 precision (`Int`/`Nat` are unbounded in Lean), never floating point. -/
 structure RawTree where
   edges : List Nat
@@ -142,21 +139,21 @@ def buildGraph (raw : RawGraph) : Except String CheckedGraph := do
 variable {V E : Type*} [DecidableEq V] [Fintype V] [DecidableEq E] [Fintype E]
 
 /-- The edge set of an edge-index list, in exactly the `{e | e ∈ l}` shape
-`instDecidableIsForestOfList` is stated for -- `abbrev`, not `def`, so
-instance search (and hence real computation) sees through it. The single
+`instDecidableIsForestOfList` is stated for. `abbrev`, not `def`, so
+instance search (and hence computation) sees through it. The single
 canonical definition; `Soundness.lean`'s own `S`-manipulation lemmas
 import and reuse this one rather than redefining it. -/
 abbrev S (l : List E) : Set E := {e | e ∈ l}
 
-/-- Turns a `Bool` check plus an error message into an `Except` action --
-gives every check below a single, unambiguous monadic type, rather than
+/-- Turns a `Bool` check plus an error message into an `Except` action,
+giving every check below a single, unambiguous monadic type, rather than
 leaving `if cond then pure () else Except.error msg` to be elaborated
 polymorphically as a bare `do`-block statement. Returns `PUnit`, not
 `Unit`: in a `do` block whose overall result type mentions a
 universe-polymorphic `E : Type*` (every caller here), binding a discarded
 `Except String Unit` statement hits a universe-unification quirk in the
-elaborator (confirmed by direct experiment) that `PUnit` -- already
-universe-polymorphic itself -- doesn't. -/
+elaborator (confirmed by direct experiment) that `PUnit`, already
+universe-polymorphic itself, doesn't. -/
 def check (cond : Bool) (msg : String) : Except String PUnit :=
   if cond then Except.ok ⟨⟩ else Except.error msg
 
@@ -169,17 +166,17 @@ halves, computed directly rather than proved about fixed literals).
 The maximality half uses `decidableIsForestInsertOfComponents` against a
 components cache built *once* per tree (`forestComponents`) rather than a
 fresh `decide (G.IsForest (S (I₀acc ++ (e :: T))))` per candidate `e`. Two
-compounding redundancies made the naive version too slow on real
-certificate pieces (`nested.certificate.json`'s 190-edge/10-tree piece):
-`instDecidableIsForestOfList` recomputes one reachability check per
-recursion level (`O(|I₀acc ++ T|)` of them) for *every* candidate, and even
-after that was collapsed to a single check per candidate
+compounding redundancies made the naive version too slow on certificate
+pieces of realistic size (`nested.certificate.json`'s 190-edge/10-tree
+piece): `instDecidableIsForestOfList` recomputes one reachability check
+per recursion level (`O(|I₀acc ++ T|)` of them) for *every* candidate, and
+even after that was collapsed to a single check per candidate
 (`decidableIsForestInsertOfList`), each of those still reran its own
-connected-components search against a base graph that never changes across
-the whole `A \ T` loop. Building the base graph's connected components once
-(see `ForestDecide.lean`'s `mergeStep`/`buildComponents`) and reusing them
-for every candidate turns each check into a cheap `List`/`Finset` lookup
-instead. -/
+connected-components search against a base graph that never changes
+across the whole `A \ T` loop. Building the base graph's connected
+components once (see `ForestDecide.lean`'s `mergeStep`/`buildComponents`)
+and reusing them for every candidate turns each check into a cheap
+`List`/`Finset` lookup instead. -/
 def checkTree (G : Multigraph V E) (I₀acc A T : List E) : Except String PUnit := do
   let _ ← check T.Nodup "tree has a duplicate edge index"
   let _ ← check (T.all (· ∈ A)) "tree uses an edge outside its own piece"
@@ -230,16 +227,16 @@ def checkPieces (G : Multigraph V E) (toE : Nat → Except String E) :
     | .ok (A, I₀acc') => checkPieces G toE rest (Uacc ++ A) I₀acc' (i + 1)
 
 /-- Recomputes the optimal pmf's marginal at every edge (global index),
-directly from a certificate's own raw `pieces` -- summing each declared
+directly from a certificate's own raw `pieces`, summing each declared
 tree's weight into every edge it uses. Mirrors `compute_eta_from_pieces`
 on the Python side (`certificate_builder.py`), but works entirely over
 `Nat`/`Fin m` rather than through `checkPiece`/`checkPieces`'s generic
 `{V E : Type*} [Fintype E]` abstraction: that abstraction has no
-computable `E → Fin m` projection available generically (`Fintype.equivFin`
-is `noncomputable`). Working directly from the raw `Nat`-indexed JSON
-data, where `m` is already concrete, sidesteps this entirely. See
-`docs/certification/pipeline.md`'s "implementation notes" for this same
-obstacle in context. -/
+computable `E → Fin m` projection available generically
+(`Fintype.equivFin` is `noncomputable`). Working directly from the raw
+`Nat`-indexed JSON data, where `m` is already concrete, sidesteps this
+entirely. See `docs/certification/pipeline.md`'s "implementation notes"
+for this same obstacle in context. -/
 def sumTreeContributions (m : Nat) (toE : Nat → Except String (Fin m))
     (pieces : List RawPiece) : Except String (Array ℚ) :=
   pieces.foldlM
@@ -268,7 +265,7 @@ def parseRationalArray (m : Nat) (raw : List (Int × Nat)) (label : String) :
     pure ((num : ℚ) / (den : ℚ))
 
 /-- Checks two same-length `ℚ` arrays are equal, reporting the first
-mismatching index (and both values) if not -- used for both the `eta` and
+mismatching index (and both values) if not. Used for both the `eta` and
 `rho` checks below. -/
 def checkQArrayEq (label : String) (computed declared : Array ℚ) : Except String PUnit := do
   let _ ← check (decide (computed.size = declared.size))
@@ -279,13 +276,13 @@ def checkQArrayEq (label : String) (computed declared : Array ℚ) : Except Stri
   | none => pure ()
 
 /-- Checks a whole parsed certificate: builds the graph, folds
-`checkPieces` over every piece, confirms the result is a genuine
-partition of the graph's own edges (every edge covered, exactly once --
-`Nodup` plus matching length is enough, since every edge in the
-accumulated list is already known, by `checkPieces`'s own disjointness
-check, to be distinct from every other piece's), and finally recomputes
-`eta`/`rho` from `pieces` and checks them against the certificate's own
-declared fields (checked, not trusted -- see the module docstring). -/
+`checkPieces` over every piece, confirms the result is a partition of the
+graph's own edges (every edge covered, exactly once: `Nodup` plus matching
+length is enough, since every edge in the accumulated list is already
+known, by `checkPieces`'s own disjointness check, to be distinct from
+every other piece's), and finally recomputes `eta`/`rho` from `pieces` and
+checks them against the certificate's own declared fields (checked, not
+trusted; see the module docstring). -/
 def checkCertificate (raw : RawCertificate) : Except String Unit := do
   if raw.certificate_version = 5 then pure ()
   else Except.error s!"unsupported certificate_version {raw.certificate_version}"
@@ -308,8 +305,8 @@ def checkCertificate (raw : RawCertificate) : Except String Unit := do
   let mstWeight : ℚ := mstEdges.foldl (fun acc i => acc + computedRho.getD i 0) 0
   let _ ← check (!decide (mstWeight < 1))
     s!"admissibility check failed: Kruskal's minimum spanning tree has rho-weight {mstWeight} < 1 \
-(UNVERIFIED: relies on an unproven Kruskal implementation -- its output is trusted, not proven, \
-to be a genuine minimum-weight spanning tree)"
+(UNVERIFIED: relies on an unproven Kruskal implementation; its output is trusted, not proven, \
+to be a minimum-weight spanning tree)"
 
 def checkCertificateJson (s : String) : Except String Unit := do
   let j ← Json.parse s

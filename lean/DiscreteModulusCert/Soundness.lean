@@ -10,17 +10,17 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 # The generic checker-to-proof-term soundness theorem
 
 `CertChecker.lean`'s `checkCertificate` is an ordinary executable function
-(`Except String Unit`) -- accepting a certificate is a runtime fact, not (by
-itself) a kernel-checked proof that a genuine `Pmf`/`PieceList` exists for
-that data. This file closes that gap generically, for *any* raw
-certificate `checkCertificate` accepts, not a hand-picked example:
-`checkCertificate_sound` shows accepting implies a real `Pmf
+(`Except String Unit`): accepting a certificate is a runtime fact, not (by
+itself) a kernel-checked proof that a `Pmf`/`PieceList` exists for that
+data. This file closes that gap generically, for *any* raw certificate
+`checkCertificate` accepts, not a hand-picked example:
+`checkCertificate_sound` shows accepting implies a `Pmf
 G.graphicMatroid` and admissible `ρ` exist with `certificate_optimality`'s
 conclusion, and `checkCertificate_optimal` (the file's capstone) wires that
 directly into `certificate_optimality` itself: for any accepted
-certificate, its `ρ` and `μ` really are simultaneously optimal.
+certificate, its `ρ` and `μ` are simultaneously optimal.
 
-Does not modify `CertChecker.lean` -- every theorem here is *about* its
+Does not modify `CertChecker.lean`: every theorem here is *about* its
 existing, already-tested functions.
 -/
 
@@ -39,7 +39,7 @@ theorem check_eq_ok_iff {cond : Bool} {msg : String} :
   cases cond <;> simp [check]
 
 /-- A successful `List.mapM` (over `Except String`) means `f` succeeded on
-every input element, producing the corresponding output element -- used to
+every input element, producing the corresponding output element. Used to
 extract per-edge/per-tree facts from `checkPiece`'s two `mapM` calls
 (`raw.edges.mapM toE`, and the per-tree conversion). -/
 theorem mapM_ok_forall₂ {α β : Type*} (f : α → Except String β) :
@@ -85,7 +85,7 @@ fold levels: `foldlM_getD_eq_of_forall` says that *if* every individual step
 of a monadic `Array ℚ`-accumulating fold adds a known per-element
 `contrib`ution at a given index (and preserves the array's size), *then* the
 whole fold's final value at that index is the starting value plus the sum of
-every element's contribution — regardless of how many elements there are or
+every element's contribution, regardless of how many elements there are or
 what else the step does. Applied at the edge level, `contrib` is an
 indicator (`treesPmf_marginal`'s own shape); at the tree and piece levels,
 `contrib` is just "the next level's already-established total," so the same
@@ -104,16 +104,17 @@ theorem getD_set!_ne {α : Type*} (xs : Array α) {i j : Nat} (hij : i ≠ j) (x
 
 /-- **The generic fold-vs-sum bridge.** If every step of a monadic
 `Array ℚ`-accumulating fold, *for elements actually in the list being
-folded* (`hstep` is only required pointwise on `a ∈ l`, not for every `a` of
-the type -- some levels below need a per-element side-fact, e.g. "this
-tree's own edge list has no duplicates", that isn't derivable from the step
-function alone), preserves the array's size and adds exactly `contrib a i`
-at index `i` (for *every* `i`, not just one -- this is what lets the lemma
-apply uniformly regardless of whether `a`'s own contribution happens to be
-zero at `i`), then folding the whole list adds up every element's
-contribution, matching a plain `List.sum`. Proved by structural induction on
-the list, mirroring `List.foldlM`'s own recursion exactly (the same style
-`mapM_ok_forall₂` above already uses for `List.mapM`). -/
+folded* (`hstep` is only required pointwise on `a ∈ l`, not for every `a`
+of the type, since some levels below need a per-element side-fact, e.g.
+"this tree's own edge list has no duplicates," that isn't derivable from
+the step function alone), preserves the array's size and adds exactly
+`contrib a i` at index `i` (for *every* `i`, not just one, which is what
+lets the lemma apply uniformly regardless of whether `a`'s own
+contribution happens to be zero at `i`), then folding the whole list adds
+up every element's contribution, matching a plain `List.sum`. Proved by
+structural induction on the list, mirroring `List.foldlM`'s own recursion
+exactly (the same style `mapM_ok_forall₂` above already uses for
+`List.mapM`). -/
 theorem foldlM_getD_eq_of_forall {α : Type*} {bound : Nat}
     (step : Array ℚ → α → Except String (Array ℚ)) (contrib : α → Fin bound → ℚ) :
     ∀ (l : List α), (∀ a ∈ l, ∀ (acc acc' : Array ℚ), acc.size = bound →
@@ -174,7 +175,7 @@ theorem foldlM_size_eq_of_forall {α : Type*} {bound : Nat}
 every occurrence of `a` in `l` gives `w` if `a ∈ l` and `0` otherwise,
 *because* `Nodup` rules out `a` occurring twice (without it, a repeated `a`
 would double-count). This is what lets `sumTreeContributions`'s per-edge
-array fold -- which really does add `w` once per *list* occurrence -- match
+array fold, which adds `w` once per *list* occurrence, match
 `treesPmf_marginal`'s Set-indicator formula, which is blind to how many
 times an edge appears in a tree's own (checked-`Nodup`) edge list. -/
 theorem sum_map_ite_eq_of_nodup {α : Type*} [DecidableEq α] (w : ℚ) (a : α) :
@@ -194,7 +195,7 @@ theorem sum_map_ite_eq_of_nodup {α : Type*} [DecidableEq α] (w : ℚ) (a : α)
 
 /-- If two lists are pointwise related by "applying `f`/`g` respectively
 gives the same value", their `f`-mapped and `g`-mapped images (hence sums)
-agree -- used to transport a per-element correspondence (`toE eNat = Except.ok e`
+agree. Used to transport a per-element correspondence (`toE eNat = Except.ok e`
 implies the raw and converted contributions agree) up to the whole list. -/
 theorem forall₂_map_eq {α β γ : Type*} {f : α → γ} {g : β → γ} :
     ∀ {l1 : List α} {l2 : List β}, List.Forall₂ (fun a b => f a = g b) l1 l2 →
@@ -205,8 +206,8 @@ theorem forall₂_map_eq {α β γ : Type*} {f : α → γ} {g : β → γ} :
 
 /-- **Level 1: the edge-within-a-tree fold matches `treesPmf_marginal`'s
 term.** `sumTreeContributions`'s innermost fold, over one tree's own raw
-edge-index list, converting each via `toE` and adding the tree's weight `w`
-at that edge -- given the converted list is `Nodup` (`checkTree_nodup`) and
+edge-index list, converts each via `toE` and adds the tree's weight `w` at
+that edge. Given the converted list is `Nodup` (`checkTree_nodup`) and
 matches `T` (`hconv`, the same conversion `checkPiece`'s own parse already
 performs), the fold's net effect at any edge `i` is exactly the indicator
 `if i ∈ S T then w else 0`, matching `treesPmf_marginal`'s own per-tree
@@ -279,7 +280,7 @@ theorem list_range_foldl_add_eq_sum_range (m : Nat) (f : Nat → ℚ) :
   | succ n ih => rw [List.range_succ, List.foldl_append, ih, Finset.sum_range_succ]; simp
 
 /-- The array-level `normSq` fold `checkCertificate` computes agrees with
-`sqNorm` applied to the array read off as a `Fin m → ℚ` function --
+`sqNorm` applied to the array read off as a `Fin m → ℚ` function,
 unconditionally, regardless of the array's actual size (out-of-range reads
 on either side are `0`, contributing nothing to either sum). -/
 theorem normSq_eq_sqNorm (m : Nat) (computedEta : Array ℚ) :
@@ -305,8 +306,8 @@ variable {V E : Type*} [DecidableEq V] [Fintype V] [DecidableEq E] [Fintype E]
 /-! ## Generic `S`-manipulation lemmas
 
 Small facts about `CertChecker.S` (the edge-set-of-a-list abbreviation),
-stated over an arbitrary `V`/`E`/`G` -- none of these actually depend on
-`G` except `forall_diff_not_isForest_of_list_all`. -/
+stated over an arbitrary `V`/`E`/`G`. None of these depend on `G` except
+`forall_diff_not_isForest_of_list_all`. -/
 
 omit [DecidableEq E] [Fintype E] in
 theorem S_ne_of_mem_not_mem {l₁ l₂ : List E} {x : E} (hx1 : x ∈ l₁) (hx2 : x ∉ l₂) :
@@ -324,11 +325,11 @@ omit [DecidableEq E] [Fintype E] in
 theorem S_nil : (S ([] : List E) : Set E) = ∅ := by ext x; simp [S]
 
 /-- A `Nodup` list whose length matches `Fintype.card E` must enumerate
-every element of `E` -- used to turn `checkCertificate`'s partition-
-completeness check (`Uacc.length = m`, together with `checkPieces`'s own
-disjointness invariant giving `Uacc.Nodup`) into the `S Uacc = Set.univ`
-fact `PieceList.glueAllGraph` needs to fold a certificate's pieces into a
-genuine top-level `Pmf`. -/
+every element of `E`. Used to turn `checkCertificate`'s
+partition-completeness check (`Uacc.length = m`, together with
+`checkPieces`'s own disjointness invariant giving `Uacc.Nodup`) into the
+`S Uacc = Set.univ` fact `PieceList.glueAllGraph` needs to fold a
+certificate's pieces into a top-level `Pmf`. -/
 theorem S_eq_univ_of_nodup_length {l : List E} (hnodup : l.Nodup)
     (hlen : l.length = Fintype.card E) : (S l : Set E) = Set.univ := by
   have hcard : l.toFinset.card = Fintype.card E := by
@@ -354,7 +355,7 @@ theorem forall_diff_not_isForest_of_list_all {G : Multigraph V E} {I₀ A T : Li
   rw [heq]
   exact h e he.1 he.2
 
-/-- Connects a `Fin l.length`-indexed sum to the underlying list's sum --
+/-- Connects a `Fin l.length`-indexed sum to the underlying list's sum,
 independent of whether `f ∘ l.get` has repeated values, unlike a
 `Finset`-image-based grouping would be. Used to build a `Pmf`'s `weight`
 function by grouping declared trees by their *denoted edge set* without
@@ -365,10 +366,10 @@ theorem sum_fin_length_eq_list_sum {α β : Type*} [AddCommMonoid β] (f : α �
     List.map_get_finRange]
 
 open Classical in
-/-- Builds a genuine `Pmf M` from a raw list of (edge-list, weight) pairs,
-each independently known to denote a base of `M` -- grouping by *denoted
-edge set* (`Fin trees.length`-indexed, so it needs no assumption that the
-raw list has no duplicate entries) rather than assuming the list is already
+/-- Builds a `Pmf M` from a raw list of (edge-list, weight) pairs, each
+independently known to denote a base of `M`, grouping by *denoted edge
+set* (`Fin trees.length`-indexed, so it needs no assumption that the raw
+list has no duplicate entries) rather than assuming the list is already
 deduplicated. This is the shape a certificate's own `local_pmf.trees` list
 comes in. -/
 noncomputable def treesPmf {M : Matroid E} {trees : List (List E × ℚ)}
@@ -400,7 +401,7 @@ noncomputable def treesPmf {M : Matroid E} {trees : List (List E × ℚ)}
 
 open Classical in
 omit [Fintype E] in
-/-- **`treesPmf`'s marginal, in closed form** -- the per-edge sum
+/-- **`treesPmf`'s marginal, in closed form**: the per-edge sum
 `CertChecker.sumTreeContributions` computes directly over the raw
 `trees` list. Needed to show the constructed piece pmf's marginal matches
 what the runtime checker already verified equals the certificate's declared
@@ -429,7 +430,7 @@ theorem treesPmf_marginal {M : Matroid E} {trees : List (List E × ℚ)}
 
 omit [Fintype V] [Fintype E] in
 /-- **`checkTree`'s first check, isolated.** A declared tree's own edge list
-has no duplicate edge index -- needed (alongside `checkTree_sound`'s `IsBase`
+has no duplicate edge index. Needed (alongside `checkTree_sound`'s `IsBase`
 conclusion) to know that `sumTreeContributions`'s per-edge array fold over
 this same list touches each of the tree's edges exactly once, matching
 `treesPmf_marginal`'s Set-indicator formula (which is blind to list
@@ -443,8 +444,8 @@ theorem checkTree_nodup {G : Multigraph V E} {I₀acc A T : List E}
   all_goals simp [bind, Except.bind] at hok
 
 omit [Fintype V] in
-/-- **Soundness of `checkTree`**: if it accepts, the declared tree really is
-a base of the piece's own (contract-then-restrict) matroid -- the executable
+/-- **Soundness of `checkTree`**: if it accepts, the declared tree is a
+base of the piece's own (contract-then-restrict) matroid, the executable
 mirror of `isBase_contract_restrict_iff_isForest`. -/
 theorem checkTree_sound {G : Multigraph V E} {prev A I₀acc T : List E}
     (hI₀ : (G.graphicMatroid ↾ (S prev)).IsBase (S I₀acc))
@@ -488,10 +489,10 @@ omit [DecidableEq E] [Fintype E] in
 /-- Threading a representative base of `prev` through one more block: if
 `I₀` is a base of `N ↾ prev` and `T` is a base of the next block's own
 (already-contracted) matroid `(N ／ prev) ↾ A`, then `I₀ ∪ T` is a base of
-`N ↾ (prev ∪ A)` -- the fact that lets `checkPiece_sound` hand off a new
-representative base to the next piece in the fold. Same restrict/contract
-identities `PieceList.glueAll`'s `cons` case uses internally for whole
-`Pmf`s, specialized here to a single base. -/
+`N ↾ (prev ∪ A)`. This is the fact that lets `checkPiece_sound` hand off a
+new representative base to the next piece in the fold. Same
+restrict/contract identities `PieceList.glueAll`'s `cons` case uses
+internally for whole `Pmf`s, specialized here to a single base. -/
 theorem isBase_restrict_union {N : Matroid E} {prev A : Set E} (hAE : A ⊆ (N ／ prev).E)
     {I₀ T : Set E} (hI₀ : (N ↾ prev).IsBase I₀) (hT : ((N ／ prev) ↾ A).IsBase T) :
     (N ↾ (prev ∪ A)).IsBase (I₀ ∪ T) := by
@@ -529,8 +530,8 @@ theorem forall₂_right_of_forall₂_const {α β : Type*} {P : β → Prop} :
 
 /-- The companion fact to `forall₂_right_of_forall₂_const`, for a relation
 that isn't const in its left argument: given `a` on the left, there's a
-*specific* related `b` on the right satisfying the full relation `R a b` --
-used to recover, for one specific declared tree `t`, the exact converted
+*specific* related `b` on the right satisfying the full relation `R a b`.
+Used to recover, for one specific declared tree `t`, the exact converted
 `(edges, weight)` pair and per-tree facts (`IsBase`, `Nodup`, the raw
 conversion) that `checkPiece`'s own parse already established for it. -/
 theorem forall₂_exists_of_mem_left {α β : Type*} {R : α → β → Prop} :
@@ -549,7 +550,7 @@ correspondence between `sumTreeContributions`'s per-piece imperative fold
 (`CertChecker.lean`) and `p.pmf.marginal` (`treesPmf_marginal`/`Family.lean`).
 The specialization is forced by `sumTreeContributions` itself, which is
 `Fin m`-indexed for the same reason its own docstring gives: no computable
-`E → Fin m` projection exists generically. The only actual caller
+`E → Fin m` projection exists generically. The only caller
 (`checkPieces_sound` below) is being extended the same way, so nothing else
 depends on this having stayed abstract. -/
 noncomputable def checkPiece_sound {m : Nat} {G : Multigraph V (Fin m)} {Uacc I₀acc : List (Fin m)}
@@ -768,7 +769,7 @@ already matches the *starting* `PieceList`'s `marginalSum` and
 `sumTreeContributions`'s outer per-piece fold over the same `raws` succeeds,
 the result matches the *extended* `PieceList`'s `marginalSum`. No
 cross-piece disjointness bookkeeping is needed here beyond what
-`checkPiece_sound` already supplies -- each piece's own contribution is
+`checkPiece_sound` already supplies: each piece's own contribution is
 just added on both sides (`PieceList.marginalSum`'s own `cons` case,
 matching one step of `sumTreeContributions`'s outer fold exactly). -/
 noncomputable def checkPieces_sound {m : Nat} {G : Multigraph V (Fin m)}
@@ -849,8 +850,8 @@ theorem natToFin_val {bound n : Nat} {f : Fin bound} (h : natToFin bound n = Exc
 /-- **Bridges `buildGraph`'s checked, `Fin`-indexed endpoints back to the
 raw JSON `Nat` pairs.** Needed to apply the Kruskal admissibility axiom
 (stated over `cg.endpoints`, `Admissibility.lean`) to what `checkCertificate`
-actually calls `Kruskal.run` on (`raw.graph.edges.toArray`, plain `Nat`
-pairs, unconverted). -/
+calls `Kruskal.run` on (`raw.graph.edges.toArray`, plain `Nat` pairs,
+unconverted). -/
 theorem buildGraph_edges_val {raw : RawGraph} {cg : CheckedGraph}
     (h : buildGraph raw = Except.ok cg) :
     cg.endpoints.toList.map (fun p : Fin cg.n × Fin cg.n => (p.1.val, p.2.val)) = raw.edges := by
@@ -892,21 +893,21 @@ theorem buildGraph_edges_val {raw : RawGraph} {cg : CheckedGraph}
       | cons hpq _ ih => simp only [List.map_cons, hpq.1, hpq.2, ih]
 
 /-- **The generic checker-to-proof-term soundness theorem.** If
-`checkCertificate` accepts a raw certificate, then (a) a genuine `Pmf` on
-the certificate's graph's spanning trees exists, built entirely from the
-certificate's own `pieces` data via `checkPieces_sound`/`PieceList.glueAllGraph`
-(no hand-transcription, works for *any* accepted certificate), (b) the
-certificate's own computed `rho` really is admissible -- always via the
-Kruskal-admissibility axiom (`Admissibility.lean`), unconditionally, even
-for a certificate whose `rho` happens to be uniform (where
-`Admissibility.lean`'s axiom-free `isAdmissible_const_div_ncard_of_isBase`
-would also apply, but this generic theorem doesn't special-case that) --
-and (c) **the gap this
-file's module docstring flagged is now closed**: the certificate's own
+`checkCertificate` accepts a raw certificate, then (a) a `Pmf` on the
+certificate's graph's spanning trees exists, built entirely from the
+certificate's own `pieces` data via
+`checkPieces_sound`/`PieceList.glueAllGraph` (no hand-transcription, works
+for *any* accepted certificate), (b) the certificate's own computed `rho`
+is admissible, always via the Kruskal-admissibility axiom
+(`Admissibility.lean`), unconditionally, even for a certificate whose
+`rho` happens to be uniform (where `Admissibility.lean`'s axiom-free
+`isAdmissible_const_div_ncard_of_isBase` would also apply, but this
+generic theorem doesn't special-case that), and (c) **the gap this file's
+module docstring flagged is now closed**: the certificate's own
 `computedEta` (`sumTreeContributions`'s output, the same one `eta`/`rho`'s
 runtime check in `checkCertificate` is built from) is, as a function,
-*exactly* this same `μ`'s marginal -- not just "some pmf exists" and
-"some computed eta exists" separately. This is what
+*exactly* this same `μ`'s marginal, not just "some pmf exists" and "some
+computed eta exists" separately. This is what
 `checkPiece_sound`/`checkPieces_sound`'s new marginal-fold conjuncts (above)
 were built for: `hMargFinal`, applied to `sumTreeContributions`'s own
 starting accumulator (`Array.replicate m 0`, matching `pl0 = PieceList.nil`'s
@@ -964,7 +965,7 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
                     split at hok
                     next => exact absurd hok (by simp)
                     next hMst =>
-                      -- Build the genuine `Pmf` from `checkPieces`' own soundness proof.
+                      -- Build the `Pmf` from `checkPieces`' own soundness proof.
                       have hSnil : (S ([] : List (Fin cg.endpoints.size)) : Set (Fin cg.endpoints.size)) = ∅ :=
                         S_nil
                       have hI₀empty : (cg.toMultigraph.graphicMatroid ↾ (∅ : Set (Fin cg.endpoints.size))).IsBase
@@ -1042,20 +1043,20 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
   · simp only [bind, Except.bind] at hok
     exact absurd hok (by simp)
 
-/-- **Capstone: an accepted certificate is genuinely optimal.** Wires
+/-- **Capstone: an accepted certificate is optimal.** Wires
 `checkCertificate_sound`'s existence facts directly into
-`certificate_optimality` (`Optimality.lean`) -- the theorem "the verifier
+`certificate_optimality` (`Optimality.lean`): the theorem "the verifier
 accepts implies the certificate is optimal" ultimately reduces to, for
 *any* accepted certificate. If `checkCertificate` accepts a raw
 certificate, its (reconstructed) `ρ` minimizes `sqNorm` over every
-admissible density on the
-certificate's graphic matroid (`ρ` solves the modulus problem), and the
-reconstructed `μ`'s marginal minimizes `sqNorm` over the marginals of every
-pmf on that matroid's bases (`μ` solves the dual min-norm-point problem) --
-both halves of "simultaneously optimal" from the Cauchy-Schwarz duality
-argument (`Optimality.lean`'s module docstring). This closes the gap this
-file's own module docstring flags -- turning "checker accepts" into a
-genuine kernel-checked optimality proof, not just an existence fact. -/
+admissible density on the certificate's graphic matroid (`ρ` solves the
+modulus problem), and the reconstructed `μ`'s marginal minimizes `sqNorm`
+over the marginals of every pmf on that matroid's bases (`μ` solves the
+dual min-norm-point problem): both halves of "simultaneously optimal"
+from the Cauchy-Schwarz duality argument (`Optimality.lean`'s module
+docstring). This closes the gap this file's own module docstring flags,
+turning "checker accepts" into a kernel-checked optimality proof, not
+just an existence fact. -/
 theorem checkCertificate_optimal (raw : RawCertificate) (hok : checkCertificate raw = Except.ok ()) :
     ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m)) (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid),
       (∀ ρ' : CertDensity (Fin m), IsAdmissible G.graphicMatroid ρ' → sqNorm ρ ≤ sqNorm ρ') ∧

@@ -2,24 +2,25 @@ import DiscreteModulusCert.ForestDecide
 
 /-!
 Smoke test for `instDecidableIsForestOfList` (`ForestDecide.lean`) on a
-concrete 3-cycle: confirms the instance actually distinguishes forests from
+concrete 3-cycle: confirms the instance distinguishes forests from
 non-forests, handles a duplicated edge index idempotently, and rejects a
 loop, rather than just type-checking vacuously.
 
 **Why `native_decide`, not `decide`.** `decide` gets stuck partway through
-kernel reduction — not because of anything in `ForestDecide.lean`, but
+kernel reduction, not because of anything in `ForestDecide.lean`, but
 because Mathlib's own `Reachable` decidability instance
 (`SimpleGraph.instDecidableRelReachable`,
 `Combinatorics/SimpleGraph/Connectivity/Finite.lean`) is built via
 `decidable_of_iff'` from a `propext`-cast proof, which the kernel's `decide`
 evaluator can't unfold (a well-documented Lean 4 phenomenon, independent of
-this project). `native_decide` compiles to native code instead of reducing in the kernel, so
-it isn't affected, at the standard cost of trusting the compiler
-(`Lean.ofReduceBool`) rather than the kernel for *this particular check* — the
-same trade-off any Lean project makes when computationally running a
-`Decidable` instance whose witness doesn't kernel-reduce directly. The
-instance's *existence* and correctness are still fully kernel-checked, no
-`sorry`, independent of which tactic evaluates it here.
+this project). `native_decide` compiles to native code instead of reducing
+in the kernel, so it isn't affected by this, at the standard cost of
+trusting the compiler (`Lean.ofReduceBool`) rather than the kernel for this
+particular check. This is the same trade-off any Lean project makes when
+running a `Decidable` instance whose witness doesn't kernel-reduce
+directly: the instance's existence and correctness are still fully
+kernel-checked, with no `sorry`, independent of which tactic evaluates it
+here.
 -/
 
 namespace DiscreteModulusCert.ForestDecideTest
