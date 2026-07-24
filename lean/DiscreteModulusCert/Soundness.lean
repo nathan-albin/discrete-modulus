@@ -299,6 +299,39 @@ theorem array_getD_map_div (arr : Array ℚ) (i : Nat) (c : ℚ) :
   simp only [Array.getD_eq_getD_getElem?, Array.getElem?_map]
   rcases h : arr[i]? with _ | x <;> simp
 
+/-- **Bridges `checkQArrayEq`'s runtime pass/fail result to genuine array
+equality**, unconditionally over every index (not just in-bounds ones):
+out-of-range reads on both sides default to `0`, so they agree there too,
+regardless of whether the two arrays even have the same size in that
+branch. This is what lets `checkCertificate_sound`/`checkCertificate_optimal`
+tie their reconstructed `ρ`/`η` to the certificate's own *declared*
+`rho`/`eta` fields, rather than merely to some computed value that happens
+to satisfy the right properties -- closing the gap where the capstone
+theorem's witnesses weren't actually pinned to the certificate that was
+checked (see `docs/certification/theorem.md`). -/
+theorem checkQArrayEq_sound {label : String} {computed declared : Array ℚ}
+    (h : checkQArrayEq label computed declared = Except.ok ()) :
+    ∀ i, computed.getD i 0 = declared.getD i 0 := by
+  unfold checkQArrayEq check at h
+  cases hsize : decide (computed.size = declared.size) with
+  | false => simp [hsize, bind, Except.bind] at h
+  | true =>
+    have hsizeEq : computed.size = declared.size := of_decide_eq_true hsize
+    simp only [hsize, if_true, bind, Except.bind] at h
+    cases hfind : (List.range computed.size).find?
+        (fun i => !decide (computed.getD i 0 = declared.getD i 0)) with
+    | some i => rw [hfind] at h; simp at h
+    | none =>
+      simp [List.find?_eq_none] at hfind
+      intro i
+      by_cases hi : i < computed.size
+      · simpa using hfind i hi
+      · have h1 : computed.getD i 0 = 0 := by
+          rw [Array.getD_eq_getD_getElem?, Array.getElem?_eq_none (by omega), Option.getD_none]
+        have h2 : declared.getD i 0 = 0 := by
+          rw [Array.getD_eq_getD_getElem?, Array.getElem?_eq_none (by omega), Option.getD_none]
+        rw [h1, h2]
+
 end NormSqBridge
 
 variable {V E : Type*} [DecidableEq V] [Fintype V] [DecidableEq E] [Fintype E]
@@ -921,14 +954,18 @@ to the `Finset.sum`-based `sqNorm` (`Family.lean`). See
 `checkCertificate_optimal` below, which wires this all the way into
 `certificate_optimality` itself. -/
 theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate raw = Except.ok ()) :
-    ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m)) (toE : Nat → Except String (Fin m))
-      (computedEta : Array ℚ) (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid),
-      sumTreeContributions m toE raw.pieces = Except.ok computedEta ∧
-      (fun e : Fin m => computedEta.getD e.val 0) = μ.marginal ∧
-      sqNorm (fun e : Fin m => computedEta.getD e.val 0) ≠ 0 ∧
-      ρ = (fun e : Fin m => computedEta.getD e.val 0 /
-        sqNorm (fun e' : Fin m => computedEta.getD e'.val 0)) ∧
-      IsAdmissible G.graphicMatroid ρ := by
+    ∃ (cg : CheckedGraph), buildGraph raw.graph = Except.ok cg ∧
+      ∃ (declaredEta declaredRho : Array ℚ),
+        parseRationalArray cg.endpoints.size raw.eta "eta" = Except.ok declaredEta ∧
+        parseRationalArray cg.endpoints.size raw.rho "rho" = Except.ok declaredRho ∧
+        ∃ (μ : Pmf cg.toMultigraph.graphicMatroid),
+          (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0) = μ.marginal ∧
+          sqNorm (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0) ≠ 0 ∧
+          (fun e : Fin cg.endpoints.size => declaredRho.getD e.val 0) =
+            (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0 /
+              sqNorm (fun e' : Fin cg.endpoints.size => declaredEta.getD e'.val 0)) ∧
+          IsAdmissible cg.toMultigraph.graphicMatroid
+            (fun e : Fin cg.endpoints.size => declaredRho.getD e.val 0) := by
   unfold checkCertificate at hok
   split_ifs at hok with hver
   · dsimp only at hok
@@ -950,6 +987,7 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
           split at hok
           next => exact absurd hok (by simp)
           next hDeclEta =>
+            rename_i declaredEta
             split at hok
             next => exact absurd hok (by simp)
             next hEtaCheck =>
@@ -959,6 +997,7 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
                 split at hok
                 next => exact absurd hok (by simp)
                 next hDeclRho =>
+                  rename_i declaredRho
                   split at hok
                   next => exact absurd hok (by simp)
                   next hRhoCheck =>
@@ -1035,33 +1074,87 @@ theorem checkCertificate_sound (raw : RawCertificate) (hok : checkCertificate ra
                             sqNorm (fun e' : Fin cg.endpoints.size => computedEta.getD e'.val 0)) := by
                         funext e
                         rw [array_getD_map_div, normSq_eq_sqNorm]
-                      refine ⟨cg.n, cg.endpoints.size, cg.toMultigraph, natToFin cg.endpoints.size,
-                        computedEta, fun e => (computedEta.map (fun x => x /
-                          List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
-                            (List.range cg.endpoints.size))).getD e.val 0, μ, hEta, hEtaMarginal, hηpos,
-                        hρeq, hAdm⟩
+                      -- Bridge `computedEta`/the computed `rho` (whatever the checker happened
+                      -- to derive from `pieces`) to the certificate's own *declared* `eta`/`rho`
+                      -- fields, via `hEtaCheck`/`hRhoCheck` (the checker's own pass/fail result
+                      -- on exactly that comparison). This is what pins the theorem's witnesses
+                      -- to the certificate that was actually checked, rather than leaving them
+                      -- as an unconstrained existential -- see `checkQArrayEq_sound`'s docstring.
+                      have hEtaPt : ∀ e : Fin cg.endpoints.size,
+                          computedEta.getD e.val 0 = declaredEta.getD e.val 0 :=
+                        fun e => checkQArrayEq_sound hEtaCheck e.val
+                      have hRhoPt : ∀ e : Fin cg.endpoints.size,
+                          (computedEta.map (fun x => x /
+                            List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
+                              (List.range cg.endpoints.size))).getD e.val 0 = declaredRho.getD e.val 0 :=
+                        fun e => checkQArrayEq_sound hRhoCheck e.val
+                      have hEtaMarginal' : (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0)
+                          = μ.marginal := by
+                        funext e
+                        rw [← hEtaPt e]
+                        exact congrFun hEtaMarginal e
+                      have hηpos' : sqNorm (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0)
+                          ≠ 0 := by
+                        have heq : sqNorm (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0)
+                            = sqNorm (fun e : Fin cg.endpoints.size => computedEta.getD e.val 0) := by
+                          congr 1; funext e; exact (hEtaPt e).symm
+                        rw [heq]; exact hηpos
+                      have hρeq' : (fun e : Fin cg.endpoints.size => declaredRho.getD e.val 0)
+                          = (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0 /
+                            sqNorm (fun e' : Fin cg.endpoints.size => declaredEta.getD e'.val 0)) := by
+                        have hsqEq : sqNorm (fun e' : Fin cg.endpoints.size => computedEta.getD e'.val 0)
+                            = sqNorm (fun e' : Fin cg.endpoints.size => declaredEta.getD e'.val 0) := by
+                          congr 1; funext e'; exact hEtaPt e'
+                        funext e
+                        rw [← hRhoPt e, congrFun hρeq e, hEtaPt e, hsqEq]
+                      have hAdm' : IsAdmissible cg.toMultigraph.graphicMatroid
+                          (fun e : Fin cg.endpoints.size => declaredRho.getD e.val 0) := by
+                        have heq : (fun e : Fin cg.endpoints.size => declaredRho.getD e.val 0)
+                            = fun e : Fin cg.endpoints.size => (computedEta.map (fun x => x /
+                                List.foldl (fun acc i => acc + computedEta.getD i 0 * computedEta.getD i 0) 0
+                                  (List.range cg.endpoints.size))).getD e.val 0 := by
+                          funext e; exact (hRhoPt e).symm
+                        rw [heq]; exact hAdm
+                      exact ⟨cg, rfl, ⟨declaredEta, declaredRho, hDeclEta, hDeclRho,
+                        ⟨μ, hEtaMarginal', hηpos', hρeq', hAdm'⟩⟩⟩
   · simp only [bind, Except.bind] at hok
     exact absurd hok (by simp)
 
 /-- **Capstone: an accepted certificate is optimal.** Wires
 `checkCertificate_sound`'s existence facts directly into
-`certificate_optimality` (`Optimality.lean`): the theorem "the verifier
-accepts implies the certificate is optimal" ultimately reduces to, for
-*any* accepted certificate. If `checkCertificate` accepts a raw
-certificate, its (reconstructed) `ρ` minimizes `sqNorm` over every
-admissible density on the certificate's graphic matroid (`ρ` solves the
-modulus problem), and the reconstructed `μ`'s marginal minimizes `sqNorm`
-over the marginals of every pmf on that matroid's bases (`μ` solves the
-dual min-norm-point problem): both halves of "simultaneously optimal"
-from the Cauchy-Schwarz duality argument (`Optimality.lean`'s module
-docstring). This closes the gap this file's own module docstring flags,
-turning "checker accepts" into a kernel-checked optimality proof, not
-just an existence fact. -/
+`certificate_optimality` (`Optimality.lean`): for *any* accepted raw
+certificate, the graph it describes (`buildGraph raw.graph`), its own
+declared `rho` field minimizes `sqNorm` over every admissible density on
+that graph's graphic matroid (`rho` solves the modulus problem), and a
+genuine pmf `μ` on that matroid's bases, with marginal exactly the
+certificate's own declared `eta` field, minimizes `sqNorm` over the
+marginals of every pmf on that matroid's bases (`μ` solves the dual
+min-norm-point problem): both halves of "simultaneously optimal" from the
+Cauchy-Schwarz duality argument (`Optimality.lean`'s module docstring).
+
+Every witness here (`cg`, `declaredEta`, `declaredRho`, `μ`) is pinned to
+`raw`'s own fields by the `Except.ok` equations threaded through the
+conclusion, not left as an unconstrained existential. This matters: an
+earlier version of this theorem stated its conclusion as a bare `∃ n m G
+ρ μ, ...` with no equation tying any of them back to `raw`, which admits
+a proof that ignores `raw`/`hok` entirely by exhibiting a fixed,
+certificate-independent graph/density/pmf satisfying the conclusion (a
+2-vertex, 1-edge graph with `ρ = 1` and the pmf on its one spanning tree
+is enough) -- see `docs/certification/theorem.md` for the full account. -/
 theorem checkCertificate_optimal (raw : RawCertificate) (hok : checkCertificate raw = Except.ok ()) :
-    ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m)) (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid),
-      (∀ ρ' : CertDensity (Fin m), IsAdmissible G.graphicMatroid ρ' → sqNorm ρ ≤ sqNorm ρ') ∧
-      (∀ μ' : Pmf G.graphicMatroid, sqNorm μ.marginal ≤ sqNorm μ'.marginal) := by
-  obtain ⟨n, m, G, toE, computedEta, ρ, μ, -, hη, hηpos, hρeq, hAdm⟩ := checkCertificate_sound raw hok
-  refine ⟨n, m, G, ρ, μ, ?_⟩
+    ∃ (cg : CheckedGraph), buildGraph raw.graph = Except.ok cg ∧
+      ∃ (declaredEta declaredRho : Array ℚ),
+        parseRationalArray cg.endpoints.size raw.eta "eta" = Except.ok declaredEta ∧
+        parseRationalArray cg.endpoints.size raw.rho "rho" = Except.ok declaredRho ∧
+        ∃ (μ : Pmf cg.toMultigraph.graphicMatroid),
+          (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0) = μ.marginal ∧
+          (∀ ρ' : CertDensity (Fin cg.endpoints.size),
+            IsAdmissible cg.toMultigraph.graphicMatroid ρ' →
+              sqNorm (fun e : Fin cg.endpoints.size => declaredRho.getD e.val 0) ≤ sqNorm ρ') ∧
+          (∀ μ' : Pmf cg.toMultigraph.graphicMatroid,
+            sqNorm μ.marginal ≤ sqNorm μ'.marginal) := by
+  obtain ⟨cg, hcg, declaredEta, declaredRho, hDeclEta, hDeclRho, μ, hη, hηpos, hρeq, hAdm⟩ :=
+    checkCertificate_sound raw hok
+  refine ⟨cg, hcg, declaredEta, declaredRho, hDeclEta, hDeclRho, μ, hη, ?_⟩
   have hopt := certificate_optimality hAdm hη hηpos hρeq
   rwa [hη] at hopt

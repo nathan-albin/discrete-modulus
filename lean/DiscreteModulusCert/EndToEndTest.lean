@@ -73,20 +73,40 @@ theorem nestedCertRaw_accepted : checkCertificate nestedCertRaw = Except.ok () :
 /-- **The end-to-end claim for `house`**: the certificate JSON file, parsed
 by the JSON parser and checked by the checker, is fed straight into
 `certificate_optimality` (via `checkCertificate_optimal`), concluding that
-`house`'s solver-produced `ρ`/`μ` are simultaneously optimal, with no
-hand-transcription anywhere in the chain. -/
+`house`'s own declared `rho`/`eta` fields are simultaneously optimal, with
+no hand-transcription anywhere in the chain. Note the conclusion names
+`house`'s own graph/`eta`/`rho` fields explicitly (via the `Except.ok`
+equations), unlike an earlier, weaker version of this claim that would
+have looked identical for `house` and `nested` alike -- see
+`docs/certification/theorem.md`. -/
 theorem house_end_to_end_optimal :
-    ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m)) (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid),
-      (∀ ρ' : CertDensity (Fin m), IsAdmissible G.graphicMatroid ρ' → sqNorm ρ ≤ sqNorm ρ') ∧
-      (∀ μ' : Pmf G.graphicMatroid, sqNorm μ.marginal ≤ sqNorm μ'.marginal) :=
+    ∃ (cg : CheckedGraph), buildGraph houseCertRaw.graph = Except.ok cg ∧
+      ∃ (declaredEta declaredRho : Array ℚ),
+        parseRationalArray cg.endpoints.size houseCertRaw.eta "eta" = Except.ok declaredEta ∧
+        parseRationalArray cg.endpoints.size houseCertRaw.rho "rho" = Except.ok declaredRho ∧
+        ∃ (μ : Pmf cg.toMultigraph.graphicMatroid),
+          (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0) = μ.marginal ∧
+          (∀ ρ' : CertDensity (Fin cg.endpoints.size),
+            IsAdmissible cg.toMultigraph.graphicMatroid ρ' →
+              sqNorm (fun e : Fin cg.endpoints.size => declaredRho.getD e.val 0) ≤ sqNorm ρ') ∧
+          (∀ μ' : Pmf cg.toMultigraph.graphicMatroid,
+            sqNorm μ.marginal ≤ sqNorm μ'.marginal) :=
   checkCertificate_optimal houseCertRaw houseCertRaw_accepted
 
 /-- Same, for `nested`: the multi-round trace, not just `house`'s single
 round. -/
 theorem nested_end_to_end_optimal :
-    ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m)) (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid),
-      (∀ ρ' : CertDensity (Fin m), IsAdmissible G.graphicMatroid ρ' → sqNorm ρ ≤ sqNorm ρ') ∧
-      (∀ μ' : Pmf G.graphicMatroid, sqNorm μ.marginal ≤ sqNorm μ'.marginal) :=
+    ∃ (cg : CheckedGraph), buildGraph nestedCertRaw.graph = Except.ok cg ∧
+      ∃ (declaredEta declaredRho : Array ℚ),
+        parseRationalArray cg.endpoints.size nestedCertRaw.eta "eta" = Except.ok declaredEta ∧
+        parseRationalArray cg.endpoints.size nestedCertRaw.rho "rho" = Except.ok declaredRho ∧
+        ∃ (μ : Pmf cg.toMultigraph.graphicMatroid),
+          (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0) = μ.marginal ∧
+          (∀ ρ' : CertDensity (Fin cg.endpoints.size),
+            IsAdmissible cg.toMultigraph.graphicMatroid ρ' →
+              sqNorm (fun e : Fin cg.endpoints.size => declaredRho.getD e.val 0) ≤ sqNorm ρ') ∧
+          (∀ μ' : Pmf cg.toMultigraph.graphicMatroid,
+            sqNorm μ.marginal ≤ sqNorm μ'.marginal) :=
   checkCertificate_optimal nestedCertRaw nestedCertRaw_accepted
 
 end CertChecker

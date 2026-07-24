@@ -107,42 +107,71 @@ connecting this theorem to a specific certificate's parsed data.
 ## 4. The capstone: read the statement, not the proof
 
 [`Soundness.lean`](../../lean/DiscreteModulusCert/Soundness.lean)'s
-`checkCertificate_optimal` (line 1060) is the theorem `lake exe
+`checkCertificate_optimal` (line 1144) is the theorem `lake exe
 verify_cert` ultimately depends on:
 
 ```lean
 theorem checkCertificate_optimal (raw : RawCertificate)
     (hok : checkCertificate raw = Except.ok ()) :
-    ∃ (n m : Nat) (G : Multigraph (Fin n) (Fin m))
-      (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid),
-      (∀ ρ' : CertDensity (Fin m), IsAdmissible G.graphicMatroid ρ' →
-        sqNorm ρ ≤ sqNorm ρ') ∧
-      (∀ μ' : Pmf G.graphicMatroid, sqNorm μ.marginal ≤ sqNorm μ'.marginal)
+    ∃ (cg : CheckedGraph), buildGraph raw.graph = Except.ok cg ∧
+      ∃ (declaredEta declaredRho : Array ℚ),
+        parseRationalArray cg.endpoints.size raw.eta "eta" = Except.ok declaredEta ∧
+        parseRationalArray cg.endpoints.size raw.rho "rho" = Except.ok declaredRho ∧
+        ∃ (μ : Pmf cg.toMultigraph.graphicMatroid),
+          (fun e : Fin cg.endpoints.size => declaredEta.getD e.val 0) = μ.marginal ∧
+          (∀ ρ' : CertDensity (Fin cg.endpoints.size),
+            IsAdmissible cg.toMultigraph.graphicMatroid ρ' →
+              sqNorm (fun e : Fin cg.endpoints.size => declaredRho.getD e.val 0) ≤ sqNorm ρ') ∧
+          (∀ μ' : Pmf cg.toMultigraph.graphicMatroid,
+            sqNorm μ.marginal ≤ sqNorm μ'.marginal)
 ```
 
 The hypothesis `hok` is exactly the runtime fact `Main.lean` checks before
-printing `ACCEPTED`. So, this is the hypothesis "The checker ran on the
-certificate and said `ACCEPTED`." The conclusion says: there exists a graph `G`
-(`n` vertices, `m` edges, built from the certificate's own `graph` field), a
-density `ρ`, and a pmf `μ` on `G`'s spanning trees (both reconstructed from the
-certificate's `pieces`, not merely copied from its `eta`/`rho` fields), such
-that `ρ` achieves the minimum `sqNorm` among *every* admissible density on `G`,
-and `μ`'s marginal achieves the minimum `sqNorm` among the marginals of *every*
-pmf on `G`'s spanning trees. That's precisely the informal claim from the top of
-this document, now stated about a specific, arbitrary accepted certificate.
+printing `ACCEPTED`. The conclusion: `buildGraph raw.graph = Except.ok cg`
+pins `cg` to be *the* graph the certificate's own `graph` field describes
+(not just some graph with the right shape); the two `parseRationalArray`
+equations pin `declaredEta`/`declaredRho` to be *the* certificate's own
+parsed `eta`/`rho` fields; and given those, there's a genuine pmf `μ` on
+`cg`'s spanning trees, with marginal exactly `declaredEta`, such that
+`declaredRho` achieves the minimum `sqNorm` among *every* admissible
+density on this graph, and `μ`'s marginal achieves the minimum `sqNorm`
+among the marginals of *every* pmf on this graph's spanning trees. That's
+precisely the informal claim from the top of this document.
 
-**You do not need to read this theorem's proof.** It's about 140 lines
-(`Soundness.lean` lines 923–1067) of array-indexing and JSON-parsing
-bookkeeping that threads `checkCertificate`'s runtime computation through
-`checkPieces_sound` and wires the result into `certificate_optimality`
-from §3. None of that changes what's proved; it only connects "the
-checker ran to completion" to "the hypotheses of `certificate_optimality`
-hold for this specific data," which the kernel has already verified
-regardless of whether a human re-derives it. The entire human obligation
-at this step is reading the *signature* above and confirming it says
-what §1 claims `ACCEPTED` means.
+**You do not need to read this theorem's proof** (`Soundness.lean` lines
+1145–1160, plus the ~250 lines of `checkCertificate_sound`'s proof it
+calls into, lines 956–1143). That's array-indexing and JSON-parsing
+bookkeeping threading `checkCertificate`'s runtime computation through
+`checkPieces_sound` and `certificate_optimality` (§3). None of that changes
+what's proved; it only connects "the checker ran to completion" to "the
+hypotheses of `certificate_optimality` hold for this specific data," which
+the kernel has already verified regardless of whether a human re-derives
+it. The entire human obligation at this step is reading the *signature*
+above and confirming it says what §1 claims `ACCEPTED` means.
 
-One thing worth checking that isn't a Lean question at all: does `G` (as
+> [!WARNING]
+> **This is not a hypothetical concern. An earlier version of this
+> exact theorem got this wrong, and reading the statement carefully is what caught
+> it.** The previous statement read `∃ (n m : Nat) (G : Multigraph (Fin n)
+> (Fin m)) (ρ : CertDensity (Fin m)) (μ : Pmf G.graphicMatroid), (∀ ρ', ...)
+> ∧ (∀ μ', ...)` That's an existential with *no equation anywhere* tying `n`,
+> `m`, `G`, `ρ`, or `μ` back to `raw`. That statement is provable by a
+> proof that ignores `raw`/`hok` entirely: fix a 2-vertex, 1-edge graph,
+> `ρ = 1` on its one edge, and the pmf putting all its weight on that one
+> spanning tree, and both conjuncts hold outright, regardless of which
+> certificate was supposedly checked (this compiled and was verified
+> directly against the kernel). The tell was already visible in
+> `EndToEndTest.lean`: `house_end_to_end_optimal` and
+> `nested_end_to_end_optimal` had *syntactically identical* types; nothing
+> about "house" or "nested" appeared in either statement. The fix, above,
+> exposes the `Except.ok` equations the proof already computed internally
+> (via `checkQArrayEq_sound`, `Soundness.lean` line 312) instead of hiding
+> them behind an unconstrained existential. The lesson generalizes: an
+> existential conclusion that never equates its witnesses to anything in
+> the hypothesis is a standing invitation to prove it with an unrelated
+> fixed witness.
+
+One thing worth checking that isn't a Lean question at all: does `cg` (as
 built from `raw.graph` by `buildGraph`) actually match the graph you
 intended to certify? That's a "does the JSON say what I think it says"
 question, answered by [`schema.md`](schema.md), not by reading more Lean.
@@ -172,8 +201,9 @@ exception in §1):
    (~150 lines, all definitions and short lemmas, §2 above).
 3. [`Optimality.lean`](../../lean/DiscreteModulusCert/Optimality.lean)'s
    `certificate_optimality` and its two halves (~60 lines, §3 above).
-4. `Soundness.lean` lines 1046–1067 only — `checkCertificate_optimal`'s
-   docstring and signature (§4 above). *Not* lines 1–1045.
+4. `Soundness.lean` lines 1124–1154 only — `checkCertificate_optimal`'s
+   docstring and signature (§4 above). *Not* its proof, and not
+   `checkCertificate_sound`'s.
 5. `Admissibility.lean`'s `run_isAdmissible_of_weight_ge_one` axiom
    statement (~10 lines) plus [`trust.md`](trust.md)'s explanation of it.
 
