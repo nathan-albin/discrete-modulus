@@ -25,6 +25,10 @@ worst that happens is a rejected certificate. Only the Lean verifier needs to
 be trusted, and it should accept a certificate only when it can prove
 optimality.
 
+## Authorship
+
+Almost all the Lean proofs, the Python certificate builder, and the JSON schema for the certification were written by Claude (Sonnet 5) directed by Albin. Claude also drafted the documentation in this directory. This has been in interesting experiment in using a large language model to write formal proofs. In particular, Claude was very good at formulating theorems from mathematical sources, filling proof gaps, and refactoring aspects of the verification code that were correct but slow. It did make conceptual mistakes when writing the documentation, and needed to be guided through some of the subtler mathematical properties of modulus at a few places. The nice thing about using an LLM with Lean is that the proofs themselves don't need to be human-checked in order for the results to be sound. The primary human obligation in this context is to make sure that the formal statements of the theorems correctly mean what is intended.
+
 ## Architecture
 
 ```
