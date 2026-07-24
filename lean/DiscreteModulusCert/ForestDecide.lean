@@ -36,39 +36,58 @@ compiles to `WellFounded.fix`/`Acc.rec`, which also doesn't reduce well under
 - Recurse on `List E` via ordinary structural pattern matching (`[]` /
   `a :: rest`) — always reduces under `decide`, no well-founded recursion.
 - Never *name* an edge's endpoints to decide which branch to take. Instead,
-  `sym2Reachable` lifts `Reachable` through `Sym2.lift` (valid since
-  reachability is symmetric) so that "are this edge's endpoints already
-  connected" is decidable *at the `Sym2 V` value itself*, via
-  `Quot.recOnSubsingleton` (`Decidable` is a subsingleton up to proof
-  irrelevance, so eliminating the quotient to select a `Decidable` value is
-  legitimate, and the kernel's `Quot` computation rule still fires
-  definitionally on any literal `s(u, v)` — exactly what a concrete
-  certificate provides). Naming the endpoints is then only ever needed
-  *inside* the resulting proof obligations (`Prop`-to-`Prop` elimination,
-  always fine), never to pick the `Decidable` branch.
+  `decidableIsForestInsertOfComponents`/`decidableIsForestInsertOfList`
+  decide "is this edge already addable without closing a cycle" as a
+  `Finset`-level membership check (`∃ c ∈ comps, edgeVerts (G.endpoints a) ⊆
+  c`) directly on the `Sym2 V` edge value, via `edgeVerts` (itself built
+  from `Sym2.lift`, so already branch-free at the value level). Naming the
+  endpoints (`induction huv : G.endpoints a with | _ u v => ...`, i.e.
+  `Sym2.ind`) is then only ever needed *inside* the resulting proof
+  obligations (`Prop`-to-`Prop` elimination, always fine), never to pick
+  the `Decidable` branch.
 
 Both fixes were confirmed necessary and sufficient by direct experiment
 (`#eval`/`decide` on a 3-cycle test graph) before settling on this design.
 
-**Performance fix (the exponential blowup).** The design above type-checks
-and is correct at any size, but was originally wired to Mathlib's own
-`DecidableRel Reachable` instance for "are these endpoints already
-connected" — which turned out to be a genuine algorithmic trap, not just a
-kernel-reduction inconvenience: it's built by transporting decidability
-across `reachable_iff_exists_finsetWalkLength_nonempty`, whose witness
-search (`finsetWalkLength`) enumerates *every walk* of each candidate
-length by branching over every neighbor at every step, no visited-set
-pruning at all — exponential in `Fintype.card V`, confirmed directly to
-hang for minutes on a 190-edge/20-vertex nearly-complete piece even under
-`native_decide` (compiled code, so not a `decide`-vs-`native_decide`
-reduction-strategy artifact — a genuinely exponential computation however
-it's run). `FastReachable` below replaces it with a textbook bounded BFS
-closure over plain `Finset` operations — polynomial, not exponential — and
-`decSym2Reachable` is wired to use it instead of `infer_instance` (which
-would otherwise silently keep picking up Mathlib's exponential instance).
-See `FastReachable`'s own section docstring for why this is a `Finset`-BFS
-rather than an array-backed union-find (the natural first choice, ruled
-out by a real computability obstruction).
+**Performance history (two fixes, not one).** The design above type-checks
+and is correct at any size, but went through two rounds of genuine
+algorithmic traps, not just kernel-reduction inconveniences:
+1. Originally wired to Mathlib's own `DecidableRel Reachable` instance for
+   "are these endpoints already connected" — built by transporting
+   decidability across `reachable_iff_exists_finsetWalkLength_nonempty`,
+   whose witness search (`finsetWalkLength`) enumerates *every walk* of
+   each candidate length by branching over every neighbor at every step,
+   no visited-set pruning at all — exponential in `Fintype.card V`,
+   confirmed directly to hang for minutes on a 190-edge/20-vertex
+   nearly-complete piece even under `native_decide` (compiled code, so a
+   genuinely exponential computation, not a `decide`-vs-`native_decide`
+   reduction-strategy artifact).
+2. Replaced with a textbook bounded BFS closure over plain `Finset`
+   operations (polynomial, not exponential) — a real fix, but one that
+   still scanned `Finset.univ` (the *whole* graph's vertex `Fintype`) on
+   every round, regardless of how few vertices a given piece actually
+   touches. Confirmed via `perf` to still dominate real `verify_cert`
+   runtime on `nested.certificate.json` (60 vertices total across all
+   pieces, but any one piece touches only ~20 of them): ~25s of a ~26s
+   total run, almost entirely in the per-round adjacency scan.
+
+Both are now replaced by `Components`'s `mergeStep`/`buildComponents`: an
+incremental union-find over `Finset V` partitions, processing each edge's
+own two endpoints once and merging any existing components they touch —
+no `Finset.univ` scan, no BFS rounds, no walk enumeration, and (per the
+subtlety above) no `Classical.choice`-requiring endpoint-naming either,
+since it operates on `edgeVerts`-derived `Finset`s rather than named
+vertices throughout. `decidableIsForestInsertOfList` now delegates to
+`decidableIsForestInsertOfComponents` (building a fresh `forestComponents`
+each call), and `instDecidableIsForestOfList`'s own recursive `O(|l|)`-many
+calls benefit the same way — this dropped `nested`'s `verify_cert` from
+~26s to ~2.5s and its `native_decide`-based end-to-end test from ~300s to
+~10s. An array-backed union-find (`Batteries.UnionFind`) was considered and
+rejected before settling on this `Finset`-based version: indexing into it
+needs a computable `V ≃ Fin (card V)` bijection, which is noncomputable in
+Mathlib for a bare `[Fintype V]` (extracting a canonical enumeration from
+an abstract `Finset`'s underlying `Multiset` quotient needs choice) — the
+same computability obstruction the file's design has to avoid throughout.
 
 **Main results:**
 - `isForest_insert_iff`: given `F` is already a forest, inserting a new edge
@@ -89,207 +108,6 @@ namespace DiscreteModulusCert
 open Multigraph
 
 variable {V E : Type*} (G : Multigraph V E)
-
-section FastReachable
-
-variable [Fintype V] [DecidableEq V]
-
-/-- **The efficient replacement for Mathlib's `Reachable` decidability.**
-Mathlib's own `DecidableRel Reachable` instance
-(`SimpleGraph.instDecidableRelReachable`, `Connectivity/Finite.lean`) is
-transported across `reachable_iff_exists_finsetWalkLength_nonempty`, whose
-witness search (`finsetWalkLength`) *literally enumerates every walk* of
-each candidate length by branching over every neighbor at every step, with
-no visited-set pruning — genuinely exponential in `Fintype.card V` for any
-graph with vertices of degree ≥ 2, not merely slow-to-kernel-reduce. On a
-190-edge/20-vertex nearly-complete piece (`nested.certificate.json`'s
-piece 0) this is why `instDecidableIsForestOfList` used to hang for
-minutes even under `native_decide` (compiled code, not kernel reduction —
-confirmed by direct experiment that the blowup is algorithmic, not a
-reduction-strategy artifact).
-
-The fix: a textbook bounded BFS closure (`bfsStep`/`bfsClosure` below),
-computed with ordinary `Finset` operations over `Fintype V` — no
-`Fin`-indexed array structure needed (an array/union-find-based fix was
-considered and rejected: `Fintype.equivFin`, the standard `V ≃ Fin
-(card V)` embedding needed to key into an efficient array-backed
-disjoint-set structure like `Batteries.UnionFind`, is `noncomputable` in
-Mathlib for a bare `[Fintype V]` — extracting a canonical enumeration from
-an abstract `Finset`'s underlying `Multiset` quotient needs choice, exactly
-the kind of noncomputability this file has to avoid throughout). Cost is
-`O(|V|)` rounds × `O(|V|)` frontier vertices × `O(|F|)` per adjacency query
-(`instDecidableRelAdjToSimpleGraphOfList` scans the edge list) —
-polynomial, not exponential, and easily fast enough at the ~200-edge/
-~20-vertex scale a certificate piece actually needs (confirmed directly:
-seconds, not minutes, on `nested`/`branch_test`'s worst pieces). -/
-def bfsStep (H : SimpleGraph V) [DecidableRel H.Adj] (S : Finset V) : Finset V :=
-  S ∪ S.biUnion fun u => Finset.univ.filter (H.Adj u)
-
-theorem subset_bfsStep (H : SimpleGraph V) [DecidableRel H.Adj] (S : Finset V) :
-    S ⊆ bfsStep H S :=
-  Finset.subset_union_left
-
-/-- Whenever a round of `bfsStep` still changes something, it strictly grows
-`S`'s cardinality — the fact that lets `bfsClosure` below terminate by
-running rounds only until it actually stops changing (a genuine fixed
-point), rather than a fixed `Fintype.card V` rounds regardless of how
-quickly the graph in question actually stabilizes. This is what turns the
-`Fintype.card V`-vertex factor from a *guaranteed* multiplier (paid even
-when the relevant piece is tiny and the closure stabilizes in a handful of
-rounds) into a mere worst-case bound. -/
-theorem bfsStep_card_lt_of_ne (H : SimpleGraph V) [DecidableRel H.Adj] {S : Finset V}
-    (h : bfsStep H S ≠ S) :
-    Fintype.card V - (bfsStep H S).card < Fintype.card V - S.card := by
-  have hlt : S.card < (bfsStep H S).card :=
-    Finset.card_lt_card (Finset.ssubset_iff_subset_ne.mpr ⟨subset_bfsStep H S, Ne.symm h⟩)
-  have hle : (bfsStep H S).card ≤ Fintype.card V := by
-    simpa using Finset.card_le_univ (bfsStep H S)
-  omega
-
-/-- **BFS closure of `S` under `H`-adjacency, stopping as soon as a round adds
-nothing new** — a genuine fixed point of `bfsStep`, computed by well-founded
-recursion on `Fintype.card V - S.card` (terminates: `bfsStep_card_lt_of_ne`).
-Unlike a fixed `Fintype.card V`-round version, this pays for extra rounds
-only when the graph in question actually needs them, instead of always
-paying a `Fintype.card V` multiplier even on a tiny/sparse piece — the
-difference between finishing in seconds and taking minutes on a real
-certificate's per-candidate maximality checks (each one a fresh reachability
-query against an already-small forest). -/
-def bfsClosure (H : SimpleGraph V) [DecidableRel H.Adj] (S : Finset V) : Finset V :=
-  if h : bfsStep H S = S then S
-  else
-    have := bfsStep_card_lt_of_ne H h
-    bfsClosure H (bfsStep H S)
-termination_by Fintype.card V - S.card
-
-theorem subset_bfsClosure (H : SimpleGraph V) [DecidableRel H.Adj] :
-    ∀ S : Finset V, S ⊆ bfsClosure H S
-  | S => by
-    unfold bfsClosure
-    split
-    · next h => exact subset_rfl
-    · next h =>
-      have := bfsStep_card_lt_of_ne H h
-      exact (subset_bfsStep H S).trans (subset_bfsClosure H (bfsStep H S))
-termination_by S => Fintype.card V - S.card
-
-/-- `bfsClosure` really is a fixed point of `bfsStep` — the fact that lets
-`reachable_iff_mem_bfsClosure` below invoke `SimpleGraph.reachable_le_of_adj_le`
-directly, rather than needing an explicit walk-length bound. -/
-theorem bfsClosure_fixedPoint (H : SimpleGraph V) [DecidableRel H.Adj] :
-    ∀ S : Finset V, bfsStep H (bfsClosure H S) = bfsClosure H S
-  | S => by
-    unfold bfsClosure
-    split
-    · next h => exact h
-    · next h =>
-      have := bfsStep_card_lt_of_ne H h
-      exact bfsClosure_fixedPoint H (bfsStep H S)
-termination_by S => Fintype.card V - S.card
-
-/-- A fixed point of `bfsStep` is closed under one `H`-adjacency hop. -/
-theorem mem_bfsClosure_of_adj (H : SimpleGraph V) [DecidableRel H.Adj] (S : Finset V) {p q : V}
-    (hp : p ∈ bfsClosure H S) (hpq : H.Adj p q) : q ∈ bfsClosure H S := by
-  rw [← bfsClosure_fixedPoint H S]
-  simp only [bfsStep, Finset.mem_union, Finset.mem_biUnion]
-  exact Or.inr ⟨p, hp, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hpq⟩⟩
-
-/-- Conversely, every vertex in a BFS closure of a set of already-reachable
-vertices is itself reachable — by well-founded induction mirroring
-`bfsClosure`'s own recursion, since `bfsStep` only ever adds direct
-neighbors of already-included (hence already-reachable) vertices. -/
-theorem reachable_of_mem_bfsClosure (H : SimpleGraph V) [DecidableRel H.Adj] {u : V} :
-    ∀ {S : Finset V}, (∀ x ∈ S, H.Reachable u x) → ∀ {y}, y ∈ bfsClosure H S → H.Reachable u y
-  | S, hS, y, hy => by
-    unfold bfsClosure at hy
-    split at hy
-    · next h => exact hS y hy
-    · next h =>
-      have := bfsStep_card_lt_of_ne H h
-      refine reachable_of_mem_bfsClosure H (S := bfsStep H S) (fun x hx => ?_) hy
-      simp only [bfsStep, Finset.mem_union, Finset.mem_biUnion] at hx
-      rcases hx with hx | ⟨s, hsS, hsx⟩
-      · exact hS x hx
-      · exact (hS s hsS).trans (Finset.mem_filter.mp hsx).2.reachable
-termination_by S => Fintype.card V - S.card
-
-/-- **Correctness of the fast reachability check.** `v` lies in `u`'s BFS
-closure iff `u` and `v` are `H`-reachable. The "only if" direction is
-`SimpleGraph.reachable_le_of_adj_le` (`Reachable` is the *smallest*
-reflexive-transitive relation containing `Adj`) applied to
-`fun p q => p ∈ bfsClosure H {u} → q ∈ bfsClosure H {u}`, whose `Adj`-closure
-is exactly `mem_bfsClosure_of_adj`. -/
-theorem reachable_iff_mem_bfsClosure (H : SimpleGraph V) [DecidableRel H.Adj] (u v : V) :
-    H.Reachable u v ↔ v ∈ bfsClosure H ({u} : Finset V) := by
-  constructor
-  · intro hreach
-    have hmem : u ∈ bfsClosure H ({u} : Finset V) :=
-      subset_bfsClosure H _ (Finset.mem_singleton_self u)
-    exact SimpleGraph.reachable_le_of_adj_le (fun _ h => h)
-      (fun _ _ _ h1 h2 h3 => h2 (h1 h3))
-      (fun p q hpq h => mem_bfsClosure_of_adj H _ h hpq) u v hreach hmem
-  · exact reachable_of_mem_bfsClosure H
-      (fun x hx => by rw [Finset.mem_singleton.mp hx])
-
-/-- Generalization of `reachable_iff_mem_bfsClosure` to a `Finset` of seed
-vertices at once: `q` lies in `S`'s BFS closure iff it's `H`-reachable from
-*some* element of `S`. Lets `Components` below compute a whole connected
-component from a single (2-vertex, edge-shaped) seed in one `bfsClosure`
-call. -/
-theorem exists_reachable_of_mem_bfsClosure (H : SimpleGraph V) [DecidableRel H.Adj] :
-    ∀ {S : Finset V} {q : V}, q ∈ bfsClosure H S → ∃ p ∈ S, H.Reachable p q
-  | S, q, hq => by
-    unfold bfsClosure at hq
-    split at hq
-    · next h => exact ⟨q, hq, SimpleGraph.Reachable.refl q⟩
-    · next h =>
-      have := bfsStep_card_lt_of_ne H h
-      obtain ⟨p, hp, hpq⟩ := exists_reachable_of_mem_bfsClosure H (S := bfsStep H S) hq
-      simp only [bfsStep, Finset.mem_union, Finset.mem_biUnion] at hp
-      rcases hp with hp | ⟨s, hsS, hsp⟩
-      · exact ⟨p, hp, hpq⟩
-      · exact ⟨s, hsS, (Finset.mem_filter.mp hsp).2.reachable.trans hpq⟩
-termination_by S => Fintype.card V - S.card
-
-theorem mem_bfsClosure_of_reachable (H : SimpleGraph V) [DecidableRel H.Adj] {S : Finset V}
-    {p q : V} (hpS : p ∈ S) (hpq : H.Reachable p q) : q ∈ bfsClosure H S := by
-  have hmem : p ∈ bfsClosure H S := subset_bfsClosure H S hpS
-  exact SimpleGraph.reachable_le_of_adj_le (fun _ h => h)
-    (fun _ _ _ h1 h2 h3 => h2 (h1 h3))
-    (fun x y hxy h => mem_bfsClosure_of_adj H _ h hxy) p q hpq hmem
-
-theorem mem_bfsClosure_iff (H : SimpleGraph V) [DecidableRel H.Adj] (S : Finset V) (q : V) :
-    q ∈ bfsClosure H S ↔ ∃ p ∈ S, H.Reachable p q :=
-  ⟨exists_reachable_of_mem_bfsClosure H, fun ⟨_, hpS, hpq⟩ => mem_bfsClosure_of_reachable H hpS hpq⟩
-
-end FastReachable
-
-section ReachableOnSym2
-
-variable [Fintype V] [DecidableEq V]
-
-/-- Reachability of a `Sym2`-packaged pair of vertices, phrased so it can be
-decided at a completely abstract edge (e.g. `G.endpoints a` for an opaque
-`a : E`) without ever naming the two vertices involved — see the file
-docstring for why that's exactly the property the decision procedure below
-needs. -/
-def sym2Reachable (H : SimpleGraph V) [DecidableRel H.Adj] : Sym2 V → Prop :=
-  Sym2.lift ⟨H.Reachable, fun _ _ => propext SimpleGraph.reachable_comm⟩
-
-/-- `sym2Reachable` is decidable at every, possibly abstract, `Sym2 V`
-element. See the file docstring for why `Quot.recOnSubsingleton` applies.
-Uses `reachable_iff_mem_bfsClosure`'s efficient `Finset`-BFS characterization
-of `Reachable` rather than `infer_instance` (which would silently pull in
-Mathlib's exponential `SimpleGraph.instDecidableRelReachable` instead — see
-`FastReachable`'s section docstring). -/
-instance decSym2Reachable (H : SimpleGraph V) [DecidableRel H.Adj] :
-    DecidablePred (sym2Reachable H) := fun z =>
-  Quot.recOnSubsingleton (motive := fun z => Decidable (sym2Reachable H z)) z
-    (fun p => by
-      show Decidable (H.Reachable p.1 p.2)
-      exact decidable_of_iff _ (reachable_iff_mem_bfsClosure H p.1 p.2).symm)
-
-end ReachableOnSym2
 
 section Adjacency
 
@@ -342,84 +160,17 @@ theorem isForest_insert_iff (hF : G.IsForest F) (heF : e ∉ F)
 
 end InsertIff
 
-section Decide
+section Components
 
-variable [Fintype V] [DecidableEq V] [DecidableEq E]
-
-omit [DecidableEq E] in
 private theorem coe_setOf_mem_cons (a : E) (l : List E) :
     ({e | e ∈ (a :: l)} : Set E) = insert a {e | e ∈ l} := by
   ext x; simp [List.mem_cons]
 
-omit [DecidableEq E] in
 private theorem coe_setOf_mem_cons_of_mem {a : E} {l : List E} (ha : a ∈ l) :
     ({e | e ∈ (a :: l)} : Set E) = {e | e ∈ l} := by
   ext x
   simp only [Set.mem_setOf_eq, List.mem_cons]
   exact ⟨fun h => h.elim (fun h => h ▸ ha) id, Or.inr⟩
-
-/-- **The single-insertion decision, reusable against a fixed base forest.**
-Given `{e' | e' ∈ l}` is already known to be a forest, decide whether
-`insert a {e' | e' ∈ l}` still is — *one* reachability check against `l`'s
-own simple graph. Factored out of `instDecidableIsForestOfList` (which uses
-it for its own `a :: rest` case below) specifically so a caller checking
-*many* candidate insertions against the *same* already-verified base forest
-(a certificate's per-piece maximality check, in `CertChecker.lean`) can call
-this directly, paying for one reachability check per candidate instead of
-re-deciding the whole `a :: l`-shaped forest from scratch each time — which
-would silently repeat `O(|l|)` nested reachability checks, one per
-recursion level `instDecidableIsForestOfList` unwinds through. -/
-def decidableIsForestInsertOfList (l : List E) (a : E) (hF : G.IsForest ({e | e ∈ l} : Set E)) :
-    Decidable (G.IsForest ({e | e ∈ (a :: l)} : Set E)) :=
-  if ha : a ∈ l then
-    isTrue (by rw [coe_setOf_mem_cons_of_mem ha]; exact hF)
-  else if hloop : (G.endpoints a).IsDiag then
-    isFalse (fun hFs => (hFs.1 a (by
-      rw [coe_setOf_mem_cons]; exact Set.mem_insert a _)) hloop)
-  else if hreach : sym2Reachable (G.toSimpleGraph {e | e ∈ l}) (G.endpoints a) then
-    isFalse (fun hFs => by
-      induction huv : G.endpoints a with
-      | _ u v =>
-      have hne : u ≠ v := fun h => hloop (by rw [huv, h]; exact Sym2.diag_isDiag v)
-      have hFs' : G.IsForest (insert a ({e | e ∈ l} : Set E)) := by
-        rw [← coe_setOf_mem_cons]; exact hFs
-      have hreach' : sym2Reachable (G.toSimpleGraph {e | e ∈ l}) (s(u, v) : Sym2 V) :=
-        huv ▸ hreach
-      exact (isForest_insert_iff G hF ha huv hne).mp hFs' hreach')
-  else
-    isTrue (by
-      induction huv : G.endpoints a with
-      | _ u v =>
-      have hne : u ≠ v := fun h => hloop (by rw [huv, h]; exact Sym2.diag_isDiag v)
-      have hnr : ¬ (G.toSimpleGraph {e | e ∈ l}).Reachable u v := fun hcontra => by
-        have hcontra' : sym2Reachable (G.toSimpleGraph {e | e ∈ l}) (s(u, v) : Sym2 V) :=
-          hcontra
-        exact hreach (huv ▸ hcontra')
-      rw [coe_setOf_mem_cons]
-      exact (isForest_insert_iff G hF ha huv hne).mpr hnr)
-
-/-- **The decision procedure itself.** Structural recursion on `l : List E`:
-`[]` is trivially a forest; for `a :: rest`, decide `G.IsForest {e | e ∈ rest}`
-recursively, and if that holds, hand off to `decidableIsForestInsertOfList`
-for the single insertion step. -/
-instance instDecidableIsForestOfList :
-    ∀ l : List E, Decidable (G.IsForest ({e | e ∈ l} : Set E))
-  | [] => isTrue (by
-      have hempty : ({e | e ∈ ([] : List E)} : Set E) = ∅ := by ext x; simp
-      rw [hempty]
-      exact ⟨fun e he => absurd he (Set.notMem_empty e), Set.injOn_empty _, by
-        rw [Multigraph.toSimpleGraph, Set.image_empty, SimpleGraph.fromEdgeSet_empty]
-        exact SimpleGraph.isAcyclic_bot⟩)
-  | a :: rest =>
-      match instDecidableIsForestOfList rest with
-      | isFalse hns =>
-          isFalse (fun hFs => hns (Multigraph.IsForest.subset G hFs (by
-            rw [coe_setOf_mem_cons]; exact Set.subset_insert a _)))
-      | isTrue hF => decidableIsForestInsertOfList G rest a hF
-
-end Decide
-
-section Components
 
 /-!
 **A components cache, for callers checking many candidate insertions
@@ -464,77 +215,214 @@ def connected (P : List (Finset V)) (p q : V) : Prop :=
 instance decConnected (P : List (Finset V)) (p q : V) : Decidable (connected P p q) := by
   unfold connected; infer_instance
 
-/-- Every component recorded so far is a *true* `H`-component: the
-`bfsClosure` of some seed all of whose own elements are already known to be
-mutually `H`-reachable (true, in `forestComponents` below, of a seed formed
-from a single edge's own two endpoints). -/
+/-- Two `Finset`s recorded in the partition never share a vertex — the
+invariant that makes `connected` (below) genuinely transitive, and that
+`buildComponents`'s incremental merging maintains throughout. -/
+def PairwiseDisjointFinsets (P : List (Finset V)) : Prop := P.Pairwise Disjoint
+
+omit [Fintype V] in
+theorem disjoint_foldl_union (l : List (Finset V)) (init c : Finset V)
+    (hinit : Disjoint init c) (hl : ∀ o ∈ l, Disjoint o c) :
+    Disjoint (l.foldl (· ∪ ·) init) c := by
+  induction l generalizing init with
+  | nil => simpa using hinit
+  | cons hd tl ih =>
+    simp only [List.foldl_cons]
+    apply ih
+    · exact Finset.disjoint_union_left.mpr ⟨hinit, hl hd List.mem_cons_self⟩
+    · intro o ho
+      exact hl o (List.mem_cons_of_mem hd ho)
+
+/-- **Merge `verts` into the partition `P`.** Absorb every existing
+component that shares a vertex with `verts` into one new component (union
+them all together with `verts` itself); components disjoint from `verts`
+pass through unchanged. Unlike the old `bfsClosure`-based version, this
+never scans `Finset.univ` (the *whole* graph's vertex `Fintype`) — it only
+ever touches vertices that already appear in `verts` or an already-recorded
+component. Confirmed to matter: on `nested.certificate.json` (60 vertices
+total, but any one piece touches only ~20 of them), `bfsStep`'s per-round
+`Finset.univ.filter` scan, combined with `instDecidableRelAdjToSimpleGraphOfList`'s
+own per-vertex edge-list scan, was the dominant cost of `verify_cert`
+(confirmed via `perf`: ~57% of cycles in the adjacency-check path) — this
+union-based merge sidesteps `Finset.univ` (and `bfsStep`/`bfsClosure`
+entirely) for the components cache, processing each edge exactly once. -/
+def mergeStep (verts : Finset V) (P : List (Finset V)) : List (Finset V) :=
+  let overlap := P.filter (fun c => ¬ Disjoint verts c)
+  let rest := P.filter (fun c => Disjoint verts c)
+  (overlap.foldl (· ∪ ·) verts) :: rest
+
+omit [Fintype V] in
+theorem pairwiseDisjoint_mergeStep (verts : Finset V) (P : List (Finset V))
+    (hP : PairwiseDisjointFinsets P) : PairwiseDisjointFinsets (mergeStep verts P) := by
+  unfold PairwiseDisjointFinsets mergeStep
+  rw [List.pairwise_cons]
+  constructor
+  · intro c hc
+    have hcP : c ∈ P := (List.mem_filter.mp hc).1
+    have hcDisj : Disjoint verts c := of_decide_eq_true (List.mem_filter.mp hc).2
+    apply disjoint_foldl_union
+    · exact hcDisj
+    · intro o ho
+      have hoP : o ∈ P := (List.mem_filter.mp ho).1
+      have hoNotDisj : ¬ Disjoint verts o := of_decide_eq_true (List.mem_filter.mp ho).2
+      have hne : o ≠ c := fun h => hoNotDisj (h ▸ hcDisj)
+      exact hP.forall hoP hcP hne
+  · exact List.Pairwise.sublist List.filter_sublist hP
+
+omit [Fintype V] in
+theorem reachable_union_of_not_disjoint (H : SimpleGraph V) [DecidableRel H.Adj]
+    {A B : Finset V} (hA : ∀ p ∈ A, ∀ q ∈ A, H.Reachable p q)
+    (hB : ∀ p ∈ B, ∀ q ∈ B, H.Reachable p q) (hAB : ¬ Disjoint A B) :
+    ∀ p ∈ A ∪ B, ∀ q ∈ A ∪ B, H.Reachable p q := by
+  obtain ⟨w, hwA, hwB⟩ := Finset.not_disjoint_iff.mp hAB
+  intro p hp q hq
+  simp only [Finset.mem_union] at hp hq
+  rcases hp with hp | hp <;> rcases hq with hq | hq
+  · exact hA p hp q hq
+  · exact (hA p hp w hwA).trans (hB w hwB q hq)
+  · exact (hB p hp w hwB).trans (hA w hwA q hq)
+  · exact hB p hp q hq
+
+omit [Fintype V] in
+theorem reachable_foldl_union (H : SimpleGraph V) [DecidableRel H.Adj] :
+    ∀ (overlap : List (Finset V)) (verts : Finset V),
+    (∀ o ∈ overlap, ¬ Disjoint verts o) →
+    (∀ o ∈ overlap, ∀ p ∈ o, ∀ q ∈ o, H.Reachable p q) →
+    (∀ p ∈ verts, ∀ q ∈ verts, H.Reachable p q) →
+    ∀ p ∈ overlap.foldl (· ∪ ·) verts, ∀ q ∈ overlap.foldl (· ∪ ·) verts, H.Reachable p q
+  | [], verts, _, _, hvertsReach => by simpa using hvertsReach
+  | hd :: tl, verts, hoverlap, hvalid, hvertsReach => by
+      simp only [List.foldl_cons]
+      apply reachable_foldl_union H tl (verts ∪ hd)
+      · intro o ho hcontra
+        exact hoverlap o (List.mem_cons_of_mem hd ho)
+          (hcontra.mono_left Finset.subset_union_left)
+      · intro o ho
+        exact hvalid o (List.mem_cons_of_mem hd ho)
+      · exact reachable_union_of_not_disjoint H hvertsReach
+          (hvalid hd List.mem_cons_self) (hoverlap hd List.mem_cons_self)
+
+/-- Every component recorded so far is internally mutually `H`-reachable —
+the soundness half of the partition invariant `buildComponents` maintains
+(true, in `forestComponents` below, of a seed formed from a single edge's
+own two endpoints). -/
 def ValidComponents (H : SimpleGraph V) [DecidableRel H.Adj] (P : List (Finset V)) : Prop :=
-  ∀ c ∈ P, ∃ seed : Finset V, c = bfsClosure H seed ∧ ∀ p ∈ seed, ∀ q ∈ seed, H.Reachable p q
+  ∀ c ∈ P, ∀ p ∈ c, ∀ q ∈ c, H.Reachable p q
 
-theorem ValidComponents.reachable_of_connected {H : SimpleGraph V} [DecidableRel H.Adj]
-    {P : List (Finset V)} (hP : ValidComponents H P) {p q : V} (hpq : connected P p q) :
-    H.Reachable p q := by
-  rcases hpq with rfl | ⟨c, hcP, hpc, hqc⟩
-  · exact SimpleGraph.Reachable.refl p
-  · obtain ⟨seed, rfl, hseed⟩ := hP c hcP
-    obtain ⟨s1, hs1, hs1p⟩ := (mem_bfsClosure_iff H seed p).mp hpc
-    obtain ⟨s2, hs2, hs2q⟩ := (mem_bfsClosure_iff H seed q).mp hqc
-    exact hs1p.symm.trans ((hseed s1 hs1 s2 hs2).trans hs2q)
+omit [Fintype V] in
+theorem validComponents_mergeStep (H : SimpleGraph V) [DecidableRel H.Adj]
+    (verts : Finset V) (P : List (Finset V))
+    (hverts : ∀ p ∈ verts, ∀ q ∈ verts, H.Reachable p q)
+    (hP : ValidComponents H P) : ValidComponents H (mergeStep verts P) := by
+  unfold ValidComponents mergeStep
+  intro c hc
+  rcases List.mem_cons.mp hc with rfl | hc
+  · apply reachable_foldl_union H _ verts
+    · intro o ho
+      exact of_decide_eq_true (List.mem_filter.mp ho).2
+    · intro o ho
+      exact hP o (List.mem_filter.mp ho).1
+    · exact hverts
+  · exact hP c (List.mem_filter.mp hc).1
 
-/-- Merge `verts` into the partition `P`: skip if some existing component
-already covers it (its connectivity information is already accounted for);
-otherwise record its whole `bfsClosure` — the genuine, complete `H`-component
-containing it, computed once, reused for every later query. -/
-def buildComponents (H : SimpleGraph V) [DecidableRel H.Adj] :
-    List (Finset V) → List (Finset V) → List (Finset V)
+/-- **Building the partition by folding `mergeStep` over a list of edge
+seeds.** Replaces the old `bfsClosure`-per-new-component version: no
+`bfsStep`/`Finset.univ` scanning anywhere in this construction, since
+`mergeStep` only ever touches vertices already present in `verts` or an
+existing component. -/
+def buildComponents : List (Finset V) → List (Finset V) → List (Finset V)
   | [], P => P
-  | verts :: rest, P =>
-      if _ : ∃ c ∈ P, verts ⊆ c then buildComponents H rest P
-      else buildComponents H rest (bfsClosure H verts :: P)
+  | verts :: rest, P => buildComponents rest (mergeStep verts P)
 
-theorem subset_buildComponents (H : SimpleGraph V) [DecidableRel H.Adj] :
-    ∀ (seeds : List (Finset V)) (P : List (Finset V)) (c : Finset V), c ∈ P →
-      c ∈ buildComponents H seeds P
-  | [], _, _, hc => hc
-  | _ :: rest, P, c, hc => by
-      unfold buildComponents
-      split
-      · exact subset_buildComponents H rest P c hc
-      · exact subset_buildComponents H rest _ c (List.mem_cons_of_mem _ hc)
+omit [Fintype V] in
+theorem pairwiseDisjoint_buildComponents :
+    ∀ (seeds : List (Finset V)) (P : List (Finset V)), PairwiseDisjointFinsets P →
+      PairwiseDisjointFinsets (buildComponents seeds P)
+  | [], _, hP => hP
+  | _ :: rest, P, hP =>
+      pairwiseDisjoint_buildComponents rest _ (pairwiseDisjoint_mergeStep _ P hP)
 
+omit [Fintype V] in
 theorem validComponents_buildComponents (H : SimpleGraph V) [DecidableRel H.Adj] :
     ∀ (seeds : List (Finset V)) (P : List (Finset V)),
       (∀ verts ∈ seeds, ∀ p ∈ verts, ∀ q ∈ verts, H.Reachable p q) →
-      ValidComponents H P → ValidComponents H (buildComponents H seeds P)
+      ValidComponents H P → ValidComponents H (buildComponents seeds P)
   | [], _, _, hP => hP
-  | verts :: rest, P, hseeds, hP => by
-      unfold buildComponents
-      split
-      · exact validComponents_buildComponents H rest P
-          (fun v hv => hseeds v (List.mem_cons_of_mem _ hv)) hP
-      · refine validComponents_buildComponents H rest _
-          (fun v hv => hseeds v (List.mem_cons_of_mem _ hv)) ?_
-        intro c hc
-        rcases List.mem_cons.mp hc with rfl | hc
-        · exact ⟨verts, rfl, hseeds verts List.mem_cons_self⟩
-        · exact hP c hc
+  | verts :: rest, P, hseeds, hP =>
+      validComponents_buildComponents H rest _
+        (fun v hv => hseeds v (List.mem_cons_of_mem _ hv))
+        (validComponents_mergeStep H verts P (hseeds verts List.mem_cons_self) hP)
 
-theorem covers_buildComponents (H : SimpleGraph V) [DecidableRel H.Adj] :
+omit [Fintype V] in
+theorem connected_trans {P : List (Finset V)} (hP : PairwiseDisjointFinsets P)
+    {p q r : V} (hpq : connected P p q) (hqr : connected P q r) : connected P p r := by
+  rcases hpq with rfl | ⟨c1, hc1, hpc1, hqc1⟩
+  · exact hqr
+  rcases hqr with rfl | ⟨c2, hc2, hqc2, hrc2⟩
+  · exact Or.inr ⟨c1, hc1, hpc1, hqc1⟩
+  by_cases heq : c1 = c2
+  · exact Or.inr ⟨c1, hc1, hpc1, heq ▸ hrc2⟩
+  · exact absurd hqc2 (Finset.disjoint_left.mp (hP.forall hc1 hc2 heq) hqc1)
+
+omit [Fintype V] in
+theorem subset_foldl_union_self (l : List (Finset V)) (init : Finset V) :
+    init ⊆ l.foldl (· ∪ ·) init := by
+  induction l generalizing init with
+  | nil => exact subset_rfl
+  | cons hd tl ih => exact Finset.subset_union_left.trans (ih (init ∪ hd))
+
+omit [Fintype V] in
+theorem mem_foldl_union_of_mem_init (l : List (Finset V)) (init : Finset V) {x : V}
+    (hx : x ∈ init) : x ∈ l.foldl (· ∪ ·) init :=
+  subset_foldl_union_self l init hx
+
+omit [Fintype V] in
+theorem mem_foldl_union_of_mem_list :
+    ∀ (l : List (Finset V)) (init : Finset V) (o : Finset V), o ∈ l → ∀ x ∈ o,
+      x ∈ l.foldl (· ∪ ·) init
+  | hd :: tl, init, o, ho, x, hx => by
+      simp only [List.foldl_cons]
+      rcases List.mem_cons.mp ho with rfl | ho'
+      · exact mem_foldl_union_of_mem_init tl (init ∪ o) (Finset.mem_union_right init hx)
+      · exact mem_foldl_union_of_mem_list tl (init ∪ hd) o ho' x hx
+
+omit [Fintype V] in
+theorem connected_mergeStep_of_connected {P : List (Finset V)} (verts : Finset V) {p q : V}
+    (h : connected P p q) : connected (mergeStep verts P) p q := by
+  rcases h with rfl | ⟨c, hc, hpc, hqc⟩
+  · exact Or.inl rfl
+  · unfold mergeStep
+    by_cases hcd : Disjoint verts c
+    · exact Or.inr ⟨c, List.mem_cons_of_mem _ (List.mem_filter.mpr ⟨hc, decide_eq_true hcd⟩),
+        hpc, hqc⟩
+    · refine Or.inr ⟨(P.filter (fun c => ¬ Disjoint verts c)).foldl (· ∪ ·) verts,
+        List.mem_cons_self, ?_, ?_⟩
+      · exact mem_foldl_union_of_mem_list _ verts c
+          (List.mem_filter.mpr ⟨hc, decide_eq_true hcd⟩) p hpc
+      · exact mem_foldl_union_of_mem_list _ verts c
+          (List.mem_filter.mpr ⟨hc, decide_eq_true hcd⟩) q hqc
+
+omit [Fintype V] in
+theorem connected_buildComponents_of_connected :
+    ∀ (seeds : List (Finset V)) (P : List (Finset V)) {p q : V}, connected P p q →
+      connected (buildComponents seeds P) p q
+  | [], _, _, _, h => h
+  | verts :: rest, _, _, _, h =>
+      connected_buildComponents_of_connected rest _ (connected_mergeStep_of_connected verts h)
+
+omit [Fintype V] in
+theorem connected_of_mem_seed :
     ∀ (seeds : List (Finset V)) (P : List (Finset V)) (verts : Finset V), verts ∈ seeds →
-      ∃ c ∈ buildComponents H seeds P, verts ⊆ c
-  | v :: rest, P, verts, hverts => by
-      unfold buildComponents
-      split
-      · next h =>
-        rcases List.mem_cons.mp hverts with rfl | hverts'
-        · obtain ⟨c, hcP, hsub⟩ := h
-          exact ⟨c, subset_buildComponents H rest P c hcP, hsub⟩
-        · exact covers_buildComponents H rest P verts hverts'
-      · next h =>
-        rcases List.mem_cons.mp hverts with rfl | hverts'
-        · exact ⟨bfsClosure H verts, subset_buildComponents H rest _ _ List.mem_cons_self,
-            subset_bfsClosure H verts⟩
-        · exact covers_buildComponents H rest _ verts hverts'
+      ∀ p ∈ verts, ∀ q ∈ verts, connected (buildComponents seeds P) p q
+  | v :: rest, P, verts, hverts, p, hp, q, hq => by
+      rcases List.mem_cons.mp hverts with rfl | hverts'
+      · unfold buildComponents
+        apply connected_buildComponents_of_connected
+        unfold mergeStep
+        exact Or.inr ⟨_, List.mem_cons_self,
+          subset_foldl_union_self _ verts hp, subset_foldl_union_self _ verts hq⟩
+      · unfold buildComponents
+        exact connected_of_mem_seed rest (mergeStep v P) verts hverts' p hp q hq
 
 variable [DecidableEq E]
 
@@ -542,7 +430,7 @@ variable [DecidableEq E]
 fold over `l`'s edges (as `edgeVerts` seeds), merging into a component
 partition as described above. -/
 def forestComponents (l : List E) : List (Finset V) :=
-  buildComponents (G.toSimpleGraph {e | e ∈ l}) (l.map (fun e => edgeVerts (G.endpoints e))) []
+  buildComponents (l.map (fun e => edgeVerts (G.endpoints e))) []
 
 omit [Fintype V] [DecidableEq E] in
 theorem mem_edgeVerts_reachable (l : List E) {e : E} (he : e ∈ l) :
@@ -565,6 +453,7 @@ theorem mem_edgeVerts_reachable (l : List E) {e : E} (he : e ∈ l) :
     · exact SimpleGraph.Reachable.refl _
 
 omit [DecidableEq E] in
+omit [Fintype V] in
 theorem validComponents_forestComponents (l : List E) :
     ValidComponents (G.toSimpleGraph {e | e ∈ l}) (forestComponents G l) :=
   validComponents_buildComponents _ _ _
@@ -575,41 +464,48 @@ theorem validComponents_forestComponents (l : List E) :
     (fun c hc => absurd hc (List.not_mem_nil))
 
 omit [DecidableEq E] in
+omit [Fintype V] in
+theorem connected_of_mem_edge (l : List E) {e : E} (he : e ∈ l) :
+    ∀ p ∈ edgeVerts (G.endpoints e), ∀ q ∈ edgeVerts (G.endpoints e),
+      connected (forestComponents G l) p q :=
+  connected_of_mem_seed (l.map (fun e' => edgeVerts (G.endpoints e'))) []
+    (edgeVerts (G.endpoints e)) (List.mem_map.mpr ⟨e, he, rfl⟩)
+
+omit [DecidableEq E] in
+omit [Fintype V] in
+theorem reachable_imp_connected (l : List E) {p q : V}
+    (w : (G.toSimpleGraph {e | e ∈ l}).Walk p q) : connected (forestComponents G l) p q := by
+  induction w with
+  | nil => exact Or.inl rfl
+  | @cons p x _ hadj rest ih =>
+      obtain ⟨e, he, heq⟩ : ∃ e ∈ l, G.endpoints e = s(p, x) := by
+        rw [Multigraph.toSimpleGraph, SimpleGraph.fromEdgeSet_adj] at hadj
+        obtain ⟨⟨e, he, heq⟩, -⟩ := hadj
+        exact ⟨e, he, heq⟩
+      have hpx : connected (forestComponents G l) p x := by
+        have hp : p ∈ edgeVerts (G.endpoints e) := by rw [heq, edgeVerts_mk]; simp
+        have hx : x ∈ edgeVerts (G.endpoints e) := by rw [heq, edgeVerts_mk]; simp
+        exact connected_of_mem_edge G l he p hp x hx
+      have hdisj : PairwiseDisjointFinsets (forestComponents G l) :=
+        pairwiseDisjoint_buildComponents _ [] List.Pairwise.nil
+      exact connected_trans hdisj hpx ih
+
+omit [DecidableEq E] [Fintype V] in
 /-- **Correctness of the components cache.** `p`/`q` lie in a common
 component of `forestComponents G l` iff they're reachable in `l`'s own
-simple graph. Soundness is `ValidComponents.reachable_of_connected`;
-completeness peels the first edge off a `p`–`q` walk (`p ≠ q` forces one to
-exist), whose `edgeVerts` seed — being one of `l`'s own edges — is
-guaranteed `covers_buildComponents`-covered by some final component, which
-(being a true `bfsClosure`-component, `mem_bfsClosure_iff`) already reaches
-every vertex `p` itself reaches, `q` included. -/
+simple graph. Soundness is direct from `ValidComponents`; completeness
+peels a `p`–`q` walk apart one edge at a time (`reachable_imp_connected`),
+placing each step's own two endpoints together via `connected_of_mem_edge`
+and chaining across steps via `connected_trans`. -/
 theorem connected_forestComponents_iff (l : List E) (p q : V) :
     connected (forestComponents G l) p q ↔ (G.toSimpleGraph {e | e ∈ l}).Reachable p q := by
   have hvalid := validComponents_forestComponents G l
   constructor
-  · exact hvalid.reachable_of_connected
-  · intro hreach
-    by_cases hpq : p = q
-    · exact Or.inl hpq
-    · have hw := hreach
-      obtain ⟨w⟩ := hw
-      cases w with
-      | nil => exact absurd rfl hpq
-      | @cons _ x _ hadj rest =>
-        obtain ⟨e, he, heq⟩ : ∃ e ∈ l, G.endpoints e = s(p, x) := by
-          rw [Multigraph.toSimpleGraph, SimpleGraph.fromEdgeSet_adj] at hadj
-          obtain ⟨⟨e, he, heq⟩, -⟩ := hadj
-          exact ⟨e, he, heq⟩
-        have hpmem : p ∈ edgeVerts (G.endpoints e) := by rw [heq, edgeVerts_mk]; simp
-        obtain ⟨c, hcP, hsub⟩ := covers_buildComponents (G.toSimpleGraph {e' | e' ∈ l})
-          (l.map (fun e' => edgeVerts (G.endpoints e'))) [] (edgeVerts (G.endpoints e))
-          (List.mem_map.mpr ⟨e, he, rfl⟩)
-        have hpc : p ∈ c := hsub hpmem
-        obtain ⟨seed, hceq, hseedR⟩ := hvalid c hcP
-        obtain ⟨s1, hs1, hs1p⟩ := (mem_bfsClosure_iff _ seed p).mp (hceq ▸ hpc)
-        have hs1q : (G.toSimpleGraph {e' | e' ∈ l}).Reachable s1 q := hs1p.trans hreach
-        have hqc : q ∈ c := hceq ▸ (mem_bfsClosure_of_reachable _ hs1 hs1q)
-        exact Or.inr ⟨c, hcP, hpc, hqc⟩
+  · rintro (rfl | ⟨c, hc, hpc, hqc⟩)
+    · exact SimpleGraph.Reachable.refl p
+    · exact hvalid c hc p hpc q hqc
+  · rintro ⟨w⟩
+    exact reachable_imp_connected G l w
 
 /-- **The fast single-insertion decision, backed by a precomputed
 components cache.** Same statement and result as
@@ -659,5 +555,46 @@ def decidableIsForestInsertOfComponents (l : List E) (a : E)
       exact (isForest_insert_iff G hF ha huv hne).mpr hnr)
 
 end Components
+
+section Decide
+
+variable [Fintype V] [DecidableEq V] [DecidableEq E]
+
+/-- **The single-insertion decision, reusable against a fixed base forest.**
+Given `{e' | e' ∈ l}` is already known to be a forest, decide whether
+`insert a {e' | e' ∈ l}` still is. A thin wrapper around
+`decidableIsForestInsertOfComponents`, building `forestComponents G l`
+fresh each call -- there's no cache to reuse here (unlike a maximality
+check's loop over many candidates against one base forest), but this still
+avoids the old `bfsClosure`/`Finset.univ`-scanning path entirely, which is
+what `instDecidableIsForestOfList`'s own `O(|l|)`-many per-level calls
+(once per recursion level, each checking a different growing prefix)
+actually bottlenecked on -- confirmed via `perf` to dominate real
+`verify_cert` runtime even after `decidableIsForestInsertOfComponents`'s
+own maximality-check path was fixed the same way. -/
+def decidableIsForestInsertOfList (l : List E) (a : E) (hF : G.IsForest ({e | e ∈ l} : Set E)) :
+    Decidable (G.IsForest ({e | e ∈ (a :: l)} : Set E)) :=
+  decidableIsForestInsertOfComponents G l a hF (forestComponents G l) rfl
+
+/-- **The decision procedure itself.** Structural recursion on `l : List E`:
+`[]` is trivially a forest; for `a :: rest`, decide `G.IsForest {e | e ∈ rest}`
+recursively, and if that holds, hand off to `decidableIsForestInsertOfList`
+for the single insertion step. -/
+instance instDecidableIsForestOfList :
+    ∀ l : List E, Decidable (G.IsForest ({e | e ∈ l} : Set E))
+  | [] => isTrue (by
+      have hempty : ({e | e ∈ ([] : List E)} : Set E) = ∅ := by ext x; simp
+      rw [hempty]
+      exact ⟨fun e he => absurd he (Set.notMem_empty e), Set.injOn_empty _, by
+        rw [Multigraph.toSimpleGraph, Set.image_empty, SimpleGraph.fromEdgeSet_empty]
+        exact SimpleGraph.isAcyclic_bot⟩)
+  | a :: rest =>
+      match instDecidableIsForestOfList rest with
+      | isFalse hns =>
+          isFalse (fun hFs => hns (Multigraph.IsForest.subset G hFs (by
+            rw [coe_setOf_mem_cons]; exact Set.subset_insert a _)))
+      | isTrue hF => decidableIsForestInsertOfList G rest a hF
+
+end Decide
 
 end DiscreteModulusCert

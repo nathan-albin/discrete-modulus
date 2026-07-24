@@ -147,17 +147,99 @@ least as important as matching data shapes/sizes — a much sharper trap
 than the "let-binding not forced" gotcha already documented above, since
 here the *compiler*, not just laziness, was quietly doing the eliding.
 
-**Untried but well-scoped fix:** restrict `bfsStep`'s frontier expansion to
-a precomputed vertex-support set for `l` (e.g. the union of `edgeVerts
-(G.endpoints e)` over `e ∈ l`) instead of `Finset.univ : Finset V`. BFS
-starting from vertices only reachable via `l`'s own edges can never leave
-that support set, so this should be sound, but it requires re-deriving
-`subset_bfsStep`/`bfsClosure`'s termination argument (currently keyed to
-`Fintype.card V`) against the smaller support set's cardinality instead,
-plus re-checking `connected_forestComponents_iff` and everything downstream
-still goes through cleanly. Not attempted yet — a genuine proof-engineering
-task, not a quick patch, and the right next step if `nested`'s ~25s is
-still worth chasing further.
+**Untried but well-scoped fix (superseded, see Stage 3):** restrict
+`bfsStep`'s frontier expansion to a precomputed vertex-support set for `l`
+instead of `Finset.univ : Finset V`. Not attempted — the user opted for the
+full union-find rewrite below instead, which subsumes this anyway.
+
+## Stage 3 (2026-07-24, same day): resolved — full union-find rewrite, ~13x
+
+User's own idea, prompted by the Stage 2 finding: instead of computing
+connected components via `bfsClosure`-per-seed (BFS from scratch, scanning
+`Finset.univ` every round), build them incrementally by processing edges
+one at a time — for each edge's two endpoints, merge every existing
+component that shares a vertex with them into one `Finset.union`, same as
+a textbook union-find but represented as a `List (Finset V)` (no array
+indexing needed, sidestepping the `Fintype.equivFin`-is-noncomputable
+obstruction `FastReachable`'s docstring already flagged for a bare
+`[Fintype V]`).
+
+**Implementation** (`ForestDecide.lean`, `Components` section): new
+`mergeStep`/`buildComponents` replace the old `bfsClosure`-based version.
+Correctness needed from scratch:
+- `PairwiseDisjointFinsets` (`List.Pairwise Disjoint`) as an invariant
+  `mergeStep` provably preserves — needed to make `connected` (share a
+  common component) actually transitive, which the old `bfsClosure`-backed
+  version got for free from BFS closures never overlapping.
+- `ValidComponents` (soundness: everyone sharing a component is mutually
+  `H`-reachable) lifted from `mergeStep` to the full `buildComponents` fold.
+- `connected_of_mem_seed`: each edge's own two endpoints end up connected
+  in the final partition, proved via a `connected`-monotonicity lemma
+  threaded across the whole fold (components only ever grow/merge, never
+  split, so once two vertices share a component they stay sharing one).
+- `connected_forestComponents_iff`'s completeness direction rebuilt via
+  ordinary `SimpleGraph.Walk` induction (peel one edge off the walk,
+  place its endpoints together via `connected_of_mem_seed`, chain across
+  steps via `connected_trans`) rather than the old proof's one-step
+  `bfsClosure`-completeness shortcut (`mem_bfsClosure_of_reachable`), which
+  has no analogue once `bfsClosure` is gone.
+
+All proved with no `sorry`/`Classical.choice`, verified first in a scratch
+file before porting in.
+
+**Second bottleneck found after "fixing" the first one.** Applying only
+the above to `forestComponents` (used by `decidableIsForestInsertOfComponents`,
+the per-candidate maximality check) gave... no measurable improvement —
+`verify_cert` on `nested` was still ~25-50s (the `lake exe` wrapper itself
+added noisy, sometimes-large overhead on top; calling the built binary
+directly gave a more honest, still-unchanged ~25.3s). Re-profiling with
+`perf` showed *the same* `List.elem`/`Sym2.instDecidableRel`/
+`instDecidableRelAdjToSimpleGraphOfList` hot path as before — but grepping
+the perf report for `decidableIsForestInsertOfList`/`bfsStep` by name
+showed only ~0.1% self-time each, seemingly clearing them. That was
+misleading: those wrapper functions have near-zero *self* time because
+almost all of their time is spent inside what they call, which perf
+attributes to the *callee's* symbol — the same leaf symbols
+(`Sym2.instDecidableRel` etc.) are reached from **both**
+`decidableIsForestInsertOfComponents` (now fixed) **and**
+`decidableIsForestInsertOfList` (still on the old `bfsClosure` path, used
+by `checkTree`'s *other* check — verifying the declared tree plus prior
+base is itself a forest, via `instDecidableIsForestOfList`'s `O(|l|)`-many
+per-level calls). Perf's flat/leaf view can't distinguish the two callers;
+only grepping the *compiled C* for who calls
+`instDecidableRelAdjToSimpleGraphOfList___redArg` directly (found in
+`ForestDecide.c`: `decidableIsForestInsertOfList___redArg___lam__0` calls
+it straight) settled which one was actually hot.
+
+**Lesson for next time:** when perf attributes cost to a shared leaf
+function reached from multiple call sites, don't trust a name-grep of the
+self-time table to clear a suspect — check the *compiled* call graph (or
+the C source) for who actually calls the hot leaf, since thin wrappers
+correctly show ~0% self-time even when they're responsible for all of a
+callee's invocations.
+
+**The actual fix:** `decidableIsForestInsertOfList` was rewritten to
+delegate directly to `decidableIsForestInsertOfComponents`, building a
+fresh `forestComponents G l` each call (no cache to reuse here, but still
+avoids `Finset.univ` entirely). This required reordering the file —
+`Components` now comes before `Decide` — since the delegation is a forward
+reference otherwise; the two small private lemmas `coe_setOf_mem_cons(_of_mem)`
+moved with it. Once nothing referenced `bfsStep`/`bfsClosure`/
+`sym2Reachable`/`decSym2Reachable` anymore, the now-dead `FastReachable`
+and `ReachableOnSym2` sections (~200 lines) were deleted outright, and the
+file's top docstring rewritten to match.
+
+**Results** (this machine, `lake exe verify_cert`, repeated runs):
+- `nested.certificate.json`: ~32s baseline → ~2.4-2.6s (~13x).
+- `house`/`branch_test.certificate.json`: unaffected (~1.6s, already fast),
+  still ACCEPTED — no regressions.
+- `EndToEndTest`'s `native_decide`-based build step (exercises the same
+  code): ~300-313s → ~10s.
+
+No `sorry`, no `Classical.choice`, zero new lint warnings (two pre-existing
+`Soundness.lean` theorems picked up a newly-unused `[Fintype V]`, fixed
+with `omit` clauses). Confirmed via full `lake build` and direct
+`verify_cert` runs on all three example certificates.
 
 ## Constraints (must hold throughout)
 

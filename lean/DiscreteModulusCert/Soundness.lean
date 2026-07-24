@@ -427,7 +427,7 @@ theorem treesPmf_marginal {M : Matroid E} {trees : List (List E × ℚ)}
         (trees.get i)) from funext (fun i => by simp [usageVector_apply, mul_comm])]
   exact sum_fin_length_eq_list_sum (fun t => if e ∈ S t.1 then t.2 else 0) trees
 
-omit [Fintype E] in
+omit [Fintype V] [Fintype E] in
 /-- **`checkTree`'s first check, isolated.** A declared tree's own edge list
 has no duplicate edge index -- needed (alongside `checkTree_sound`'s `IsBase`
 conclusion) to know that `sumTreeContributions`'s per-edge array fold over
@@ -442,6 +442,7 @@ theorem checkTree_nodup {G : Multigraph V E} {I₀acc A T : List E}
   · exact of_decide_eq_true h1
   all_goals simp [bind, Except.bind] at hok
 
+omit [Fintype V] in
 /-- **Soundness of `checkTree`**: if it accepts, the declared tree really is
 a base of the piece's own (contract-then-restrict) matroid -- the executable
 mirror of `isBase_contract_restrict_iff_isForest`. -/
