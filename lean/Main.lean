@@ -25,7 +25,7 @@ for the full trusted-computing-base ledger and the status of proving
 Kruskal's algorithm correct. -/
 def kruskalCaveat : String :=
   "  NOTE: admissibility of rho relies on an unverified Kruskal implementation \
-(its output is trusted, not proven, to be a genuine minimum-weight spanning tree)."
+(its output is trusted, not proven, to be a minimum-weight spanning tree)."
 
 def main (args : List String) : IO UInt32 := do
   match args with

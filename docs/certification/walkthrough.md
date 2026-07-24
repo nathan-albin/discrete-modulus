@@ -129,8 +129,7 @@ lake exe verify_cert ../cpp/examples/house.certificate.json
 
 ```
 ../cpp/examples/house.certificate.json: ACCEPTED  (graph: 5 vertices, 6 edges, fingerprint 2557820888710597248)
-  NOTE: admissibility of rho relies on an unverified Kruskal implementation
-  (its output is trusted, not proven, to be a minimum-weight spanning tree).
+  NOTE: admissibility of rho relies on an unverified Kruskal implementation (its output is trusted, not proven, to be a minimum-weight spanning tree).
 ```
 
 During this stage, the verifier:

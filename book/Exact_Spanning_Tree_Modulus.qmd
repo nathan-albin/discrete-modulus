@@ -28,7 +28,11 @@ The [Dual Families](Dual_Families.qmd) chapter showed that the spanning tree fam
 
 This chapter gives an *exact*, combinatorial algorithm (see @albin2025exactarithmeticspanningtree) that computes this same quantity directly, without ever enumerating $\hat{\Gamma}$, and that scales to much larger graphs. The algorithm builds on Cunningham's algorithm for polymatroids [@cunningham1985optimalattackreinforcement], which works on a generic matroid but is particularly easy to understand when specialized to the language of spanning trees, as we do below. It's implemented in `discrete_modulus.spanning_tree_modulus`, with an independent C++ implementation in [`cpp/`](https://github.com/nathan-albin/discrete-modulus/tree/main/cpp) (see its [API reference](reference/cpp/) for `discrete_modulus::spanning_tree_modulus` and friends).
 
-## Rank
+## Foundations
+
+Everything in this section builds toward a single number: the vulnerability of a graph, which the next section uses as its core subroutine for computing $\eta^*$. We start from the rank function, build the polymatroid it defines, and then describe Cunningham's algorithm, an efficient way to work inside that polymatroid using nothing but a sequence of max-flow computations.
+
+### Rank
 
 Consider an undirected graph $G=(V,E)$ with vertex set $V$ and edge set $E$. The **rank function** on $G$ is a function $f:2^E\to\mathbb{N}_0$. Given a subset of edges $J\subseteq E$, the rank of $J$ is defined as
 
@@ -63,7 +67,7 @@ for i, J in enumerate(examples):
     plt.title("rank = {}".format(rank(G, J)))
 ```
 
-## Polymatroid
+### Polymatroid
 
 From the rank function, $f$ (which is an example of what Cunningham calls a **polymatroid function**), we define the **polymatroid** $P(f)$ as
 
@@ -99,7 +103,7 @@ $$
 
 The set $P(f)$ in this case is exactly the set of non-negative vectors $x\in\mathbb{R}^E_{\ge 0}$ that satisfy all 7 of the above inequalities. (Of course, the second set of three inequalities is implied by the first set of three, so there are in reality only four important inequalities.)
 
-## Polymatroid bases
+### Polymatroid bases
 
 Let $y\in\mathbb{R}^E_{\ge 0}$. We say that $x\in\mathbb{R}^E_{\ge 0}$ is a **$P(f)$-basis** of $y$ if the following conditions hold.
 
@@ -107,17 +111,17 @@ Let $y\in\mathbb{R}^E_{\ge 0}$. We say that $x\in\mathbb{R}^E_{\ge 0}$ is a **$P
 2. $x\preceq y$ (elementwise comparison), and
 3. $x$ is maximal in the sense that it cannot be increased on any edge without violating one of the two previous properties.
 
-## Cunningham's algorithm
+### Cunningham's algorithm
 
 A key ingredient in this method of finding spanning tree modulus is computing lots of $P(f)$-bases for various $y$. To do this, we use Cunningham's algorithm.
 
 Cunningham's algorithm is a greedy algorithm. Essentially, we initialize $x=0$ on all edges. Then, we loop over every edge $j\in E$ and increase $x$ on $j$ until either we run into an inequality in the polymatroid $P(f)$ or we reach $y(j)$. Cunningham proved that this greedy procedure of looping through all edges once and making $x$ on each as large as possible without violating any of the inequality constraints ($x\in P(f)$ and $x\preceq y$) results in $x$ being a $P(f)$-basis of $y$. At the end of this procedure, there will be some set of edges $J\subseteq E$ that is **tight** in the sense that $x(J)=f(J)$. This tight set is also used in the computation of modulus.
 
-## The max-flow problem
+### The max-flow problem
 
 At each step of the algorithm, we will either set $x(j)=y(j)$ or we will discover that we can't make $x(j)$ that large without violating one of the inequalities $x(J)\le f(J)$ for all $J\subseteq E$. Checking these inequalities is the hard part. The number of subsets to check is $2^{|E|}$, which makes a brute force approach computationally expensive. Fortunately, Cunningham formulated an equivalent max-flow problem that can identify a critical subset $J$. Without getting into the details of why it works, there is a relatively simple procedure for producing a capacitated flow network to solve the problem. Using a max-flow solver then produces the answer to the question "How big can I make $x(j)$ without leaving the polymatroid $P(f)$?"
 
-## Integer arithmetic
+### Integer arithmetic
 
 The implementation in `discrete_modulus.spanning_tree_modulus` is not quite the one Cunningham described. We want to compute everything in exact arithmetic (not floating point arithmetic), so we need to perform a little transformation. In the spanning tree modulus code, we always look for a $P(f)$-basis of a rational constant vector $y\equiv\frac{p}{q}$. This can be transformed into looking for a $P(qf)$-basis of the constant vector $y\equiv p$. This transformation produces a max-flow problem with integer capacities that can be solved exactly.
 
@@ -149,7 +153,7 @@ In order to interpret the results, remember that the code computes a $P(qf)$-bas
 
 To see why we can't assign $\frac{3}{4}$ to the last edge, look at the tight set returned. Evidently the triangle of edges $J$ among the vertices $0$, $1$ and $2$ is tight for this $x$. To verify this, note that $J$ has rank 2. Summing $x$ on those three edges gives $\frac{3}{4} + \frac{3}{4} + \frac{2}{4} = \frac{8}{4}=2$. Since $x(J)=f(J)$, it's not possible to increase $x$ on any of those edges while keeping $x$ inside the polymatroid.
 
-## Graph vulnerability
+### Graph vulnerability
 
 The way Cunningham's algorithm is used in the modulus code is as a way of finding **vulnerable** sets of edges on the graph. Without getting into detailed definitions, we'll just say that there is a value, $\theta(G)$, that is called the vulnerability of $G$. In the modulus code, we need to compute this vulnerability. There are two interesting facts about graph vulnerability that make Cunningham's algorithm useful for this problem.
 
@@ -182,7 +186,7 @@ for theta in Theta:
 
 This shows that the graph vulnerability in this case is $\frac{3}{4}$.
 
-### Binary search
+#### Binary search
 
 Since the possible $\theta(G)$ values are ordered and since we can query about which side of a particular value $\theta(G)$ falls, we can use a binary search to locate the value. This is exactly what `graph_vulnerability` does.
 
@@ -235,3 +239,30 @@ nx.draw(
 ```
 
 Note how this connects back to the [Dual Families](Dual_Families.qmd) chapter: $\eta^*$ computed above is exactly the optimal density for the blocking dual of the spanning tree family (Chopra's feasible partitions). We have computed this $\eta^*$ exactly, and without ever enumerating the feasible partition family.
+
+## Verifying the result
+
+Computing $\eta^*$ once doesn't by itself prove it's optimal; the code that computed it could have a bug. The repository includes a separate certification pipeline that turns a computed $\eta^*$ into a machine-checked proof of optimality, verified by the Lean 4 theorem prover. This section sketches how that pipeline works and shows it running end to end; see [`docs/certification/`](https://github.com/nathan-albin/discrete-modulus/tree/main/docs/certification) for the full details, especially [`walkthrough.md`](https://github.com/nathan-albin/discrete-modulus/blob/main/docs/certification/walkthrough.md), of which this section is a condensed version.
+
+The pipeline has three stages.
+
+1. **Trace the solver.** Run with `--trace`, and the C++ solver (the same computation as `spanning_tree_modulus` above, implemented independently in C++) records every round of its binary search: the tight set of edges found and the $\theta$ value at which it was found, the raw ingredients of the disassembly argument from the previous section.
+2. **Build a certificate.** `certificate_builder` turns that trace into a *certificate*: the edge set is broken into pieces, each carrying a local probability distribution over spanning trees (a *pmf*). Choosing independently from each piece's pmf and taking the union produces a probability distribution $\mu$ over spanning trees of the whole graph. From $\mu$, the builder computes `eta` (the edge probabilities it implies) and `rho` (an admissible dual weighting, one edge weight per edge, under which every spanning tree weighs at least 1) and checks that they match the values the solver found.
+3. **Verify in Lean.** The Lean verifier re-derives `eta` and `rho` from the pieces itself, rather than trusting the builder's arithmetic; confirms every piece's trees really are spanning trees with a valid pmf; and checks that $\rho$ is admissible. It then applies a Cauchy-Schwarz duality argument to conclude that $\mu$ and $\rho$ are both optimal.
+
+Here's what that looks like on the house graph:
+
+```
+cpp/build/spt_mod cpp/examples/house --trace
+python -m discrete_modulus.certificate_builder cpp/examples/house
+cd lean && lake exe verify_cert ../cpp/examples/house.certificate.json
+```
+
+The final command prints:
+
+```
+../cpp/examples/house.certificate.json: ACCEPTED  (graph: 5 vertices, 6 edges, fingerprint 2557820888710597248)
+  NOTE: admissibility of rho relies on an unverified Kruskal implementation (its output is trusted, not proven, to be a minimum-weight spanning tree).
+```
+
+`ACCEPTED` means the Lean kernel has checked the certificate. The `(graph: ...)` summary and fingerprint aren't part of that checked conclusion; they're a human cross-check on the one step that can't be kernel-checked, namely reading the right file off disk. The `NOTE` names the pipeline's one deliberate trust gap: admissibility checking relies on Kruskal's algorithm to find a minimum-weight spanning tree, and that implementation isn't itself proven correct (though for graphs like the house, where $\rho$ turns out to be constant, an alternate argument skips Kruskal entirely). See [`trust.md`](https://github.com/nathan-albin/discrete-modulus/blob/main/docs/certification/trust.md) for the complete accounting of what is, and isn't, kernel-checked.
