@@ -71,7 +71,13 @@ false positive.
    structured internally.
 3. **[`schema.md`](schema.md)**: field-by-field reference for the two JSON
    formats involved (the solver trace and the certificate).
-4. **[`trust.md`](trust.md)**: the trusted computing base. What's
+4. **[`theorem.md`](theorem.md)**: the bounded reading list. If you didn't
+   write any of this, what do you actually have to read (as opposed to take
+   on faith) to independently confirm that `ACCEPTED` means what it's
+   claimed to mean? Includes a dependency graph of what's trusted, what's
+   worth sanity-checking, and what's safe to skip because the kernel already
+   checked it.
+5. **[`trust.md`](trust.md)**: the trusted computing base. What's
    kernel-checked, what's accepted as trusted and why, and what remains as
    future work to close that gap.
 
