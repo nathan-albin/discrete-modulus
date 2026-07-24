@@ -32,3 +32,26 @@ TEST_CASE("wheel_graph hub is connected to every rim vertex", "[graphs]") {
     // 5 rim edges + 5 spokes
     REQUIRE(num_edges(g) == 10);
 }
+
+TEST_CASE("is_simple_graph accepts every demo graph", "[graphs]") {
+    REQUIRE(is_simple_graph(complete_graph(5)));
+    REQUIRE(is_simple_graph(cycle_plus_triangle(6)));
+    REQUIRE(is_simple_graph(wheel_graph(6)));
+    REQUIRE(is_simple_graph(disconnected_graph()));
+    REQUIRE(is_simple_graph(growing_multipartite(4)));
+    REQUIRE(is_simple_graph(complete_plus_triangle(5)));
+}
+
+TEST_CASE("is_simple_graph rejects a self-loop", "[graphs]") {
+    Graph g(3);
+    add_edge(0, 1, g);
+    add_edge(1, 1, g);
+    REQUIRE_FALSE(is_simple_graph(g));
+}
+
+TEST_CASE("is_simple_graph rejects parallel edges regardless of endpoint order", "[graphs]") {
+    Graph g(3);
+    add_edge(0, 1, g);
+    add_edge(1, 0, g);
+    REQUIRE_FALSE(is_simple_graph(g));
+}

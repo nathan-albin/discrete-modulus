@@ -11,30 +11,44 @@ Currently the code includes a  Python library (`discrete_modulus`, located in
 implementing an exact-arithmetic algorithm for computing spanning tree modulus.
 [`julia/`](julia/) is a placeholder for a future Julia code. Each is an
 **independent** implementation of the same underlying theory, they aren't intended to interoperate (yet).
+[`lean/`](lean/) is a Lean 4 project, still early-stage, that will independently
+verify certificates of optimality produced from the C++ solver's output, built
+on top of [`lean-modulus`](https://github.com/nathan-albin/lean-modulus).
 
 ## Repository layout
 
-- [`python/`](python/) — the `discrete_modulus` Python package
+- [`python/`](python/): the `discrete_modulus` Python package
   (`python/src/discrete_modulus/`: basic algorithm, family operators,
   NetworkX-based families, demo graphs), managed with
   [`uv`](https://docs.astral.sh/uv/) (`python/pyproject.toml` +
   `python/uv.lock`). Requires Python >= 3.11.
-  - `python/tests/` — the `pytest` suite.
-  - `python/docs/` — a standalone `mkdocs` site that generates the Python
+  - `python/tests/`: the `pytest` suite.
+  - `python/docs/`: a standalone `mkdocs` site that generates the Python
     API reference from docstrings via `mkdocstrings`.
-- [`book/`](book/) — the `.qmd` pages that make up the companion book, built
+- [`book/`](book/): the `.qmd` pages that make up the companion book, built
   with [Quarto](https://quarto.org/).
-- [`cpp/`](cpp/) — the `discrete_modulus` C++ library (header-only,
+- [`cpp/`](cpp/): the `discrete_modulus` C++ library (header-only,
   `cpp/include/discrete_modulus/`: exact spanning tree modulus via
   Cunningham's algorithm), built with CMake and Boost.Graph. Narrower in
-  scope than `python/` so far — see [`cpp/README.md`](cpp/README.md).
-  - `cpp/test/` — the Catch2 test suite.
-  - `cpp/docs/` — Doxygen config for the API reference.
-- [`julia/`](julia/) — not implemented yet; see its `README.md` for
+  scope than `python/` so far; see [`cpp/README.md`](cpp/README.md).
+  - `cpp/test/`: the Catch2 test suite.
+  - `cpp/docs/`: Doxygen config for the API reference.
+- [`julia/`](julia/): not implemented yet; see its `README.md` for
   intended scope.
-- [`.github/workflows/`](.github/workflows/) — CI: linting, tests (Python
-  and C++), and the book/docs build+deploy (see [CI](#ci) below).
-- [`.devcontainer/`](.devcontainer/) — a devcontainer with Python, `uv`,
+- [`lean/`](lean/): a Lean 4 project (`DiscreteModulusCert`, managed with
+  [Lake](https://github.com/leanprover/lake)) that kernel-checks
+  certificates of spanning-tree-modulus optimality without trusting the C++
+  solver's arithmetic. Depends on
+  [`lean-modulus`](https://github.com/nathan-albin/lean-modulus) (pinned to a
+  specific commit) for its graph/matroid infrastructure. See
+  [`docs/certification/`](docs/certification/) for how this fits together
+  with the C++ solver and the Python certificate builder.
+- [`docs/certification/`](docs/certification/): what a certificate is, how
+  the solver/builder/verifier pipeline produces and checks one, and exactly
+  what is (and isn't) trusted, with a worked example.
+- [`.github/workflows/`](.github/workflows/): CI, linting, tests (Python,
+  C++, and Lean), and the book/docs build+deploy (see [CI](#ci) below).
+- [`.devcontainer/`](.devcontainer/): a devcontainer with Python, `uv`,
   the Quarto CLI, and the C++ toolchain (CMake, Boost, Doxygen)
   preinstalled (see [Development environment](#development-environment)
   below).
@@ -59,7 +73,7 @@ uv sync --group dev --group book --group docs
 
 or `uv sync --all-groups` for everything at once.
 
-- `dev` — `ruff`, `mypy`, `pytest`, for linting, type-checking, and testing:
+- `dev`: `ruff`, `mypy`, `pytest`, for linting, type-checking, and testing:
 
   ```sh
   cd python
@@ -69,11 +83,11 @@ or `uv sync --all-groups` for everything at once.
   uv run pytest --cov --cov-report=term-missing
   ```
 
-- `book` — Jupyter, matplotlib, `pycddlib`, needed to execute the book's
+- `book`: Jupyter, matplotlib, `pycddlib`, needed to execute the book's
   code cells. `pycddlib` builds a C extension against `cddlib`'s headers
-  (Ubuntu/Debian: `apt install libcdd-dev`) — already present in the
+  (Ubuntu/Debian: `apt install libcdd-dev`): already present in the
   devcontainer image. See "Building the book" below.
-- `docs` — `mkdocs` + `mkdocstrings`, needed to build the Python API
+- `docs`: `mkdocs` + `mkdocstrings`, needed to build the Python API
   reference. See "Building the Python API reference" below.
 
 The `.qmd` pages in `book/` import the library the same way, via
@@ -81,7 +95,7 @@ The `.qmd` pages in `book/` import the library the same way, via
 
 ## Building the book
 
-The book is built with [Quarto](https://quarto.org/) — install the Quarto
+The book is built with [Quarto](https://quarto.org/): install the Quarto
 CLI separately (it's not a Python package): see the
 [get-started guide](https://quarto.org/docs/get-started/).
 
@@ -147,6 +161,24 @@ an unoptimized build is dramatically slower.
 See [`cpp/README.md`](cpp/README.md) for more, including running the
 `spt_mod` CLI.
 
+## Building the Lean verifier
+
+Kept out of the main devcontainer: Mathlib's binary cache alone is several
+GB, only needed by contributors actually working on `lean/`. Run its setup
+script once, which installs [`elan`](https://github.com/leanprover/elan) if
+needed, then fetches dependencies and Mathlib's cache before building:
+
+```sh
+lean/setup.sh
+```
+
+Subsequent builds:
+
+```sh
+cd lean
+lake build
+```
+
 ## Building the C++ API reference
 
 Requires [Doxygen](https://www.doxygen.nl/) (and, optionally,
@@ -163,20 +195,23 @@ generates `cpp/docs/_site/html/`.
 
 The included devcontainer (`.devcontainer/`) has Python, `uv`, the Quarto
 CLI, `libcdd-dev`, and the C++ toolchain (CMake, Boost, Doxygen, Graphviz)
-preinstalled, and runs `uv sync --all-groups` on create — opening the repo
+preinstalled, and runs `uv sync --all-groups` on create: opening the repo
 in it (VS Code's Dev Containers extension, or a Codespace) is enough to
 lint, test, and build the book, the Python API docs, and the C++ library
-immediately.
+immediately. The Lean toolchain is deliberately left out (see "Building the
+Lean verifier" above): run `lean/setup.sh` once if you need it.
 
 ## CI
 
-- `lint.yml` — `ruff check`, `ruff format --check`, `mypy`, on changes
+- `lint.yml`: `ruff check`, `ruff format --check`, `mypy`, on changes
   under `python/`.
-- `test.yml` — `pytest` across a Python version matrix, on changes under
+- `test.yml`: `pytest` across a Python version matrix, on changes under
   `python/`.
-- `cpp-test.yml` — configures, builds, and runs the Catch2 test suite for
+- `cpp-test.yml`: configures, builds, and runs the Catch2 test suite for
   `cpp/`, on changes under `cpp/`.
-- `book.yml` — builds the book, the Python API reference, and the C++ API
+- `lean-test.yml`: installs `elan`, fetches Mathlib's cache, and runs
+  `lake build` for `lean/`, on changes under `lean/`.
+- `book.yml`: builds the book, the Python API reference, and the C++ API
   reference as independent jobs, then assembles them into one site (book
   at the root, API references under `reference/python/` and
   `reference/cpp/`) and publishes it to the `gh-pages` branch, on push to
