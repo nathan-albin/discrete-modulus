@@ -1,6 +1,6 @@
 # Worked example: the house graph, start to finish
 
-This file demonstrates the whole pipeline on the smallest real example checked
+This file demonstrates the whole pipeline on the smallest example checked
 into the repository, `cpp/examples/house`, showing the file contents produced at
 each stage. You can reproduce all of it yourself (commands are given at each
 step). The commands assume you have built the C++ solver as described in
@@ -111,11 +111,11 @@ the part that detects the roof triangle and shrinks it.
 Both pieces are 3-edge triangles, so each has exactly 3 spanning trees (leave
 one edge out). Assigning each tree a probability of $1/3$ gives a uniform value
 of $\eta^*=2/3$ on each edge. To build a spanning tree of the house with this
-distribution; pick one of piece 1's 3 trees and one of piece 2's 3 trees
+distribution, pick one of piece 1's 3 trees and one of piece 2's 3 trees
 independently, then take the union. Because of the way the pieces were constructed, this always produces a spanning tree of the house graph.
 
 **`eta`/`rho` are checked, not trusted.** The builder computes these values
-independently from `pieces` (summing each declared tree's weight into every edge
+independently of `pieces` (summing each declared tree's weight into every edge
 it touches) and puts them into the certificate. The `validate_certificate`
 function re-derives them and asserts they match before writing the file. (Later,
 the Lean verifier repeats that same check from scratch.)
@@ -130,12 +130,12 @@ lake exe verify_cert ../cpp/examples/house.certificate.json
 ```
 ../cpp/examples/house.certificate.json: ACCEPTED
   NOTE: admissibility of rho relies on an unverified Kruskal implementation
-  (its output is trusted, not proven, to be a genuine minimum-weight spanning tree).
+  (its output is trusted, not proven, to be a minimum-weight spanning tree).
 ```
 
 During this stage, the verifier:
 
-1. Re-checks every piece: the declared spanning trees are actually spanning
+1. Re-checks every piece: the declared spanning trees are indeed spanning
    trees, the pmf weights are nonnegative and sum to 1, the pieces' edges disjointly cover the whole graph.
 2. Recomputes `eta` and `rho` from `pieces` and confirms they match the
    declared fields.
@@ -147,7 +147,7 @@ During this stage, the verifier:
    to exactly $1$ ($\left<\rho,\eta\right> = 6 \times \tfrac14 \times
    \tfrac23 = 1$), and $\|\rho\|^2 \|\eta\|^2 = \tfrac38 \times \tfrac83 = 1$. Cauchy-Schwarz is satisfied with equality, proving that $\rho$ and $\mu$ are both optimal.
 
-`ACCEPTED` means the certificate has been validated by the Lean validator. You
+`ACCEPTED` means the certificate has been checked by the Lean verifier. You
 can also see `lean/DiscreteModulusCert/EndToEndTest.lean`'s
 `house_end_to_end_optimal` for an example of how to build a kernel-checked Lean
 theorem stating the correctness conclusion for a certificate read from a JSON
