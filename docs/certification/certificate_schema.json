@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nathan-albin/discrete-modulus/docs/certification/certificate_schema.json",
+  "title": "Spanning-tree-modulus certificate (v5)",
+  "description": "Certificate format produced by the untrusted Python builder (discrete_modulus.certificate_builder) and consumed by the Lean verifier (lean/DiscreteModulusCert/CertChecker.lean). See docs/certification/schema.md for the full field-by-field writeup. A flat, ORDERED list of 'pieces' -- one per within-round deflation core, or per solver round if it needed no further deflation -- glued by a single left-fold of Pmf.glue (lean/DiscreteModulusCert/Glue.lean). Order matters: it must match discovery order (round 1's pieces, in their own discovery order, then round 2's, ...), the same order FactoredPmf.pieces / SolverTrace.rounds already produce. Invariants this schema does NOT and cannot check (the verifier's actual job, not JSON-Schema's): every piece's 'edges' disjoint from every earlier piece's; the union of all pieces' 'edges' equals the whole top-level 'graph.edges' list; every declared tree is a genuine forest (Multigraph.IsForest, lean/DiscreteModulusCert/ForestDecide.lean) that is maximal within its piece; each piece's tree weights are non-negative and sum to exactly 1; 'eta'/'rho' have exactly one entry per top-level graph edge. 'eta'/'rho' fields: the verifier always derives both from 'pieces' anyway (compositionally, from each piece's own local marginal -- Pmf.glue's support is a literal Cartesian product, exponential in the number of pieces, so the glued top-level pmf's marginal must never be computed directly -- but the per-piece composition is cheap, linear in pieces x edges), so these fields are CHECKED against that recomputation, never trusted as inputs -- a mismatch is rejected. Shipping the checked values (rather than omitting them, since the verifier derives them anyway) makes the certificate a self-contained, human/tool-readable artifact -- directly diffable against the C++ solver's own '*.eta' output without running the verifier at all. Rational numbers are always [numerator, denominator] pairs of JSON integers -- NEVER floating point, and NEVER assume 53-bit-safe integer range: numerators/denominators are arbitrary precision (they come from exact Fraction arithmetic on the Python side), so a JSON parser that silently coerces big integers to double-precision floats will silently corrupt a certificate. denominator is always a positive integer; fractions need not be in lowest terms.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["certificate_version", "graph", "pieces", "eta", "rho"],
+  "properties": {
+    "certificate_version": {
+      "const": 5,
+      "description": "Independent from the solver-trace's own \"version\" field (solver_trace.hpp) -- they evolve on different schedules."
+    },
+    "graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["num_vertices", "edges"],
+      "properties": {
+        "num_vertices": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Vertices are the integers 0..num_vertices-1; no separate vertex-label list, matching Boost's vecS vertex_descriptor."
+        },
+        "edges": {
+          "type": "array",
+          "description": "edges[i] gives global edge i's two endpoint vertices. Array position IS the edge's stable global index -- every 'edges' list elsewhere in this document indexes into this array, never relabeled. Parallel edges (repeated [u, v] pairs) are legal and distinct edge identities.",
+          "items": { "$ref": "#/$defs/edgeEndpoints" }
+        }
+      }
+    },
+    "pieces": {
+      "type": "array",
+      "description": "One entry per block in the flat laminar-family fold (lean/DiscreteModulusCert/Glue.lean's PieceList), in discovery order.",
+      "items": { "$ref": "#/$defs/piece" }
+    },
+    "eta": {
+      "type": "array",
+      "description": "The optimal pmf's marginal at every edge (global index, same order as graph.edges) -- eta[i] is edge i's usage probability. Checked (verifier-checked, not schema-checked) against 'pieces' own composed local marginals; must have exactly one entry per graph edge.",
+      "items": { "$ref": "#/$defs/rational" }
+    },
+    "rho": {
+      "type": "array",
+      "description": "The admissible density rho = eta / ||eta||^2, same indexing as 'eta'. Checked (verifier-checked, not schema-checked) against a fresh computation from 'eta'; must have exactly one entry per graph edge.",
+      "items": { "$ref": "#/$defs/rational" }
+    }
+  },
+  "$defs": {
+    "rational": {
+      "type": "array",
+      "description": "[numerator, denominator]; see the top-level description for why these are never floats.",
+      "prefixItems": [
+        { "type": "integer" },
+        { "type": "integer", "exclusiveMinimum": 0 }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "edgeEndpoints": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "integer", "minimum": 0 },
+        { "type": "integer", "minimum": 0 }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "edgeIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "An index into the top-level graph.edges array -- always global, never piece-local."
+    },
+    "vertexLabel": {
+      "description": "An original-graph vertex index (0..num_vertices-1), or an opaque synthetic label for a vertex created by deflation-contracting an earlier piece (e.g. \"__core_0__\", matching pmf_construction.py's own synthetic naming). Informational only -- see 'vertices' below.",
+      "oneOf": [
+        { "type": "integer", "minimum": 0 },
+        { "type": "string" }
+      ]
+    },
+    "tree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edges", "weight"],
+      "properties": {
+        "edges": {
+          "type": "array",
+          "description": "A spanning tree of this piece: global edge indices (a subset of the enclosing piece's own 'edges').",
+          "items": { "$ref": "#/$defs/edgeIndex" }
+        },
+        "weight": { "$ref": "#/$defs/rational" }
+      }
+    },
+    "piece": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edges", "local_pmf"],
+      "properties": {
+        "edges": {
+          "type": "array",
+          "description": "This piece's own edge scope, as global indices. Must be disjoint from every earlier piece's 'edges' (verifier-checked, not schema-checked).",
+          "items": { "$ref": "#/$defs/edgeIndex" }
+        },
+        "vertices": {
+          "type": "array",
+          "description": "INFORMATIONAL ONLY, not load-bearing for verification -- every check the verifier performs runs purely on edge sets (Pmf.glue, IsForest, etc. never mention vertices). Kept for traceability back to solver_trace.hpp's own per-round 'vertices' field and for human debugging only; a verifier is not required to parse or cross-check this field against anything.",
+          "items": { "$ref": "#/$defs/vertexLabel" }
+        },
+        "local_pmf": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["trees"],
+          "properties": {
+            "trees": {
+              "type": "array",
+              "description": "This piece's local pmf: a Finset of edge sets plus a rational weight each (DiscreteModulusCert.Pmf's exact shape). Weights must be non-negative and sum to exactly 1 (verifier-checked).",
+              "items": { "$ref": "#/$defs/tree" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

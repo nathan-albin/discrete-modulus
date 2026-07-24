@@ -340,6 +340,11 @@ inline std::pair<rational<long>, std::set<Edge>> graph_vulnerability(
  */
 inline std::map<Edge, rational<long>> spanning_tree_modulus(Graph& g, bool verbose = false,
                                                               SolverTrace* trace = nullptr) {
+    assert(is_simple_graph(g) &&
+           "spanning_tree_modulus assumes a simple graph (no self-loops, no parallel edges) -- "
+           "see is_simple_graph's docs in graphs.hpp for why a multigraph input isn't just "
+           "unsupported but silently wrong");
+
     std::map<Edge, rational<long>> eta_star;
     long remain = static_cast<long>(num_edges(g));
 
