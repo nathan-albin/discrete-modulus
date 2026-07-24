@@ -25,7 +25,7 @@ its Tier 3 entry below.
 These are the `docs/certification/` files — read them before anything
 else; they'll make every file below faster to place.
 
-- [ ] `docs/certification/README.md` — architecture overview, the
+- [x] `docs/certification/README.md` — architecture overview, the
       three-stage pipeline, trust-per-stage table.
 - [ ] `docs/certification/walkthrough.md` — the house graph through all
       three stages with real file contents at each step.
